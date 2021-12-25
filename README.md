@@ -1,0 +1,1 @@
+# discord-scam-terminator
