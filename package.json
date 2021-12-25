@@ -1,0 +1,25 @@
+{
+  "name": "discord-scam-terminator",
+  "version": "1.0.0",
+  "description": "Targets common discord scams",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shatindle/discord-scam-terminator.git"
+  },
+  "author": "shatindle",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/shatindle/discord-scam-terminator/issues"
+  },
+  "homepage": "https://github.com/shatindle/discord-scam-terminator#readme",
+  "dependencies": {
+    "@discordjs/rest": "^0.2.0-canary.0",
+    "discord-api-types": "^0.26.0",
+    "discord.js": "^13.4.0",
+    "uuid": "^8.3.2"
+  }
+}
