@@ -18,6 +18,7 @@
   "homepage": "https://github.com/shatindle/discord-scam-terminator#readme",
   "dependencies": {
     "@discordjs/rest": "^0.2.0-canary.0",
+    "@google-cloud/firestore": "^5.0.1",
     "discord-api-types": "^0.26.0",
     "discord.js": "^13.4.0",
     "uuid": "^8.3.2"

@@ -104,3 +104,4 @@ dist
 .tern-port
 settings.json
 package-lock.json
+firebase.json
