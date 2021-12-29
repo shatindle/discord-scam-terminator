@@ -18,5 +18,5 @@ discord.login(token);
 
 require("./Monitors/clonex")(discord);
 require("./Monitors/nitroSteamScam")(discord);
-
+require("./Monitors/serverCount")(discord);
 
