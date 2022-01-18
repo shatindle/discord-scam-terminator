@@ -25,6 +25,13 @@ function onlyUnique(value, index, self) {
 
 function containsKeyIndicators(message) {
     message = message.toLowerCase();
+
+    try {
+        const urls = extractUrlsFromContent(message);
+
+        urls.forEach(url => message = message.replace(url, " "));
+    } catch { /* we don't really care if this fails */}
+
     var indicators = 0;
 
     if (message.indexOf("@everyone") > -1)
