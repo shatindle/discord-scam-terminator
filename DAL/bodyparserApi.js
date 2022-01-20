@@ -1,3 +1,5 @@
+const { remove } = require('confusables'); 
+
 const urlRegex = /(https?:\/\/[^ ]*)/;
 
 function extractUrlsFromContent(content) {
@@ -25,6 +27,7 @@ function onlyUnique(value, index, self) {
 
 function containsKeyIndicators(message) {
     message = message.toLowerCase();
+    message = remove(message);
     message = message.replace(/\n/g, " ");
     message = message.replace(/\s\s+/g, " ");
 
