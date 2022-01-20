@@ -25,6 +25,8 @@ function onlyUnique(value, index, self) {
 
 function containsKeyIndicators(message) {
     message = message.toLowerCase();
+    message = message.replace(/\n/g, " ");
+    message = message.replace(/\s\s+/g, " ");
 
     try {
         const urls = extractUrlsFromContent(message);
@@ -54,6 +56,9 @@ function containsKeyIndicators(message) {
 
     if (message.indexOf("airdrop") > -1)
         indicators += 1;
+
+    if (message.indexOf("who is first? :)") > -1)
+        indicators += 2;
 
     return indicators > 1;
 }
