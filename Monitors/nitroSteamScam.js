@@ -1,6 +1,6 @@
 const DiscordApi = require('discord.js');
 const { extractUrlsFromContent, containsKeyIndicators } = require("../DAL/bodyparserApi");
-const { validUrl, discordUrl, steamUrl } = require("../DAL/urlTesterApi");
+const { validUrl, isUrlInWhitelist } = require("../DAL/urlTesterApi");
 const { shouldBanUser, recordKick, recordError, recordWarning, recordFail } = require("../DAL/databaseApi");
 
 const reason = "Nitro/Steam phishing";
@@ -28,9 +28,7 @@ const reason = "Nitro/Steam phishing";
                 for (var i = 0; i < urlsFound.length; i++) {
                     if (validUrl(urlsFound[i])) {
                         // it's a valid URL with a key indicator.  Is it a valid steam or discord url?
-                        if (discordUrl(urlsFound[i]))
-                            continue;
-                        if (steamUrl(urlsFound[i]))
+                        if (isUrlInWhitelist(urlsFound[i]))
                             continue;
         
                         // could be a malicious URL.  We need to delete the message.
