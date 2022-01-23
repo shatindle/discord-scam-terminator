@@ -25,23 +25,49 @@ function onlyUnique(value, index, self) {
     return self.indexOf(value) === index;
 }
 
-function containsKeyIndicators(message) {
+function cleanMessage(message) {
     message = message.toLowerCase();
     message = remove(message);
     message = message.replace(/\n/g, " ");
     message = message.replace(/\s\s+/g, " ");
+
+    return message;
+}
+
+function isJustUrl(message) {
+    message = cleanMessage(message);
 
     try {
         const urls = extractUrlsFromContent(message);
 
         // no URLs means this isn't a scam link
         if (urls.length === 0)
-            return false;
+            return 0;
 
         urls.forEach(url => message = message.replace(url, " "));
     } catch { /* we don't really care if this fails */}
 
-    var indicators = 0;
+    return message.trim() === "";
+}
+
+function containsKeyIndicators(message, removeUrl = true) {
+    message = cleanMessage(message);
+
+    if (removeUrl) {
+        try {
+            const urls = extractUrlsFromContent(message);
+    
+            // no URLs means this isn't a scam link
+            if (urls.length === 0)
+                return 0;
+    
+            urls.forEach(url => message = message.replace(url, " "));
+
+            message = message.replace(/\s\s+/g, " ");
+        } catch { /* we don't really care if this fails */}
+    }
+
+    let indicators = 0;
 
     if (message.indexOf("@everyone") > -1)
         indicators += 3;
@@ -64,13 +90,22 @@ function containsKeyIndicators(message) {
     if (message.indexOf("airdrop") > -1)
         indicators += 1;
 
+    if (message.indexOf("gifted a subscription") > -1)
+        indicators += 1;
+
+    if (message.indexOf("discord has gifted you") > -1)
+        indicators += 2;
+
     if (message.indexOf("who is first? :)") > -1)
         indicators += 2;
 
-    return indicators > 1;
+    return indicators;
 }
 
 module.exports = {
     extractUrlsFromContent,
-    containsKeyIndicators
+    containsKeyIndicators,
+    cleanMessage,
+    MINIMUM_INDICATORS: 1,
+    isJustUrl
 };
