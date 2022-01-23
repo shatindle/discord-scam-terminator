@@ -26,7 +26,7 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: Copy the application to run folder
         run: |
-          cp $GITHUB_WORKSPACE/* /home/sha_tindle/repos/discord-scam-terminator
+          cp -r $GITHUB_WORKSPACE/* /home/sha_tindle/repos/discord-scam-terminator
           cd /home/sha_tindle/repos/discord-scam-terminator
           npm install
           pm2 restart scam-terminator
