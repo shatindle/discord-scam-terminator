@@ -1,6 +1,6 @@
 const DiscordApi = require('discord.js');
-const { extractUrlsFromContent, containsKeyIndicators } = require("../DAL/bodyparserApi");
-const { validUrl, isUrlInWhitelist } = require("../DAL/urlTesterApi");
+const { extractUrlsFromContent, containsKeyIndicators, MINIMUM_INDICATORS, isJustUrl } = require("../DAL/bodyparserApi");
+const { validUrl, isUrlInWhitelist, isSafeDeepCheck } = require("../DAL/urlTesterApi");
 const { shouldBanUser, recordKick, recordError, recordWarning, recordFail } = require("../DAL/databaseApi");
 
 const reason = "Nitro/Steam phishing";
@@ -19,10 +19,13 @@ const reason = "Nitro/Steam phishing";
 
         var guildId = message.guild.id;
         var userId = message.member.id;
-    
+
         try {
-            if (containsKeyIndicators(message.content)) {
-                // possible spam.  Does it have a URL?
+            const keyIndicators = containsKeyIndicators(message.content, true) > MINIMUM_INDICATORS;
+            const justUrl = isJustUrl(message.content);
+
+            if (keyIndicators || justUrl) {
+                // possible scam.  Does it have a URL?
                 var urlsFound = extractUrlsFromContent(message.content);
         
                 for (var i = 0; i < urlsFound.length; i++) {
@@ -30,6 +33,12 @@ const reason = "Nitro/Steam phishing";
                         // it's a valid URL with a key indicator.  Is it a valid steam or discord url?
                         if (isUrlInWhitelist(urlsFound[i]))
                             continue;
+
+                        if (justUrl) {
+                            // perform a deep check as it could still be malicious
+                            if (await isSafeDeepCheck(urlsFound[i])) 
+                                continue;
+                        }
         
                         // could be a malicious URL.  We need to delete the message.
                         if (message.deletable) {
@@ -71,6 +80,9 @@ const reason = "Nitro/Steam phishing";
                                 username,
                                 reason);
                         }
+
+                        // the message has been deleted, don't bother checking any other URLs
+                        return;
                     }
                 }
             }

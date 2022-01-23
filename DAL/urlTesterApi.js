@@ -1,4 +1,6 @@
 const { URL } = require('url');
+const ogs = require('open-graph-scraper');
+const { containsKeyIndicators, cleanMessage, MINIMUM_INDICATORS } = require('./bodyparserApi');
 
 function stringIsAValidUrl(s, protocols) {
     try {
@@ -139,10 +141,64 @@ function isUrlInWhitelist(url) {
     return discordUrl(url) || steamUrl(url) || whitelistedUrl(url);
 }
 
+// all encountered scams since boot
+const knownScams = {};
+
+/**
+ * @description Checks to see if the URL is likely a scam by inspecting the head part of the HTML
+ * @param {string} url The URL we need to perform a head check on
+ * @returns Whether or not the URL is safe
+ */
+async function isSafeDeepCheck(url) {
+    const hostname = extractHostname(url);
+
+    // if we've encountered this scam recently, then we know it's bad
+    // don't re-perform the deep check for known scam URLs
+    // we don't want to get blacklisted
+    if (hostname in knownScams)
+        return false;
+
+    try {
+        const metadata = await ogs({ url });
+
+        if (metadata) {
+            if (metadata.error)
+                // something went wrong, server might be down
+                return true;
+            
+
+            if (!metadata.result) 
+                // no metadata so we're probably ok
+                return true;
+            
+            const graph = metadata.result;
+
+            if (containsKeyIndicators(graph.ogTitle, false) > MINIMUM_INDICATORS || containsKeyIndicators(graph.ogDescription, false) > MINIMUM_INDICATORS) {
+                knownScams[hostname] = true;
+
+                // good chance this is a scam
+                return false;
+            }
+
+            if (cleanMessage(graph.twitterSite) === '@discord' || cleanMessage(graph.twitterCreator) === '@discord') {
+                knownScams[hostname] = true;
+
+                // good chance this is a scam
+                return false;
+            }
+        }
+    } catch (err) {
+        // unable to return if it's safe, return true
+    }
+        
+    return true;
+}
+
 module.exports = {
     validUrl,
     discordUrl,
     steamUrl,
     whitelistedUrl,
-    isUrlInWhitelist
+    isUrlInWhitelist,
+    isSafeDeepCheck
 };
