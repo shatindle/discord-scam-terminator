@@ -17,91 +17,132 @@ function validUrl(url) {
     return stringIsAValidUrl(url, ['http', 'https']);
 }
 
-function cleanUrl(url) {
-    url = url.toLowerCase();
-    if (url.indexOf("https://") === 0)
-        url = url.substring(8);
-    else if (url.indexOf("http://") === 0)
-        url = url.substring(7);
 
-    return url;
+function extractHostname(url) {
+    url = url.toLowerCase();
+    
+    try {
+        const urlObject = new URL(url);
+
+        return urlObject.hostname;
+    } catch {
+        if (url.indexOf("https://") === 0)
+            url = url.substring(8);
+        else if (url.indexOf("http://") === 0)
+            url = url.substring(7);
+
+        return url;
+    }
 }
 
-function compareUrls(url, compare) {
-    return url.indexOf(compare + "/") === 0 || url === compare;
+function domainsMatch(url, compare) {
+    return url.endsWith("." + compare) || url === compare;
 }
 
 function discordUrl(url) {
-    url = cleanUrl(url);
+    const hostname = extractHostname(url);
     
-    if (compareUrls(url, "discord.com"))
+    if (domainsMatch(hostname, "discord.com"))
         return true;
 
-    if (compareUrls(url, "discord.gg"))
+    if (domainsMatch(hostname, "discord.gg"))
         return true;
 
-    if (compareUrls(url, "discord.gift"))
+    if (domainsMatch(hostname, "discord.gift"))
         return true;
 
-    if (compareUrls(url, "discord.media"))
+    if (domainsMatch(hostname, "discord.media"))
         return true;
 
-    if (compareUrls(url, "discordapp.com"))
+    if (domainsMatch(hostname, "discordapp.com"))
         return true;
 
-    if (compareUrls(url, "discordapp.net"))
+    if (domainsMatch(hostname, "discordapp.net"))
         return true;
     
-    if (compareUrls(url, "discordstatus.com"))
+    if (domainsMatch(hostname, "discordstatus.com"))
         return true;
 
     return false;
 }
 
 function steamUrl(url) {
-    url = cleanUrl(url);
+    const hostname = extractHostname(url);
     
-    if (compareUrls(url, "s.team"))
+    if (domainsMatch(hostname, "s.team"))
         return true;
 
-    if (compareUrls(url, "steam-chat.com"))
+    if (domainsMatch(hostname, "steam-chat.com"))
         return true;
 
-    if (compareUrls(url, "steamchina.com"))
+    if (domainsMatch(hostname, "steamchina.com"))
         return true;
 
-    if (compareUrls(url, "steamcommunity.com"))
+    if (domainsMatch(hostname, "steamcommunity.com"))
         return true;
 
-    if (compareUrls(url, "steamcontent.com"))
+    if (domainsMatch(hostname, "steamcontent.com"))
         return true;
     
-    if (compareUrls(url, "steamgames.com")) 
+    if (domainsMatch(hostname, "steamgames.com")) 
         return true;
 
-    if (compareUrls(url, "steampowered.com")) 
+    if (domainsMatch(hostname, "steampowered.com")) 
         return true;
 
-    if (compareUrls(url, "steampowered.com.8686c.com")) 
+    if (domainsMatch(hostname, "steampowered.com.8686c.com")) 
         return true;
 
-    if (compareUrls(url, "steamstatic.com")) 
+    if (domainsMatch(hostname, "steamstatic.com")) 
         return true;
 
-    if (compareUrls(url, "steamstatic.com.8686c.com")) 
+    if (domainsMatch(hostname, "steamstatic.com.8686c.com")) 
         return true;
 
-    if (compareUrls(url, "steamusercontent.com")) 
+    if (domainsMatch(hostname, "steamusercontent.com")) 
         return true;
 
-    if (compareUrls(url, "valvesoftware.com")) 
+    if (domainsMatch(hostname, "valvesoftware.com")) 
         return true;
 
     return false;
 }
 
+function whitelistedUrl(url) {
+    const hostname = extractHostname(url);
+
+    if (domainsMatch(hostname, "rsplatoon.com"))
+        return true;
+        
+    if (domainsMatch(hostname, "tenor.com"))
+        return true;
+    
+    if (domainsMatch(hostname, "youtube.com"))
+        return true;
+        
+    if (domainsMatch(hostname, "youtu.be"))
+        return true;
+    
+    if (domainsMatch(hostname, "twitch.tv"))
+        return true;
+        
+    if (domainsMatch(hostname, "twitter.com"))
+        return true;
+    
+    if (domainsMatch(hostname, "reddit.com"))
+        return true;
+
+    return false;
+}
+
+function isUrlInWhitelist(url) {
+    return discordUrl(url) || steamUrl(url) || whitelistedUrl(url);
+}
+
 module.exports = {
     validUrl,
     discordUrl,
-    steamUrl
+    steamUrl,
+    whitelistedUrl,
+    isUrlInWhitelist
 };

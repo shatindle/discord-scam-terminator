@@ -34,6 +34,10 @@ function containsKeyIndicators(message) {
     try {
         const urls = extractUrlsFromContent(message);
 
+        // no URLs means this isn't a scam link
+        if (urls.length === 0)
+            return false;
+
         urls.forEach(url => message = message.replace(url, " "));
     } catch { /* we don't really care if this fails */}
 
