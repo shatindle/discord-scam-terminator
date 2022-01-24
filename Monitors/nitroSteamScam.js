@@ -20,8 +20,6 @@ const reason = "Nitro/Steam phishing";
         var guildId = message.guild.id;
         var userId = message.member.id;
 
-        if (guildId !== "780530139027996723") return;
-
         try {
             const keyIndicators = containsKeyIndicators(message.content, true) > MINIMUM_INDICATORS;
             const urlsFound = extractUrlsFromContent(message.content);
