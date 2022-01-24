@@ -1,5 +1,5 @@
 const DiscordApi = require('discord.js');
-const { extractUrlsFromContent, containsKeyIndicators, MINIMUM_INDICATORS, isJustUrl } = require("../DAL/bodyparserApi");
+const { extractUrlsFromContent, containsKeyIndicators, MINIMUM_INDICATORS } = require("../DAL/bodyparserApi");
 const { validUrl, isUrlInWhitelist, isSafeDeepCheck } = require("../DAL/urlTesterApi");
 const { shouldBanUser, recordKick, recordError, recordWarning, recordFail } = require("../DAL/databaseApi");
 
@@ -20,70 +20,66 @@ const reason = "Nitro/Steam phishing";
         var guildId = message.guild.id;
         var userId = message.member.id;
 
+        if (guildId !== "780530139027996723") return;
+
         try {
             const keyIndicators = containsKeyIndicators(message.content, true) > MINIMUM_INDICATORS;
-            const justUrl = isJustUrl(message.content);
+            const urlsFound = extractUrlsFromContent(message.content);
 
-            if (keyIndicators || justUrl) {
-                // possible scam.  Does it have a URL?
-                var urlsFound = extractUrlsFromContent(message.content);
-        
-                for (var i = 0; i < urlsFound.length; i++) {
-                    if (validUrl(urlsFound[i])) {
-                        // it's a valid URL with a key indicator.  Is it a valid steam or discord url?
-                        if (isUrlInWhitelist(urlsFound[i]))
-                            continue;
+            
+            for (var i = 0; i < urlsFound.length; i++) {
+                // possible scam.  What is in the URLs?
+                if (validUrl(urlsFound[i])) {
+                    // it's a valid URL.  Is it a valid steam or discord url?
+                    if (isUrlInWhitelist(urlsFound[i]))
+                        continue;
 
-                        if (justUrl) {
-                            // perform a deep check as it could still be malicious
-                            if (await isSafeDeepCheck(urlsFound[i])) 
-                                continue;
-                        }
-        
-                        // could be a malicious URL.  We need to delete the message.
-                        if (message.deletable) {
-                            await message.delete();
-                        }
+                    // if it doesn't have key indicators, perform a deep check as it could still be malicious
+                    if (!keyIndicators && await isSafeDeepCheck(urlsFound[i])) 
+                        continue;
+    
+                    // could be a malicious URL.  We need to delete the message.
+                    if (message.deletable) {
+                        await message.delete();
+                    }
 
-                        var username = message.member.user.username + "#" + message.member.user.discriminator;
-    
-                        var response = await message.channel.send(
-                            "Malicious URL detected.  If this was in error, please let a Mod know.");
-    
-                        setTimeout(async function() {
-                            if (response.deletable)
-                                await response.delete();
-                        }, 5000);
-    
-                        // should we ban the user? 
-                        if (shouldBanUser(message.member.id, message.content)) {
-                            if (message.member.kickable) {
-                                
-                                await message.member.kick();
-                                await recordKick(
-                                    guildId,
-                                    userId,
-                                    username,
-                                    reason);
-                            } else {
-                                await recordFail(
-                                    guildId,
-                                    userId,
-                                    username,
-                                    reason);
-                            }
+                    var username = message.member.user.username + "#" + message.member.user.discriminator;
+
+                    var response = await message.channel.send(
+                        "Malicious URL detected.  If this was in error, please let a Mod know.");
+
+                    setTimeout(async function() {
+                        if (response.deletable)
+                            await response.delete();
+                    }, 5000);
+
+                    // should we ban the user? 
+                    if (shouldBanUser(message.member.id, message.content)) {
+                        if (message.member.kickable) {
                             
+                            await message.member.kick();
+                            await recordKick(
+                                guildId,
+                                userId,
+                                username,
+                                reason);
                         } else {
-                            await recordWarning(
+                            await recordFail(
                                 guildId,
                                 userId,
                                 username,
                                 reason);
                         }
-
-                        // the message has been deleted, don't bother checking any other URLs
-                        return;
+                    } else {
+                        await recordWarning(
+                            guildId,
+                            userId,
+                            username,
+                            reason);
                     }
+
+                    // the message has been deleted, don't bother checking any other URLs
+                    return;
                 }
             }
         } catch (err) {
