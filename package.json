@@ -22,7 +22,7 @@
     "confusables": "^1.1.0",
     "discord-api-types": "^0.26.0",
     "discord.js": "^13.4.0",
-    "open-graph-scraper": "^4.11.0",
+    "open-graph-scraper-bypasshtmlcheck": "^4.11.0-1",
     "uuid": "^8.3.2"
   }
 }

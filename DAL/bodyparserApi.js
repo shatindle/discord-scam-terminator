@@ -34,22 +34,6 @@ function cleanMessage(message) {
     return message;
 }
 
-function isJustUrl(message) {
-    message = cleanMessage(message);
-
-    try {
-        const urls = extractUrlsFromContent(message);
-
-        // no URLs means this isn't a scam link
-        if (urls.length === 0)
-            return 0;
-
-        urls.forEach(url => message = message.replace(url, " "));
-    } catch { /* we don't really care if this fails */}
-
-    return message.trim() === "";
-}
-
 function containsKeyIndicators(message, removeUrl = true) {
     message = cleanMessage(message);
 
@@ -106,6 +90,5 @@ module.exports = {
     extractUrlsFromContent,
     containsKeyIndicators,
     cleanMessage,
-    MINIMUM_INDICATORS: 1,
-    isJustUrl
+    MINIMUM_INDICATORS: 1
 };

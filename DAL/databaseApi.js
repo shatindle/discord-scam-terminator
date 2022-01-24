@@ -148,11 +148,59 @@ function shouldBanUser(userId, message) {
     }
 }
 
+async function addUrlToBlacklist(url) {
+    var moment = Date.now().valueOf().toString();
+
+    var ref = await db.collection("blacklist").doc(moment);
+    await ref.set({
+        url,
+        timestamp: Firestore.Timestamp.now()
+    });
+}
+
+async function addUrlToWhitelist(url) {
+    var moment = Date.now().valueOf().toString();
+
+    var ref = await db.collection("whitelist").doc(moment);
+    await ref.set({
+        url,
+        timestamp: Firestore.Timestamp.now()
+    });
+}
+
+async function loadUrlBlacklist() {
+    var ref = await db.collection("blacklist");
+    var docs = await ref.get();
+
+    const list = {};
+
+    if (docs)
+        docs.forEach(element => list[element.data().url] = true);
+
+    return list;
+}
+
+async function loadUrlWhitelist() {
+    var ref = await db.collection("whitelist");
+    var docs = await ref.get();
+
+    const list = {};
+
+    if (docs)
+        docs.forEach(element => list[element.data().url] = true);
+
+    return list;
+}
+
 module.exports = {
     shouldBanUser,
     recordWarning,
     recordBan,
     recordKick,
     recordFail,
-    recordError
+    recordError,
+    addUrlToBlacklist,
+    loadUrlBlacklist,
+    addUrlToWhitelist,
+    loadUrlWhitelist
 };
