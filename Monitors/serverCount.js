@@ -6,11 +6,11 @@ const DiscordApi = require('discord.js');
  */
  function monitor(discord) {
     setInterval(function() {
-        discord.user.setActivity(`Protecting ${discord.guilds.cache.size} servers`);
+        discord.user.setActivity(`defense ${discord.guilds.cache.size} servers`);
     }, 1000 * 60 * 60);
 
     setTimeout(function() {
-        discord.user.setActivity(`Protecting ${discord.guilds.cache.size} servers`);
+        discord.user.setActivity(`defense ${discord.guilds.cache.size} servers`);
     }, 5000);
  }
 
