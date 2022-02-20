@@ -203,7 +203,11 @@ async function isSafeDeepCheck(url) {
                 return false;
             }
 
-            if (cleanMessage(graph.twitterSite ?? "") === '@discord' || cleanMessage(graph.twitterCreator ?? "") === '@discord') {
+            if (
+                cleanMessage(graph.twitterSite ?? "") === '@discord' || 
+                cleanMessage(graph.twitterCreator ?? "") === '@discord' ||
+                cleanMessage(graph.twitterSite ?? "") === '@steam' ||
+                cleanMessage(graph.twitterCreator ?? "") === '@steam') {
                 blacklist[hostname] = true;
                 await addUrlToBlacklist(hostname);
 
