@@ -77,6 +77,9 @@ function containsKeyIndicators(message, removeUrl = true) {
     if (message.indexOf("gifted a subscription") > -1)
         indicators += 1;
 
+    if (message.indexOf("trade offer with") > -1)
+        indicators += 1;
+
     if (message.indexOf("discord has gifted you") > -1)
         indicators += 2;
 
