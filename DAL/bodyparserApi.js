@@ -86,6 +86,9 @@ function containsKeyIndicators(message, removeUrl = true) {
     if (message.indexOf("who is first? :)") > -1)
         indicators += 2;
 
+    if (message.indexOf("take it guys :)") > -1)
+        indicators += 2;
+
     return indicators;
 }
 
