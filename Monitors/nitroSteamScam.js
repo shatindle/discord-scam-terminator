@@ -29,7 +29,6 @@ const reason = "Nitro/Steam phishing";
             const keyIndicators = containsKeyIndicators(message.content, true) > MINIMUM_INDICATORS;
             const urlsFound = extractUrlsFromContent(message.content);
 
-            
             for (var i = 0; i < urlsFound.length; i++) {
                 // possible scam.  What is in the URLs?
                 if (validUrl(urlsFound[i])) {
@@ -39,7 +38,8 @@ const reason = "Nitro/Steam phishing";
 
                     // if it doesn't have key indicators...
                     // perform a deep check as it could still be malicious
-                    if (!keyIndicators && await isSafeDeepCheck(urlsFound[i])) 
+                    // reversing to catch more URLs
+                    if (await isSafeDeepCheck(urlsFound[i]) && !keyIndicators) 
                         continue;
     
                     // could be a malicious URL.  We need to delete the message.
