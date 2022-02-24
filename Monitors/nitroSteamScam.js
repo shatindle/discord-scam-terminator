@@ -38,11 +38,8 @@ const reason = "Nitro/Steam phishing";
                         continue;
 
                     // if it doesn't have key indicators...
-                    if (!keyIndicators) 
-                        continue;
-
                     // perform a deep check as it could still be malicious
-                    if (await isSafeDeepCheck(urlsFound[i]))
+                    if (!keyIndicators && await isSafeDeepCheck(urlsFound[i])) 
                         continue;
     
                     // could be a malicious URL.  We need to delete the message.
