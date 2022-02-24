@@ -10,9 +10,14 @@ function extractUrlsFromContent(content) {
             return urls;
 
         let url;
-        content.match(urlRegex).forEach((match) => {
-            urls.push(match);
-        });
+        const test = content.match(urlRegex);
+        if (test && test.forEach) {
+            test.forEach((match) => {
+                urls.push(match);
+            });
+        } else {
+            return [];
+        }
 
         return urls.filter(onlyUnique);
     } catch (err) {
