@@ -5,6 +5,46 @@ const { shouldBanUser, recordKick, recordError, recordWarning, recordFail } = re
 
 const reason = "Nitro/Steam phishing";
 
+async function maliciousUrlDetected(message, guildId, userId, username) {
+    // could be a malicious URL.  We need to delete the message.
+    if (message.deletable) {
+        await message.delete();
+    }
+
+    var response = await message.channel.send(
+        "Malicious URL detected.  If this was in error, please let a Mod know.");
+
+    setTimeout(async function() {
+        if (response.deletable)
+            await response.delete();
+    }, 5000);
+
+    // should we ban the user? 
+    if (shouldBanUser(message.member.id, message.content)) {
+        if (message.member.kickable) {
+            
+            await message.member.kick();
+            await recordKick(
+                guildId,
+                userId,
+                username,
+                reason);
+        } else {
+            await recordFail(
+                guildId,
+                userId,
+                username,
+                reason);
+        }
+    } else {
+        await recordWarning(
+            guildId,
+            userId,
+            username,
+            reason);
+    }
+}
+
 /**
  * @description Looks for nitro/steam scams and removes them
  * @param {DiscordApi.Client} discord The discord client
@@ -26,6 +66,9 @@ const reason = "Nitro/Steam phishing";
         var userId = message.member.id;
 
         try {
+            var username = message.member.user.username + "#" + message.member.user.discriminator;
+            var messageRemoved = false;
+            
             const keyIndicators = containsKeyIndicators(message.content, true) > MINIMUM_INDICATORS;
             const urlsFound = extractUrlsFromContent(message.content);
 
@@ -39,51 +82,27 @@ const reason = "Nitro/Steam phishing";
                     // if it doesn't have key indicators...
                     // perform a deep check as it could still be malicious
                     // reversing to catch more URLs
-                    if (await isSafeDeepCheck(urlsFound[i]) && !keyIndicators) 
-                        continue;
-    
-                    // could be a malicious URL.  We need to delete the message.
-                    if (message.deletable) {
-                        await message.delete();
-                    }
-
-                    var username = message.member.user.username + "#" + message.member.user.discriminator;
-
-                    var response = await message.channel.send(
-                        "Malicious URL detected.  If this was in error, please let a Mod know.");
-
-                    setTimeout(async function() {
-                        if (response.deletable)
-                            await response.delete();
-                    }, 5000);
-
-                    // should we ban the user? 
-                    if (shouldBanUser(message.member.id, message.content)) {
-                        if (message.member.kickable) {
-                            
-                            await message.member.kick();
-                            await recordKick(
-                                guildId,
-                                userId,
-                                username,
-                                reason);
-                        } else {
-                            await recordFail(
-                                guildId,
-                                userId,
-                                username,
-                                reason);
+                    if (keyIndicators) {
+                        if (!messageRemoved) {
+                            // if it has key indicators, then mark it as malicious and run the deep check after
+                            await maliciousUrlDetected(message, guildId, userId, username);
+                            messageRemoved = true;
                         }
-                    } else {
-                        await recordWarning(
-                            guildId,
-                            userId,
-                            username,
-                            reason);
-                    }
 
-                    // the message has been deleted, don't bother checking any other URLs
-                    return;
+                        // perform the deep check to grab the URL if necessary
+                        await isSafeDeepCheck(urlsFound[i]);
+
+                    } else if (await isSafeDeepCheck(urlsFound[i])) {
+                        // looks like we're ok
+                        // check the next URL
+                        continue;
+                    } else {
+                        if (!messageRemoved) {
+                            // if it doesn't have key indicators but fails the deep check, mark it as malicious
+                            await maliciousUrlDetected(message, guildId, userId, username);
+                            messageRemoved = true;
+                        }
+                    }
                 }
             }
         } catch (err) {
