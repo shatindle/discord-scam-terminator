@@ -147,7 +147,7 @@ let blacklist = {};
 let whitelist = {};
 
 // load the blacklist and whitelists
-setTimeout(async function() {
+async function init() {
     const databaseBlacklist = await loadUrlBlacklist();
 
     blacklist = {
@@ -161,7 +161,7 @@ setTimeout(async function() {
         ...whitelist,
         ...databaseWhitelist
     };
-}, 3000);
+}
 
 /**
  * @description Checks to see if the URL is likely a scam by inspecting the head part of the HTML
@@ -216,8 +216,9 @@ async function isSafeDeepCheck(url) {
             }
 
             // if we're here, then we can add it to the whitelist
+            // note that a whitelist entry does not guarantee it is ok
             whitelist[hostname] = true;
-            await addUrlToWhitelist(hostname);
+            await addUrlToWhitelist(hostname, url);
         }
     } catch (err) {
         // unable to return if it's safe, return true
@@ -233,5 +234,7 @@ module.exports = {
     steamUrl,
     whitelistedUrl,
     isUrlInWhitelist,
-    isSafeDeepCheck
+    isSafeDeepCheck,
+
+    init
 };

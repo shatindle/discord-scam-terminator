@@ -1,6 +1,6 @@
 const DiscordApi = require('discord.js');
 const { extractUrlsFromContent, containsKeyIndicators, MINIMUM_INDICATORS } = require("../DAL/bodyparserApi");
-const { validUrl, isUrlInWhitelist, isSafeDeepCheck } = require("../DAL/urlTesterApi");
+const { validUrl, isUrlInWhitelist, isSafeDeepCheck, init:initUrlTesterApi } = require("../DAL/urlTesterApi");
 const { shouldBanUser, recordKick, recordError, recordWarning, recordFail } = require("../DAL/databaseApi");
 
 const reason = "Nitro/Steam phishing";
@@ -10,6 +10,11 @@ const reason = "Nitro/Steam phishing";
  * @param {DiscordApi.Client} discord The discord client
  */
  function monitor(discord) {
+    discord.once('ready', async () => {
+        await initUrlTesterApi();
+        console.log("ready!");
+    });
+
     discord.on('messageCreate', async (message) => {
         // ignore posts from bots
         if (message.author.bot) return;
@@ -32,8 +37,12 @@ const reason = "Nitro/Steam phishing";
                     if (isUrlInWhitelist(urlsFound[i]))
                         continue;
 
-                    // if it doesn't have key indicators, perform a deep check as it could still be malicious
-                    if (!keyIndicators && await isSafeDeepCheck(urlsFound[i])) 
+                    // if it doesn't have key indicators...
+                    if (!keyIndicators) 
+                        continue;
+
+                    // perform a deep check as it could still be malicious
+                    if (await isSafeDeepCheck(urlsFound[i]))
                         continue;
     
                     // could be a malicious URL.  We need to delete the message.

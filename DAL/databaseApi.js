@@ -158,12 +158,16 @@ async function addUrlToBlacklist(url) {
     });
 }
 
-async function addUrlToWhitelist(url) {
+async function addUrlToWhitelist(url, example) {
     var moment = Date.now().valueOf().toString();
+
+    if (!example)
+        example = "";
 
     var ref = await db.collection("whitelist").doc(moment);
     await ref.set({
         url,
+        example,
         timestamp: Firestore.Timestamp.now()
     });
 }
