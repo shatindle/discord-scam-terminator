@@ -1,5 +1,6 @@
 const { URL } = require('url');
 const ogs = require('open-graph-scraper-bypasshtmlcheck');
+const UserAgents = require('user-agents');
 const { containsKeyIndicators, cleanMessage, MINIMUM_INDICATORS } = require('./bodyparserApi');
 const { loadUrlBlacklist, loadUrlWhitelist, addUrlToBlacklist, addUrlToWhitelist } = require('./databaseApi');
 
@@ -181,7 +182,8 @@ async function isSafeDeepCheck(url) {
         return true;
 
     try {
-        const metadata = await ogs({ url });
+        const agent = new UserAgents();
+        const metadata = await ogs({ url, headers: agent.data });
 
         if (metadata) {
             if (metadata.error)
