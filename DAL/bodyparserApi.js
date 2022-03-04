@@ -1,6 +1,6 @@
 const { remove } = require('confusables'); 
 
-const urlRegex = /(https?:\/\/[^ ]*)/;
+const urlRegex = /(https?:\/\/[^\s\\]*)/;
 
 function extractUrlsFromContent(content) {
     try {
