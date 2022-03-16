@@ -1,0 +1,5 @@
+{
+    "token": "DISCORD_BOT_TOKEN",
+    "uuidNamespace": "UUID_NAMESPACE",
+    "firebaseProjectId": "FIREBASE_PROJECT_ID"
+}
