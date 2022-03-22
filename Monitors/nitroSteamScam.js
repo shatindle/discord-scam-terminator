@@ -91,9 +91,12 @@ async function maliciousUrlDetected(message, guildId, userId, username) {
 
                         // perform the deep check to grab the URL if necessary
                         await isSafeDeepCheck(urlsFound[i]);
+                    }
+                    
+                    let safeCheck = await isSafeDeepCheck(urlsFound[i]);
 
-                    } else if (await isSafeDeepCheck(urlsFound[i])) {
-                        // looks like we're ok
+                    if (safeCheck === true || safeCheck === null) {
+                        // looks like we're ok, but it might require manual review
                         // check the next URL
                         continue;
                     } else {

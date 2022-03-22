@@ -172,6 +172,17 @@ async function addUrlToWhitelist(url, example) {
     });
 }
 
+async function addUrlToGraylist(url, example) {
+    var moment = Date.now().valueOf().toString();
+
+    var ref = await db.collection("graylist").doc(moment);
+    await ref.set({
+        url,
+        example,
+        timestamp: Firestore.Timestamp.now()
+    });
+}
+
 async function loadUrlBlacklist() {
     var ref = await db.collection("blacklist");
     var docs = await ref.get();
@@ -196,6 +207,18 @@ async function loadUrlWhitelist() {
     return list;
 }
 
+async function loadUrlGraylist() {
+    var ref = await db.collection("graylist");
+    var docs = await ref.get();
+
+    const list = {};
+
+    if (docs)
+        docs.forEach(element => list[element.data().url] = true);
+
+    return list;
+}
+
 module.exports = {
     shouldBanUser,
     recordWarning,
@@ -206,5 +229,7 @@ module.exports = {
     addUrlToBlacklist,
     loadUrlBlacklist,
     addUrlToWhitelist,
-    loadUrlWhitelist
+    loadUrlWhitelist,
+    addUrlToGraylist,
+    loadUrlGraylist
 };

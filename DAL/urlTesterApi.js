@@ -1,8 +1,10 @@
 const { URL } = require('url');
 const ogs = require('open-graph-scraper-bypasshtmlcheck');
+const fetch = require("node-fetch");
+const AbortController = globalThis.AbortController;
 const UserAgents = require('user-agents');
 const { containsKeyIndicators, cleanMessage, MINIMUM_INDICATORS } = require('./bodyparserApi');
-const { loadUrlBlacklist, loadUrlWhitelist, addUrlToBlacklist, addUrlToWhitelist } = require('./databaseApi');
+const { loadUrlBlacklist, loadUrlWhitelist, loadUrlGraylist, addUrlToBlacklist, addUrlToWhitelist, addUrlToGraylist } = require('./databaseApi');
 
 function stringIsAValidUrl(s, protocols) {
     try {
@@ -146,6 +148,7 @@ function isUrlInWhitelist(url) {
 // all encountered scams since boot
 let blacklist = {};
 let whitelist = {};
+let graylist = {};
 
 // load the blacklist and whitelists
 async function init() {
@@ -162,6 +165,51 @@ async function init() {
         ...whitelist,
         ...databaseWhitelist
     };
+
+    const databaseGraylist = await loadUrlGraylist();
+
+    graylist = {
+        ...graylist,
+        ...databaseGraylist
+    };
+}
+
+/**
+ * @description Checks if a page is protected things that may interfere with validation
+ * @param {String} url The URL to check
+ * @returns {Boolean} Whether or not this page is protected
+ */
+async function isPageProtected(url) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => {
+        controller.abort();
+    }, 3000);
+
+    try {
+        const userAgent = new UserAgents(/Windows/);
+        var result = await fetch(url, {
+            method: "GET",
+            headers: {
+                'User-Agent': userAgent.toString()
+            },
+            size: 1000000,
+            signal: controller.signal
+        });
+    
+        var text = await result.text();
+    
+        if (text.indexOf("<title>Please Wait... | Cloudflare</title>") > -1) {
+            // this is likely a scam
+            return true;
+        }
+    } catch (err) {
+        // something went wrong, keep going
+        console.log(`Error when retrieving page: ${err}`);
+    } finally {
+        clearTimeout(timeout);
+    }
+
+    return false;
 }
 
 /**
@@ -180,6 +228,9 @@ async function isSafeDeepCheck(url) {
 
     if (hostname in whitelist)
         return true;
+
+    if (hostname in graylist)
+        return null;
 
     try {
         const agent = new UserAgents();
@@ -217,17 +268,37 @@ async function isSafeDeepCheck(url) {
                 return false;
             }
 
+            // if this page is protected, add it to the gray list
+            if (isPageProtected(url)) {
+                graylist[hostname] = true;
+                await addUrlToGraylist(hostname, url);
+
+                // this needs manual review
+                return null;
+            }
+
             // if we're here, then we can add it to the whitelist
             // note that a whitelist entry does not guarantee it is ok
             whitelist[hostname] = true;
             await addUrlToWhitelist(hostname, url);
+
+            return true;
         }
     } catch (err) {
         // unable to return if it's safe, return true
         console.log(err);
+
+        // if this page is protected, add it to the gray list
+        if (isPageProtected(url)) {
+            graylist[hostname] = true;
+            await addUrlToGraylist(hostname, url);
+
+            // this needs manual review
+            return null;
+        }
     }
         
-    return true;
+    return null;
 }
 
 module.exports = {

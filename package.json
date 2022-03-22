@@ -22,8 +22,9 @@
     "confusables": "^1.1.0",
     "discord-api-types": "^0.26.0",
     "discord.js": "^13.4.0",
+    "node-fetch": "^2.6.7",
     "open-graph-scraper-bypasshtmlcheck": "^4.11.0-1",
-    "user-agents": "^1.0.944",
+    "user-agents": "^1.0.962",
     "uuid": "^8.3.2"
   }
 }
