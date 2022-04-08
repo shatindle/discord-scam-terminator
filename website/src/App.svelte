@@ -15,14 +15,12 @@
 
 	const moveToWhitelist = async (url) => {
 		await move(url, "graylist", "whitelist");
-		graylist.splice(graylist.indexOf(url), 1);
-		console.dir(graylist);
+		graylist = graylist.filter(g => g !== url);
 	};
 
 	const moveToBlacklist = async (url) => {
 		await move(url, "graylist", "blacklist");
-		graylist.splice(graylist.indexOf(url), 1);
-		console.dir(graylist);
+		graylist = graylist.filter(g => g !== url);
 	};
 </script>
 

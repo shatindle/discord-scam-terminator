@@ -47,7 +47,7 @@ router.get('/whitelist', adminAuth, async (req, res) => res.json(Object.keys(awa
 router.post('/move', adminAuth, express.json(), async (req, res) => {
     await moveUrl(req.body.url, req.body.from, req.body.to);
 
-    return res.status(200);
+    return res.sendStatus(200);
 });
 
 module.exports = router;
