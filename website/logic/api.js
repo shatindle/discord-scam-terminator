@@ -2,6 +2,14 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const { Permissions } = require('discord.js');
+const { loadUrlBlacklist, loadUrlGraylist, loadUrlWhitelist, moveUrl } = require('../../DAL/databaseApi');
+
+function adminAuth(req, res, next) {
+    if (!req.session || !req.session.admin)
+        return res.send(401);
+
+    return next();
+}
 
 router.get('/pfp', (req, res) => {
     if (req.user) {
@@ -31,6 +39,15 @@ router.get('/user', (req, res) => {
     }
 
     return res.status(401);
-})
+});
+
+router.get('/blacklist', adminAuth, async (req, res) => res.json(Object.keys(await loadUrlBlacklist())));
+router.get('/graylist', adminAuth, async (req, res) => res.json(Object.keys(await loadUrlGraylist())));
+router.get('/whitelist', adminAuth, async (req, res) => res.json(Object.keys(await loadUrlWhitelist())));
+router.post('/move', adminAuth, express.json(), async (req, res) => {
+    await moveUrl(req.body.url, req.body.from, req.body.to);
+
+    return res.status(200);
+});
 
 module.exports = router;

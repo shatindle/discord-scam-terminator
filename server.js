@@ -20,7 +20,7 @@ app.use(express.urlencoded());
 app.use(cookieParser());
 
 app
-    .get('/lib', express.static(__dirname + './website/lib'))
+    .use('/lib', express.static(__dirname + '/website/lib'))
     .use(discordLogin)
     .use('/api', api)
     .get('*', (req, res) => res.sendFile(path.resolve(__dirname, './website/html/index.html')));

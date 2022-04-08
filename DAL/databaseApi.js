@@ -172,6 +172,45 @@ async function addUrlToWhitelist(url, example) {
     });
 }
 
+async function moveUrl(url, fromList, toList) {
+    if (fromList !== "blacklist" && fromList !== "graylist" && fromList !== "whitelist")
+        throw "Invalid fromList";
+        
+    if (toList !== "blacklist" && toList !== "graylist" && toList !== "whitelist")
+        throw "Invalid toList";
+        
+    if (fromList === toList)
+        throw "Lists must be different";
+
+    var ref = await db.collection(fromList).where("url", "==", url);
+    var docs = await ref.get();
+
+    var found = false, ids = [];
+
+    if (docs)
+        docs.forEach(element => {
+            found = true;
+            ids.push(element.id);
+        });
+
+    if (found) {
+        switch (toList) {
+            case "blacklist": 
+                await addUrlToBlacklist(url);
+                break;
+            case "graylist": 
+                await addUrlToGraylist(url);
+                break;
+            case "whitelist":
+                await addUrlToWhitelist(url);
+                break;
+        }
+        
+        for (var i = 0; i < ids.length; i++)
+            await (await db.collection(fromList).doc(ids[i])).delete();
+    }
+}
+
 async function addUrlToGraylist(url, example) {
     var moment = Date.now().valueOf().toString();
 
@@ -231,5 +270,6 @@ module.exports = {
     addUrlToWhitelist,
     loadUrlWhitelist,
     addUrlToGraylist,
-    loadUrlGraylist
+    loadUrlGraylist,
+    moveUrl
 };
