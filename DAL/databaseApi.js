@@ -183,6 +183,19 @@ async function addUrlToGraylist(url, example) {
     });
 }
 
+async function addMessageToScamList(url, message, user, guild) {
+    var moment = Date.now().valueOf().toString();
+
+    var ref = await db.collection("scamlist").doc(moment);
+    await ref.set({
+        url,
+        message,
+        user,
+        guild,
+        timestamp: Firestore.Timestamp.now()
+    });
+}
+
 async function loadUrlBlacklist() {
     var ref = await db.collection("blacklist");
     var docs = await ref.get();
@@ -231,5 +244,6 @@ module.exports = {
     addUrlToWhitelist,
     loadUrlWhitelist,
     addUrlToGraylist,
-    loadUrlGraylist
+    loadUrlGraylist,
+    addMessageToScamList
 };
