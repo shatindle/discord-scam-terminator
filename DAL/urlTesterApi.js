@@ -119,24 +119,6 @@ function whitelistedUrl(url) {
 
     if (domainsMatch(hostname, "rsplatoon.com"))
         return true;
-        
-    if (domainsMatch(hostname, "tenor.com"))
-        return true;
-    
-    if (domainsMatch(hostname, "youtube.com"))
-        return true;
-        
-    if (domainsMatch(hostname, "youtu.be"))
-        return true;
-    
-    if (domainsMatch(hostname, "twitch.tv"))
-        return true;
-        
-    if (domainsMatch(hostname, "twitter.com"))
-        return true;
-    
-    if (domainsMatch(hostname, "reddit.com"))
-        return true;
 
     return false;
 }
