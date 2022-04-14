@@ -1,6 +1,6 @@
 const DiscordApi = require('discord.js');
 const { extractUrlsFromContent, containsKeyIndicators, MINIMUM_INDICATORS, isRedlineStealer } = require("../DAL/bodyparserApi");
-const { validUrl, isSafeDeepCheck, init:initUrlTesterApi } = require("../DAL/urlTesterApi");
+const { validUrl, isSafeDeepCheck, init:initUrlTesterApi, isUrlInWhitelist } = require("../DAL/urlTesterApi");
 const { shouldBanUser, recordKick, recordError, recordWarning, recordFail } = require("../DAL/databaseApi");
 
 const reason = "Nitro/Steam phishing";
