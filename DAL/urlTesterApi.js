@@ -4,7 +4,7 @@ const fetch = require("node-fetch");
 const AbortController = globalThis.AbortController;
 const UserAgents = require('user-agents');
 const { containsKeyIndicators, cleanMessage, MINIMUM_INDICATORS } = require('./bodyparserApi');
-const { loadUrlBlacklist, loadUrlWhitelist, loadUrlGraylist, addUrlToBlacklist, addUrlToWhitelist, addUrlToGraylist } = require('./databaseApi');
+const { loadUrlBlacklist, loadUrlWhitelist, loadUrlGraylist, addUrlToWhitelist, addUrlToGraylist } = require('./databaseApi');
 
 function stringIsAValidUrl(s, protocols) {
     try {
@@ -226,11 +226,15 @@ async function isSafeDeepCheck(url) {
     if (hostname in blacklist)
         return false;
 
-    if (hostname in whitelist)
-        return true;
+    // seems that we should no longer trust the whitelist.
+    // there are new scam types that are using media 
+    // to tell users how to "get free nitro" or "steam"
+    // if (hostname in whitelist)
+    //     return true;
 
-    if (hostname in graylist)
-        return null;
+    // same applies to the graylist.  Rescan unless it's known to be bad
+    // if (hostname in graylist)
+    //     return null;
 
     try {
         const agent = new UserAgents();
@@ -249,8 +253,9 @@ async function isSafeDeepCheck(url) {
             const graph = metadata.result;
 
             if (containsKeyIndicators(graph.ogTitle ?? "", false) > MINIMUM_INDICATORS || containsKeyIndicators(graph.ogDescription ?? "", false) > MINIMUM_INDICATORS) {
-                blacklist[hostname] = true;
-                await addUrlToBlacklist(hostname);
+                
+                graylist[hostname] = true;
+                await addUrlToGraylist(hostname, url, true);
 
                 // good chance this is a scam
                 return false;
@@ -261,8 +266,9 @@ async function isSafeDeepCheck(url) {
                 cleanMessage(graph.twitterCreator ?? "") === '@discord' ||
                 cleanMessage(graph.twitterSite ?? "") === '@steam' ||
                 cleanMessage(graph.twitterCreator ?? "") === '@steam') {
-                blacklist[hostname] = true;
-                await addUrlToBlacklist(hostname);
+
+                graylist[hostname] = true;
+                await addUrlToGraylist(hostname, url, true);
 
                 // good chance this is a scam
                 return false;
@@ -270,8 +276,10 @@ async function isSafeDeepCheck(url) {
 
             // if this page is protected, add it to the gray list
             if (isPageProtected(url)) {
-                graylist[hostname] = true;
-                await addUrlToGraylist(hostname, url);
+                if ((hostname in whitelist) === false && (hostname in blacklist) === false) {
+                    graylist[hostname] = true;
+                    await addUrlToGraylist(hostname, url, false);
+                }
 
                 // this needs manual review
                 return null;
@@ -279,8 +287,10 @@ async function isSafeDeepCheck(url) {
 
             // if we're here, then we can add it to the whitelist
             // note that a whitelist entry does not guarantee it is ok
-            whitelist[hostname] = true;
-            await addUrlToWhitelist(hostname, url);
+            if ((hostname in whitelist) === false && (hostname in graylist) === false) {
+                whitelist[hostname] = true;
+                await addUrlToWhitelist(hostname, url);
+            }
 
             return true;
         }
@@ -290,8 +300,10 @@ async function isSafeDeepCheck(url) {
 
         // if this page is protected, add it to the gray list
         if (isPageProtected(url)) {
-            graylist[hostname] = true;
-            await addUrlToGraylist(hostname, url);
+            if ((hostname in whitelist) === false && (hostname in blacklist) === false) {
+                graylist[hostname] = true;
+                await addUrlToGraylist(hostname, url, false);
+            }
 
             // this needs manual review
             return null;

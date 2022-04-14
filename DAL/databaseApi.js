@@ -172,13 +172,14 @@ async function addUrlToWhitelist(url, example) {
     });
 }
 
-async function addUrlToGraylist(url, example) {
+async function addUrlToGraylist(url, example, removed) {
     var moment = Date.now().valueOf().toString();
 
     var ref = await db.collection("graylist").doc(moment);
     await ref.set({
         url,
         example,
+        removed,
         timestamp: Firestore.Timestamp.now()
     });
 }

@@ -1,6 +1,6 @@
 const DiscordApi = require('discord.js');
 const { extractUrlsFromContent, containsKeyIndicators, MINIMUM_INDICATORS, isRedlineStealer } = require("../DAL/bodyparserApi");
-const { validUrl, isUrlInWhitelist, isSafeDeepCheck, init:initUrlTesterApi } = require("../DAL/urlTesterApi");
+const { validUrl, isSafeDeepCheck, init:initUrlTesterApi } = require("../DAL/urlTesterApi");
 const { shouldBanUser, recordKick, recordError, recordWarning, recordFail } = require("../DAL/databaseApi");
 
 const reason = "Nitro/Steam phishing";
@@ -86,8 +86,11 @@ async function maliciousUrlDetected(message, guildId, userId, username) {
                     }
 
                     // it's a valid URL.  Is it a valid steam or discord url?
-                    if (isUrlInWhitelist(urlsFound[i]))
-                        continue;
+                    // seems that we should no longer trust the whitelist.
+                    // there are new scam types that are using media 
+                    // to tell users how to "get free nitro" or "steam"
+                    // if (isUrlInWhitelist(urlsFound[i]))
+                    //     continue;
 
                     // if it doesn't have key indicators...
                     // perform a deep check as it could still be malicious

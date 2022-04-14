@@ -68,6 +68,9 @@ function containsKeyIndicators(message, removeUrl = true) {
     if (message.indexOf("nitro") > -1)
         indicators += 1;
 
+    if (message.indexOf("free") > -1)
+        indicators += 1;
+
     if (message.indexOf("giveaway") > -1)
         indicators += 1;
     
