@@ -86,11 +86,8 @@ async function maliciousUrlDetected(message, guildId, userId, username) {
                     }
 
                     // it's a valid URL.  Is it a valid steam or discord url?
-                    // seems that we should no longer trust the whitelist.
-                    // there are new scam types that are using media 
-                    // to tell users how to "get free nitro" or "steam"
-                    // if (isUrlInWhitelist(urlsFound[i]))
-                    //     continue;
+                    if (isUrlInWhitelist(urlsFound[i]))
+                        continue;
 
                     // if it doesn't have key indicators...
                     // perform a deep check as it could still be malicious
