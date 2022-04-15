@@ -120,6 +120,15 @@ function whitelistedUrl(url) {
     if (domainsMatch(hostname, "rsplatoon.com"))
         return true;
 
+    if (domainsMatch(hostname, "tenor.com"))
+        return true;
+
+    if (domainsMatch(hostname, "reddit.com"))
+        return true;
+
+    if (domainsMatch(hostname, "twitter.com"))
+        return true;
+
     return false;
 }
 
