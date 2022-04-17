@@ -7,7 +7,13 @@ const client = new Client({
     ] });
 
 client.once('ready', async () => {
-    client.guilds.cache.forEach(guild => console.log(`${guild.id}: ${guild.name}`));
+    console.log(client.guilds.cache.size);
+    let total = 0;
+    client.guilds.cache.forEach(guild => {
+        console.log(`${guild.id}: ${guild.name}: ${guild.memberCount}`);
+        total += guild.memberCount;
+    });
+    console.log(`${total} users`);
     console.log("ready!");
 });
 
