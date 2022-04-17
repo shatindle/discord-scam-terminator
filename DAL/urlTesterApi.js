@@ -174,7 +174,7 @@ async function isPageProtected(url) {
     const controller = new AbortController();
     const timeout = setTimeout(() => {
         controller.abort();
-    }, 3000);
+    }, 10000);
 
     try {
         const userAgent = new UserAgents(/Windows/);
@@ -266,7 +266,7 @@ async function isSafeDeepCheck(url) {
             }
 
             // if this page is protected, add it to the gray list
-            if (isPageProtected(url)) {
+            if (await isPageProtected(url)) {
                 if ((hostname in whitelist) === false && (hostname in blacklist) === false) {
                     graylist[hostname] = true;
                     await addUrlToGraylist(hostname, url, false);
