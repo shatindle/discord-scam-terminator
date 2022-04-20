@@ -58,40 +58,51 @@ function containsKeyIndicators(message, removeUrl = true) {
     
             urls.forEach(url => message = message.replace(url, " "));
 
+            message = message.replace(":", " ");
             message = message.replace(/\s\s+/g, " ");
         } catch { /* we don't really care if this fails */}
     }
 
-    let indicators = 0;
     let wordcount = countWords(message);
 
     // only analyze short messages for now
     if (wordcount > 60)
         return indicators;
 
-    if (message.indexOf("@everyone") > -1)
+    let indicators = 0;
+    let words = message.match(/\b(\w+)\b/g);
+
+    for (var word of words) {
+        if (word === "@everyone")
         indicators += 3;
 
-    if (message.indexOf("discord") > -1)
-        indicators += 1;
+        if (word === "discord")
+            indicators += 1;
 
-    if (message.indexOf("nitro") > -1)
-        indicators += 1;
+        if (word === "nitro")
+            indicators += 1;
 
-    if (message.indexOf("free") > -1)
-        indicators += 1;
+        if (word === "free")
+            indicators += 1;
 
-    if (message.indexOf("giveaway") > -1)
-        indicators += 1;
-    
-    if (message.indexOf("steam") > -1)
-        indicators += 1;
+        if (word === "giveaway")
+            indicators += 1;
+        
+        if (word === "steam")
+            indicators += 1;
 
-    if (message.indexOf("month") > -1)
-        indicators += 1;
+        if (word === "month")
+            indicators += 1;
 
-    if (message.indexOf("airdrop") > -1)
-        indicators += 1;
+        if (word === "airdrop")
+            indicators += 1;
+
+        if (word === "pass") 
+            indicators += 1;
+        
+        if (word === "password") 
+            indicators += 1;
+    }
 
     if (message.indexOf("gifted a subscription") > -1)
         indicators += 1;
@@ -109,9 +120,6 @@ function containsKeyIndicators(message, removeUrl = true) {
         indicators += 2;
 
     if (message.indexOf("test my first game") > -1) 
-        indicators += 1;
-        
-    if (message.indexOf("pass") > -1) 
         indicators += 1;
 
     return indicators;
