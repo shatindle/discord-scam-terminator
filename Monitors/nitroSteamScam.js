@@ -1,6 +1,6 @@
 const DiscordApi = require('discord.js');
-const { extractUrlsFromContent, containsKeyIndicators, MINIMUM_INDICATORS } = require("../DAL/bodyparserApi");
-const { validUrl, isUrlInWhitelist, isSafeDeepCheck, init:initUrlTesterApi } = require("../DAL/urlTesterApi");
+const { extractUrlsFromContent, containsKeyIndicators, MINIMUM_INDICATORS, isRedlineStealer } = require("../DAL/bodyparserApi");
+const { validUrl, isSafeDeepCheck, init:initUrlTesterApi, isUrlInWhitelist } = require("../DAL/urlTesterApi");
 const { shouldBanUser, recordKick, recordError, recordWarning, recordFail } = require("../DAL/databaseApi");
 
 const reason = "Nitro/Steam phishing";
@@ -71,10 +71,20 @@ async function maliciousUrlDetected(message, guildId, userId, username) {
             
             const keyIndicators = containsKeyIndicators(message.content, true) > MINIMUM_INDICATORS;
             const urlsFound = extractUrlsFromContent(message.content);
+            const redlineStealer = await isRedlineStealer(message.content, urlsFound, userId, guildId);
 
             for (var i = 0; i < urlsFound.length; i++) {
                 // possible scam.  What is in the URLs?
                 if (validUrl(urlsFound[i])) {
+                    // if this is a redline stealer, ignore the domain
+                    if (redlineStealer) {
+                        if (!messageRemoved) {
+                            // if it has key indicators, then mark it as malicious and run the deep check after
+                            await maliciousUrlDetected(message, guildId, userId, username);
+                            messageRemoved = true;
+                        }
+                    }
+
                     // it's a valid URL.  Is it a valid steam or discord url?
                     if (isUrlInWhitelist(urlsFound[i]))
                         continue;
@@ -111,9 +121,9 @@ async function maliciousUrlDetected(message, guildId, userId, username) {
         } catch (err) {
             // something went wrong when assessing the message content
             try {
-                await recordError(guildId, userId, err, reason);
+                await recordError(guildId, userId, err.toString(), reason);
             } catch (err2) {
-                await recordError("", "", err2, reason);
+                await recordError("", "", err2.toString(), reason);
             }
         }
     });

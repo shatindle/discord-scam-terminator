@@ -211,13 +211,37 @@ async function moveUrl(url, fromList, toList) {
     }
 }
 
-async function addUrlToGraylist(url, example) {
+async function addUrlToGraylist(url, example, removed) {
     var moment = Date.now().valueOf().toString();
 
     var ref = await db.collection("graylist").doc(moment);
     await ref.set({
         url,
         example,
+        removed,
+        timestamp: Firestore.Timestamp.now()
+    });
+}
+
+async function addUrlToVerifiedDomains(url) {
+    var moment = Date.now().valueOf().toString();
+
+    var ref = await db.collection("verifieddomains").doc(moment);
+    await ref.set({
+        url,
+        timestamp: Firestore.Timestamp.now()
+    });
+}
+
+async function addMessageToScamList(url, message, user, guild) {
+    var moment = Date.now().valueOf().toString();
+
+    var ref = await db.collection("scamlist").doc(moment);
+    await ref.set({
+        url,
+        message,
+        user,
+        guild,
         timestamp: Firestore.Timestamp.now()
     });
 }
@@ -258,6 +282,18 @@ async function loadUrlGraylist() {
     return list;
 }
 
+async function loadVerifiedDomains() {
+    var ref = await db.collection("verifieddomains");
+    var docs = await ref.get();
+
+    const list = {};
+
+    if (docs)
+        docs.forEach(element => list[element.data().url] = true);
+
+    return list;
+}
+
 module.exports = {
     shouldBanUser,
     recordWarning,
@@ -271,5 +307,8 @@ module.exports = {
     loadUrlWhitelist,
     addUrlToGraylist,
     loadUrlGraylist,
-    moveUrl
+    moveUrl,
+    addMessageToScamList,
+    addUrlToVerifiedDomains,
+    loadVerifiedDomains
 };

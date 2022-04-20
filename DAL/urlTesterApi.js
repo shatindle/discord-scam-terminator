@@ -4,7 +4,7 @@ const fetch = require("node-fetch");
 const AbortController = globalThis.AbortController;
 const UserAgents = require('user-agents');
 const { containsKeyIndicators, cleanMessage, MINIMUM_INDICATORS } = require('./bodyparserApi');
-const { loadUrlBlacklist, loadUrlWhitelist, loadUrlGraylist, addUrlToBlacklist, addUrlToWhitelist, addUrlToGraylist } = require('./databaseApi');
+const { loadUrlBlacklist, loadUrlWhitelist, loadUrlGraylist, addUrlToWhitelist, addUrlToGraylist, loadVerifiedDomains } = require('./databaseApi');
 
 function stringIsAValidUrl(s, protocols) {
     try {
@@ -119,36 +119,28 @@ function whitelistedUrl(url) {
 
     if (domainsMatch(hostname, "rsplatoon.com"))
         return true;
-        
+
     if (domainsMatch(hostname, "tenor.com"))
         return true;
-    
-    if (domainsMatch(hostname, "youtube.com"))
-        return true;
-        
-    if (domainsMatch(hostname, "youtu.be"))
-        return true;
-    
-    if (domainsMatch(hostname, "twitch.tv"))
-        return true;
-        
-    if (domainsMatch(hostname, "twitter.com"))
-        return true;
-    
+
     if (domainsMatch(hostname, "reddit.com"))
+        return true;
+
+    if (domainsMatch(hostname, "twitter.com"))
         return true;
 
     return false;
 }
 
 function isUrlInWhitelist(url) {
-    return discordUrl(url) || steamUrl(url) || whitelistedUrl(url);
+    return discordUrl(url) || steamUrl(url) || whitelistedUrl(url) || isVerifiedDomain(url);
 }
 
 // all encountered scams since boot
 let blacklist = {};
 let whitelist = {};
 let graylist = {};
+let verifieddomains = {};
 
 // load the blacklist and whitelists
 async function init() {
@@ -172,6 +164,13 @@ async function init() {
         ...graylist,
         ...databaseGraylist
     };
+
+    const verifiedDomainsList = await loadVerifiedDomains();
+
+    verifieddomains = {
+        ...verifieddomains,
+        ...verifiedDomainsList
+    };
 }
 
 /**
@@ -183,7 +182,7 @@ async function isPageProtected(url) {
     const controller = new AbortController();
     const timeout = setTimeout(() => {
         controller.abort();
-    }, 3000);
+    }, 10000);
 
     try {
         const userAgent = new UserAgents(/Windows/);
@@ -213,6 +212,19 @@ async function isPageProtected(url) {
 }
 
 /**
+ * @description Checks to see if the domain is in human verified the safe list
+ * @param {string} hostname The hostname to check if it's been pre-verified
+ * @returns {bool} Whether or not this domain can be always trusted
+ */
+function isVerifiedDomain(hostname) {
+    // this is the new whitelist
+    if (hostname in verifieddomains)
+        return true;
+
+    return false;
+}
+
+/**
  * @description Checks to see if the URL is likely a scam by inspecting the head part of the HTML
  * @param {string} url The URL we need to perform a head check on
  * @returns Whether or not the URL is safe
@@ -226,11 +238,14 @@ async function isSafeDeepCheck(url) {
     if (hostname in blacklist)
         return false;
 
-    if (hostname in whitelist)
+    if (isVerifiedDomain(hostname))
         return true;
 
-    if (hostname in graylist)
-        return null;
+    // seems that we should no longer trust the graylist.
+    // there are new scam types that are using media 
+    // to tell users how to "get free nitro" or "steam"
+    // if (hostname in graylist)
+    //     return null;
 
     try {
         const agent = new UserAgents();
@@ -249,8 +264,9 @@ async function isSafeDeepCheck(url) {
             const graph = metadata.result;
 
             if (containsKeyIndicators(graph.ogTitle ?? "", false) > MINIMUM_INDICATORS || containsKeyIndicators(graph.ogDescription ?? "", false) > MINIMUM_INDICATORS) {
-                blacklist[hostname] = true;
-                await addUrlToBlacklist(hostname);
+                
+                graylist[hostname] = true;
+                await addUrlToGraylist(hostname, url, true);
 
                 // good chance this is a scam
                 return false;
@@ -261,17 +277,20 @@ async function isSafeDeepCheck(url) {
                 cleanMessage(graph.twitterCreator ?? "") === '@discord' ||
                 cleanMessage(graph.twitterSite ?? "") === '@steam' ||
                 cleanMessage(graph.twitterCreator ?? "") === '@steam') {
-                blacklist[hostname] = true;
-                await addUrlToBlacklist(hostname);
+
+                graylist[hostname] = true;
+                await addUrlToGraylist(hostname, url, true);
 
                 // good chance this is a scam
                 return false;
             }
 
             // if this page is protected, add it to the gray list
-            if (isPageProtected(url)) {
-                graylist[hostname] = true;
-                await addUrlToGraylist(hostname, url);
+            if (await isPageProtected(url)) {
+                if ((hostname in whitelist) === false && (hostname in blacklist) === false) {
+                    graylist[hostname] = true;
+                    await addUrlToGraylist(hostname, url, false);
+                }
 
                 // this needs manual review
                 return null;
@@ -279,8 +298,10 @@ async function isSafeDeepCheck(url) {
 
             // if we're here, then we can add it to the whitelist
             // note that a whitelist entry does not guarantee it is ok
-            whitelist[hostname] = true;
-            await addUrlToWhitelist(hostname, url);
+            if ((hostname in whitelist) === false && (hostname in graylist) === false) {
+                whitelist[hostname] = true;
+                await addUrlToWhitelist(hostname, url);
+            }
 
             return true;
         }
@@ -290,8 +311,10 @@ async function isSafeDeepCheck(url) {
 
         // if this page is protected, add it to the gray list
         if (isPageProtected(url)) {
-            graylist[hostname] = true;
-            await addUrlToGraylist(hostname, url);
+            if ((hostname in whitelist) === false && (hostname in blacklist) === false) {
+                graylist[hostname] = true;
+                await addUrlToGraylist(hostname, url, false);
+            }
 
             // this needs manual review
             return null;
