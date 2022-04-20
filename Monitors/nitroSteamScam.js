@@ -121,9 +121,9 @@ async function maliciousUrlDetected(message, guildId, userId, username) {
         } catch (err) {
             // something went wrong when assessing the message content
             try {
-                await recordError(guildId, userId, err, reason);
+                await recordError(guildId, userId, err.toString(), reason);
             } catch (err2) {
-                await recordError("", "", err2, reason);
+                await recordError("", "", err2.toString(), reason);
             }
         }
     });
