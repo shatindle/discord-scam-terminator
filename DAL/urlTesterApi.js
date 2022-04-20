@@ -4,7 +4,7 @@ const fetch = require("node-fetch");
 const AbortController = globalThis.AbortController;
 const UserAgents = require('user-agents');
 const { containsKeyIndicators, cleanMessage, MINIMUM_INDICATORS } = require('./bodyparserApi');
-const { loadUrlBlacklist, loadUrlWhitelist, loadUrlGraylist, addUrlToWhitelist, addUrlToGraylist } = require('./databaseApi');
+const { loadUrlBlacklist, loadUrlWhitelist, loadUrlGraylist, addUrlToWhitelist, addUrlToGraylist, loadVerifiedDomains } = require('./databaseApi');
 
 function stringIsAValidUrl(s, protocols) {
     try {
@@ -133,13 +133,14 @@ function whitelistedUrl(url) {
 }
 
 function isUrlInWhitelist(url) {
-    return discordUrl(url) || steamUrl(url) || whitelistedUrl(url);
+    return discordUrl(url) || steamUrl(url) || whitelistedUrl(url) || isVerifiedDomain(url);
 }
 
 // all encountered scams since boot
 let blacklist = {};
 let whitelist = {};
 let graylist = {};
+let verifieddomains = {};
 
 // load the blacklist and whitelists
 async function init() {
@@ -162,6 +163,13 @@ async function init() {
     graylist = {
         ...graylist,
         ...databaseGraylist
+    };
+
+    const verifiedDomainsList = await loadVerifiedDomains();
+
+    verifieddomains = {
+        ...verifieddomains,
+        ...verifiedDomainsList
     };
 }
 
@@ -204,6 +212,19 @@ async function isPageProtected(url) {
 }
 
 /**
+ * @description Checks to see if the domain is in human verified the safe list
+ * @param {string} hostname The hostname to check if it's been pre-verified
+ * @returns {bool} Whether or not this domain can be always trusted
+ */
+function isVerifiedDomain(hostname) {
+    // this is the new whitelist
+    if (hostname in verifieddomains)
+        return true;
+
+    return false;
+}
+
+/**
  * @description Checks to see if the URL is likely a scam by inspecting the head part of the HTML
  * @param {string} url The URL we need to perform a head check on
  * @returns Whether or not the URL is safe
@@ -217,13 +238,12 @@ async function isSafeDeepCheck(url) {
     if (hostname in blacklist)
         return false;
 
-    // seems that we should no longer trust the whitelist.
+    if (isVerifiedDomain(hostname))
+        return true;
+
+    // seems that we should no longer trust the graylist.
     // there are new scam types that are using media 
     // to tell users how to "get free nitro" or "steam"
-    // if (hostname in whitelist)
-    //     return true;
-
-    // same applies to the graylist.  Rescan unless it's known to be bad
     // if (hostname in graylist)
     //     return null;
 
