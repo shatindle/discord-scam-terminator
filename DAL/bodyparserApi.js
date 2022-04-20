@@ -72,6 +72,7 @@ function containsKeyIndicators(message, removeUrl = true) {
     let indicators = 0;
     let words = message.match(/\b(\w+)\b/g);
 
+    if (words && words.length)
     for (var word of words) {
         if (word === "@everyone")
         indicators += 3;
