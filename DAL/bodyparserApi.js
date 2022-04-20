@@ -65,11 +65,12 @@ function containsKeyIndicators(message, removeUrl = true) {
 
     let wordcount = countWords(message);
 
+    let indicators = 0;
+
     // only analyze short messages for now
     if (wordcount > 60)
         return indicators;
 
-    let indicators = 0;
     let words = message.match(/\b(\w+)\b/g);
 
     if (words && words.length)
