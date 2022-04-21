@@ -72,6 +72,7 @@ function containsKeyIndicators(message, removeUrl = true) {
         return indicators;
 
     let words = message.match(/\b(\w+)\b/g);
+    words = [...new Set(words)];
 
     if (words && words.length)
     for (var word of words) {
