@@ -173,10 +173,10 @@ async function addUrlToWhitelist(url, example) {
 }
 
 async function moveUrl(url, fromList, toList) {
-    if (fromList !== "blacklist" && fromList !== "graylist" && fromList !== "whitelist")
+    if (fromList !== "blacklist" && fromList !== "graylist" && fromList !== "whitelist" && fromList !== "verifieddomains")
         throw "Invalid fromList";
         
-    if (toList !== "blacklist" && toList !== "graylist" && toList !== "whitelist")
+    if (toList !== "blacklist" && toList !== "graylist" && toList !== "whitelist" && toList !== "verifieddomains")
         throw "Invalid toList";
         
     if (fromList === toList)
@@ -203,6 +203,9 @@ async function moveUrl(url, fromList, toList) {
                 break;
             case "whitelist":
                 await addUrlToWhitelist(url);
+                break;
+            case "verifieddomains":
+                await addUrlToVerifiedDomains(url);
                 break;
         }
         
@@ -270,14 +273,19 @@ async function loadUrlWhitelist() {
     return list;
 }
 
-async function loadUrlGraylist() {
+async function loadUrlGraylist(everything) {
     var ref = await db.collection("graylist");
     var docs = await ref.get();
 
     const list = {};
 
-    if (docs)
-        docs.forEach(element => list[element.data().url] = true);
+    if (docs) {
+        if (everything) {
+            docs.forEach(element => list[element.data().url] = element.data());
+        } else {
+            docs.forEach(element => list[element.data().url] = true);
+        }
+    }
 
     return list;
 }
