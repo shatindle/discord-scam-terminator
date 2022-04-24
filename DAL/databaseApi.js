@@ -172,6 +172,48 @@ async function addUrlToWhitelist(url, example) {
     });
 }
 
+async function moveUrl(url, fromList, toList) {
+    if (fromList !== "blacklist" && fromList !== "graylist" && fromList !== "whitelist" && fromList !== "verifieddomains")
+        throw "Invalid fromList";
+        
+    if (toList !== "blacklist" && toList !== "graylist" && toList !== "whitelist" && toList !== "verifieddomains")
+        throw "Invalid toList";
+        
+    if (fromList === toList)
+        throw "Lists must be different";
+
+    var ref = await db.collection(fromList).where("url", "==", url);
+    var docs = await ref.get();
+
+    var found = false, ids = [];
+
+    if (docs)
+        docs.forEach(element => {
+            found = true;
+            ids.push(element.id);
+        });
+
+    if (found) {
+        switch (toList) {
+            case "blacklist": 
+                await addUrlToBlacklist(url);
+                break;
+            case "graylist": 
+                await addUrlToGraylist(url);
+                break;
+            case "whitelist":
+                await addUrlToWhitelist(url);
+                break;
+            case "verifieddomains":
+                await addUrlToVerifiedDomains(url);
+                break;
+        }
+        
+        for (var i = 0; i < ids.length; i++)
+            await (await db.collection(fromList).doc(ids[i])).delete();
+    }
+}
+
 async function addUrlToGraylist(url, example, removed) {
     var moment = Date.now().valueOf().toString();
 
@@ -231,14 +273,19 @@ async function loadUrlWhitelist() {
     return list;
 }
 
-async function loadUrlGraylist() {
+async function loadUrlGraylist(everything) {
     var ref = await db.collection("graylist");
     var docs = await ref.get();
 
     const list = {};
 
-    if (docs)
-        docs.forEach(element => list[element.data().url] = true);
+    if (docs) {
+        if (everything) {
+            docs.forEach(element => list[element.data().url] = element.data());
+        } else {
+            docs.forEach(element => list[element.data().url] = true);
+        }
+    }
 
     return list;
 }
@@ -268,6 +315,7 @@ module.exports = {
     loadUrlWhitelist,
     addUrlToGraylist,
     loadUrlGraylist,
+    moveUrl,
     addMessageToScamList,
     addUrlToVerifiedDomains,
     loadVerifiedDomains

@@ -105,3 +105,4 @@ dist
 settings.json
 package-lock.json
 firebase.json
+/website/lib/build*

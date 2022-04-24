@@ -1,5 +1,15 @@
 {
     "token": "DISCORD_BOT_TOKEN",
     "uuidNamespace": "UUID_NAMESPACE",
-    "firebaseProjectId": "FIREBASE_PROJECT_ID"
+    "firebaseProjectId": "FIREBASE_PROJECT_ID",
+    "discord": {
+        "clientId": "DISCORD_APP_CLIENT_ID",
+        "clientSecret": "DISCORD_APP_CLIENT_SECRET",
+        "callbackUrl": "REDIRECT_URL_AFTER_DISCORD_LOGIN",
+        "sessionSecret": "SOME_MADE_UP_SESSION_SECRET",
+        "admin": ["DISCORD_USER_ID_OF_ADMIN_FOR_BOT"]
+    },
+    "http": 5000,
+    "secure": false,
+    "secureCookie": true
 }

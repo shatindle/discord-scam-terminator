@@ -7,11 +7,32 @@
         {
             "type": "pwa-node",
             "request": "launch",
-            "name": "Launch Program",
+            "name": "Launch Bot",
             "skipFiles": [
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}\\index.js"
+        },
+        {
+            "name": "Website Only",
+            "type": "node",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": ["run", "dev"]
+        },
+        {
+            "type": "pwa-chrome",
+            "request": "launch",
+            "name": "Browser",
+            "url": "http://localhost",
+            "webRoot": "${workspaceFolder}/src"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Watch Breakpoints",
+            "configurations": ["Website Only", "Browser"]
         }
     ]
 }
