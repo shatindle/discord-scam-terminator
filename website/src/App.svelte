@@ -83,7 +83,7 @@
 				<h3>Graylist</h3>
 				<button type="button" on:click={async () => graylist = await getGraylist()}>Reload</button>
 				{#if graylist}
-				{#if graylist.length > 0}
+				{#if Object.keys(graylist).length > 0}
 				<ul>
 					{#each Object.values(graylist) as item}
 					<li>

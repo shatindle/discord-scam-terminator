@@ -579,14 +579,17 @@ var app = (function () {
 
     // (85:4) {#if graylist}
     function create_if_block(ctx) {
+    	let show_if;
     	let if_block_anchor;
 
     	function select_block_type_1(ctx, dirty) {
-    		if (/*graylist*/ ctx[1].length > 0) return create_if_block_1;
+    		if (dirty & /*graylist*/ 2) show_if = null;
+    		if (show_if == null) show_if = !!(Object.keys(/*graylist*/ ctx[1]).length > 0);
+    		if (show_if) return create_if_block_1;
     		return create_else_block;
     	}
 
-    	let current_block_type = select_block_type_1(ctx);
+    	let current_block_type = select_block_type_1(ctx, -1);
     	let if_block = current_block_type(ctx);
 
     	const block = {
@@ -599,7 +602,7 @@ var app = (function () {
     			insert_dev(target, if_block_anchor, anchor);
     		},
     		p: function update(ctx, dirty) {
-    			if (current_block_type === (current_block_type = select_block_type_1(ctx)) && if_block) {
+    			if (current_block_type === (current_block_type = select_block_type_1(ctx, dirty)) && if_block) {
     				if_block.p(ctx, dirty);
     			} else {
     				if_block.d(1);
@@ -636,7 +639,7 @@ var app = (function () {
     		c: function create() {
     			div = element("div");
     			div.textContent = "There are no items in the gray list";
-    			add_location(div, file, 121, 4, 3827);
+    			add_location(div, file, 121, 4, 3840);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -658,7 +661,7 @@ var app = (function () {
     	return block;
     }
 
-    // (86:4) {#if graylist.length > 0}
+    // (86:4) {#if Object.keys(graylist).length > 0}
     function create_if_block_1(ctx) {
     	let ul;
     	let each_value = Object.values(/*graylist*/ ctx[1]);
@@ -678,7 +681,7 @@ var app = (function () {
     			}
 
     			attr_dev(ul, "class", "svelte-1cwodev");
-    			add_location(ul, file, 86, 4, 2386);
+    			add_location(ul, file, 86, 4, 2399);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, ul, anchor);
@@ -722,7 +725,7 @@ var app = (function () {
     		block,
     		id: create_if_block_1.name,
     		type: "if",
-    		source: "(86:4) {#if graylist.length > 0}",
+    		source: "(86:4) {#if Object.keys(graylist).length > 0}",
     		ctx
     	});
 
@@ -823,50 +826,50 @@ var app = (function () {
     			t13 = space();
     			attr_dev(a, "href", a_href_value = /*item*/ ctx[13].example);
     			attr_dev(a, "target", "_blank");
-    			add_location(a, file, 92, 20, 2659);
-    			add_location(p, file, 92, 8, 2647);
+    			add_location(a, file, 92, 20, 2672);
+    			add_location(p, file, 92, 8, 2660);
     			set_style(div0, "position", "relative");
-    			add_location(div0, file, 91, 7, 2605);
+    			add_location(div0, file, 91, 7, 2618);
     			set_style(div1, "position", "relative");
     			set_style(div1, "display", "block");
     			attr_dev(div1, "class", div1_class_value = "" + (null_to_empty(/*item*/ ctx[13].removed ? "badlink" : "") + " svelte-1cwodev"));
-    			add_location(div1, file, 89, 6, 2455);
+    			add_location(div1, file, 89, 6, 2468);
     			attr_dev(i0, "class", "bi bi-check-all");
-    			add_location(i0, file, 98, 9, 2946);
+    			add_location(i0, file, 98, 9, 2959);
     			attr_dev(button0, "type", "button");
     			attr_dev(button0, "class", "btn btn-primary");
-    			add_location(button0, file, 97, 8, 2835);
+    			add_location(button0, file, 97, 8, 2848);
     			attr_dev(div2, "class", "col svelte-1cwodev");
     			set_style(div2, "text-align", "left");
-    			add_location(div2, file, 96, 7, 2783);
+    			add_location(div2, file, 96, 7, 2796);
     			attr_dev(i1, "class", "bi bi-check");
-    			add_location(i1, file, 103, 9, 3195);
+    			add_location(i1, file, 103, 9, 3208);
     			attr_dev(button1, "type", "button");
     			attr_dev(button1, "class", "btn btn-success");
-    			add_location(button1, file, 102, 8, 3083);
+    			add_location(button1, file, 102, 8, 3096);
     			attr_dev(div3, "class", "col svelte-1cwodev");
     			set_style(div3, "text-align", "center");
-    			add_location(div3, file, 101, 7, 3029);
+    			add_location(div3, file, 101, 7, 3042);
     			attr_dev(i2, "class", "bi bi-x");
-    			add_location(i2, file, 108, 9, 3437);
+    			add_location(i2, file, 108, 9, 3450);
     			attr_dev(button2, "type", "button");
     			attr_dev(button2, "class", "btn btn-warning");
-    			add_location(button2, file, 107, 8, 3325);
+    			add_location(button2, file, 107, 8, 3338);
     			attr_dev(div4, "class", "col svelte-1cwodev");
     			set_style(div4, "text-align", "center");
-    			add_location(div4, file, 106, 7, 3271);
+    			add_location(div4, file, 106, 7, 3284);
     			attr_dev(i3, "class", "bi bi-emoji-dizzy-fill");
-    			add_location(i3, file, 113, 9, 3675);
+    			add_location(i3, file, 113, 9, 3688);
     			attr_dev(button3, "type", "button");
     			attr_dev(button3, "class", "btn btn-danger");
-    			add_location(button3, file, 112, 8, 3564);
+    			add_location(button3, file, 112, 8, 3577);
     			attr_dev(div5, "class", "col svelte-1cwodev");
     			set_style(div5, "text-align", "right");
-    			add_location(div5, file, 111, 7, 3511);
+    			add_location(div5, file, 111, 7, 3524);
     			attr_dev(div6, "class", "row");
-    			add_location(div6, file, 95, 6, 2757);
+    			add_location(div6, file, 95, 6, 2770);
     			attr_dev(li, "class", "svelte-1cwodev");
-    			add_location(li, file, 88, 5, 2443);
+    			add_location(li, file, 88, 5, 2456);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, li, anchor);
