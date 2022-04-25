@@ -68,6 +68,20 @@ async function recordError(guildId, userId, error, reason) {
     await writeLog("error", guildId, userId, null, reason, error);
 }
 
+async function recordContentReview(guildId, userId, username, action, message) {
+    const moment = Date.now().valueOf().toString();
+
+    let ref = await db.collection("contentreview").doc(moment);
+    await ref.set({
+        guildId,
+        userId,
+        username,
+        action,
+        message,
+        timestamp: Firestore.Timestamp.now()
+    });
+}
+
 function getId(data) {
     return uuidv5(data, uuidNamespace);
 }
@@ -318,5 +332,7 @@ module.exports = {
     moveUrl,
     addMessageToScamList,
     addUrlToVerifiedDomains,
-    loadVerifiedDomains
+    loadVerifiedDomains,
+
+    recordContentReview
 };

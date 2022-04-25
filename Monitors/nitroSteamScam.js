@@ -1,7 +1,7 @@
 const DiscordApi = require('discord.js');
 const { extractUrlsFromContent, containsKeyIndicators, MINIMUM_INDICATORS, isRedlineStealer } = require("../DAL/bodyparserApi");
 const { validUrl, isSafeDeepCheck, init:initUrlTesterApi, isUrlInWhitelist } = require("../DAL/urlTesterApi");
-const { shouldBanUser, recordKick, recordError, recordWarning, recordFail } = require("../DAL/databaseApi");
+const { shouldBanUser, recordKick, recordError, recordWarning, recordFail, recordContentReview } = require("../DAL/databaseApi");
 
 const reason = "Nitro/Steam phishing";
 
@@ -19,6 +19,8 @@ async function maliciousUrlDetected(message, guildId, userId, username) {
             await response.delete();
     }, 5000);
 
+    let action = null;
+
     // should we ban the user? 
     if (shouldBanUser(message.member.id, message.content)) {
         if (message.member.kickable) {
@@ -29,12 +31,16 @@ async function maliciousUrlDetected(message, guildId, userId, username) {
                 userId,
                 username,
                 reason);
+
+            action = "kick-success";
         } else {
             await recordFail(
                 guildId,
                 userId,
                 username,
                 reason);
+
+            action = "kick-fail"
         }
     } else {
         await recordWarning(
@@ -42,6 +48,20 @@ async function maliciousUrlDetected(message, guildId, userId, username) {
             userId,
             username,
             reason);
+
+        action = "warn";
+    }
+
+    try {
+        await recordContentReview(
+            guildId,
+            userId,
+            username,
+            action,
+            message.content
+        );
+    } catch (err) {
+        await recordError(guildId, userId, err.toString(), "failed to record content review message");
     }
 }
 
