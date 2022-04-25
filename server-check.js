@@ -14,7 +14,7 @@ client.once('ready', async () => {
         total += guild.memberCount;
     });
     console.log(`${total} users`);
-    console.log("ready!");
+    process.exit(0);
 });
 
 client.login(token);
