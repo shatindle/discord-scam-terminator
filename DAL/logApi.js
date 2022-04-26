@@ -31,8 +31,8 @@ const logWarning = async (client, guildId, userId, channelId, message = "") =>
     await logActivity(
         client,
         guildId, 
-        `User warned: <@${userId}>`,
-`__Original message in <#${channelId}:__
+        `User warned`,
+`__<@${userId}> sent this message in <#${channelId}>:__
 \`${message.replace("`", "")}\``,
         WARNING_COLOR);
 
@@ -42,8 +42,8 @@ const logKick = async (client, guildId, userId, channelId, message = "") =>
     await logActivity(
         client,
         guildId, 
-        `User kicked: <@${userId}>`,
-`__Original message in <#${channelId}:__
+        `User kicked`,
+`__<@${userId}> sent this message in <#${channelId}>:__
 \`${message.replace("`", "")}\``,
         KICK_COLOR);
 
