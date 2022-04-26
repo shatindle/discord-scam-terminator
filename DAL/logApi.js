@@ -44,7 +44,7 @@ const logKick = async (client, guildId, userId, channelId, message = "") =>
         client,
         guildId, 
         `User kicked`,
-`**<@${userId}> sent this message in <#${channelId}>**:__
+`**<@${userId}> sent this message in <#${channelId}>**:
 
 \`${message.replace("`", "")}\``,
         KICK_COLOR);
