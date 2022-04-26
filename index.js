@@ -24,8 +24,8 @@ for (const file of commandFiles) {
 
 client.once('ready', async () => {
     require("./Monitors/clonex")(client);
-    require("./Monitors/nitroSteamScam")(client);
     require("./Monitors/serverCount")(client);
+    await require("./Monitors/nitroSteamScam")(client);
 });
 
 // login to client - we should auto reconnect automatically

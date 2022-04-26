@@ -79,7 +79,7 @@ async function maliciousUrlDetected(message, guildId, userId, username) {
  * @description Looks for nitro/steam scams and removes them
  * @param {DiscordApi.Client} discord The discord client
  */
- function monitor(discord) {
+async function monitor(discord) {
     await initUrlTesterApi();
     await loadAllLogChannels();
 
