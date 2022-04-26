@@ -1,5 +1,5 @@
 const { MessageEmbed } = require("discord.js");
-const { getLogChannel } = require("../dal/databaseApi");
+const { getLogChannel } = require("../DAL/databaseApi");
 
 async function logActivity(client, guildId, action, activity, color = "#007bff") {
     try {
