@@ -2,7 +2,7 @@
 
 ## tl;dr
 
-If you're just interested in the invite link, you can invite the bot [here](https://discord.com/api/oauth2/authorize?client_id=924388372854767646&permissions=1099511704578&scope=bot).
+If you're just interested in the invite link, you can invite the bot [here](https://discord.com/api/oauth2/authorize?client_id=924388372854767646&permissions=1099511704578&scope=bot%20applications.commands).
 
 ## What the bot does
 
@@ -25,6 +25,10 @@ The bot needs the following permissions to function:
 - Ban Members (optional, used only for the clonex scams)
 
 Additionally, in order to kick users, the bot must have a role above all users you wish to kick.  **NOTE: the bot will only kick users that do not have the Manage Messages permission in the server.**  Moderators should not be kicked by the bot.
+
+The bot was originally deployed without slash commands.  Some slash commands have been added such as the log command.  To enable it, you may need to re-invite the bot to update the scopes.  You should not need to kick the bot.
+
+To log all malicious detections, do /log to:CHANNEL
 
 ## System requirements
 
