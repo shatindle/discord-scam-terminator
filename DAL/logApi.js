@@ -33,7 +33,7 @@ const logWarning = async (client, guildId, userId, channelId, message = "") =>
         guildId, 
         `User warned: <@${userId}>`,
 `__Original message in <#${channelId}:__
-${message.replace("`", "")}`,
+\`${message.replace("`", "")}\``,
         WARNING_COLOR);
 
 const KICK_COLOR = "#dc3545";
@@ -44,7 +44,7 @@ const logKick = async (client, guildId, userId, channelId, message = "") =>
         guildId, 
         `User kicked: <@${userId}>`,
 `__Original message in <#${channelId}:__
-${message.replace("`", "")}`,
+\`${message.replace("`", "")}\``,
         KICK_COLOR);
 
 
