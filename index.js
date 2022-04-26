@@ -1,22 +1,35 @@
-const DiscordApi = require('discord.js');
+const { Client, Collection, Intents } = require('discord.js');
+const fs = require('fs');
 
 
-const discord = new DiscordApi.Client({ 
+const client = new Client({ 
     intents: [
-        DiscordApi.Intents.FLAGS.GUILDS,
-        DiscordApi.Intents.FLAGS.GUILD_MESSAGES,
-        DiscordApi.Intents.FLAGS.GUILD_MEMBERS,
-        DiscordApi.Intents.FLAGS.GUILD_BANS
+        Intents.FLAGS.GUILDS,
+        Intents.FLAGS.GUILD_MESSAGES,
+        Intents.FLAGS.GUILD_MEMBERS,
+        Intents.FLAGS.GUILD_BANS
     ], 
     partials: ['MESSAGE', 'CHANNEL', 'REACTION'] 
 });
 
 const { token } = require('./settings.json');
 
-// login to discord - we should auto reconnect automatically
-discord.login(token);
+client.commands = new Collection();
+const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
-require("./Monitors/clonex")(discord);
-require("./Monitors/nitroSteamScam")(discord);
-require("./Monitors/serverCount")(discord);
+for (const file of commandFiles) {
+	const command = require(`./commands/${file}`);
+	client.commands.set(command.data.name, command);
+}
+
+client.once('ready', async () => {
+    require("./Monitors/clonex")(client);
+    require("./Monitors/nitroSteamScam")(client);
+    require("./Monitors/serverCount")(client);
+});
+
+// login to client - we should auto reconnect automatically
+client.login(token);
+
+
 

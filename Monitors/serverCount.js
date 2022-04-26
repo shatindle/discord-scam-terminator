@@ -9,9 +9,7 @@ const DiscordApi = require('discord.js');
         discord.user.setActivity(`defense in ${discord.guilds.cache.size} servers`);
     }, 1000 * 60 * 60);
 
-    setTimeout(function() {
-        discord.user.setActivity(`defense in ${discord.guilds.cache.size} servers`);
-    }, 5000);
+    discord.user.setActivity(`defense in ${discord.guilds.cache.size} servers`);
  }
 
  module.exports = monitor;

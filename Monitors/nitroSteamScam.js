@@ -1,11 +1,16 @@
 const DiscordApi = require('discord.js');
 const { extractUrlsFromContent, containsKeyIndicators, MINIMUM_INDICATORS, isRedlineStealer } = require("../DAL/bodyparserApi");
 const { validUrl, isSafeDeepCheck, init:initUrlTesterApi, isUrlInWhitelist } = require("../DAL/urlTesterApi");
-const { shouldBanUser, recordKick, recordError, recordWarning, recordFail, recordContentReview } = require("../DAL/databaseApi");
+const { shouldBanUser, recordKick, recordError, recordWarning, recordFail, recordContentReview, loadAllLogChannels } = require("../DAL/databaseApi");
+const { logWarning, logKick } = require("../DAL/logApi");
 
 const reason = "Nitro/Steam phishing";
 
 async function maliciousUrlDetected(message, guildId, userId, username) {
+    const content = message.content;
+    const client = message.client;
+    const channelId = message.channel.id;
+
     // could be a malicious URL.  We need to delete the message.
     if (message.deletable) {
         await message.delete();
@@ -22,7 +27,7 @@ async function maliciousUrlDetected(message, guildId, userId, username) {
     let action = null;
 
     // should we ban the user? 
-    if (shouldBanUser(message.member.id, message.content)) {
+    if (shouldBanUser(message.member.id, content)) {
         if (message.member.kickable) {
             
             await message.member.kick();
@@ -32,6 +37,8 @@ async function maliciousUrlDetected(message, guildId, userId, username) {
                 username,
                 reason);
 
+            await logKick(client, guildId, userId, channelId, content);
+
             action = "kick-success";
         } else {
             await recordFail(
@@ -39,6 +46,8 @@ async function maliciousUrlDetected(message, guildId, userId, username) {
                 userId,
                 username,
                 reason);
+
+            await logWarning(client, guildId, userId, channelId, content);
 
             action = "kick-fail"
         }
@@ -49,6 +58,8 @@ async function maliciousUrlDetected(message, guildId, userId, username) {
             username,
             reason);
 
+        await logWarning(client, guildId, userId, channelId, content);
+
         action = "warn";
     }
 
@@ -58,8 +69,7 @@ async function maliciousUrlDetected(message, guildId, userId, username) {
             userId,
             username,
             action,
-            message.content
-        );
+            content);
     } catch (err) {
         await recordError(guildId, userId, err.toString(), "failed to record content review message");
     }
@@ -70,10 +80,8 @@ async function maliciousUrlDetected(message, guildId, userId, username) {
  * @param {DiscordApi.Client} discord The discord client
  */
  function monitor(discord) {
-    discord.once('ready', async () => {
-        await initUrlTesterApi();
-        console.log("ready!");
-    });
+    await initUrlTesterApi();
+    await loadAllLogChannels();
 
     discord.on('messageCreate', async (message) => {
         // ignore posts from bots
