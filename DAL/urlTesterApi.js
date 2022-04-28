@@ -152,33 +152,34 @@ let verifieddomains = {};
 
 // load the blacklist and whitelists
 async function init() {
-    const databaseBlacklist = await loadUrlBlacklist();
+    // TODO: confirm we no longer need this
+    // const databaseBlacklist = await loadUrlBlacklist();
 
-    blacklist = {
-        ...blacklist,
-        ...databaseBlacklist
-    };
+    // blacklist = {
+    //     ...blacklist,
+    //     ...databaseBlacklist
+    // };
 
-    const databaseWhitelist = await loadUrlWhitelist();
+    // const databaseWhitelist = await loadUrlWhitelist();
 
-    whitelist = {
-        ...whitelist,
-        ...databaseWhitelist
-    };
+    // whitelist = {
+    //     ...whitelist,
+    //     ...databaseWhitelist
+    // };
 
-    const databaseGraylist = await loadUrlGraylist();
+    // const databaseGraylist = await loadUrlGraylist();
 
-    graylist = {
-        ...graylist,
-        ...databaseGraylist
-    };
+    // graylist = {
+    //     ...graylist,
+    //     ...databaseGraylist
+    // };
 
-    const verifiedDomainsList = await loadVerifiedDomains();
+    // const verifiedDomainsList = await loadVerifiedDomains();
 
-    verifieddomains = {
-        ...verifieddomains,
-        ...verifiedDomainsList
-    };
+    // verifieddomains = {
+    //     ...verifieddomains,
+    //     ...verifiedDomainsList
+    // };
 }
 
 function addressChanges(changes, list) {
