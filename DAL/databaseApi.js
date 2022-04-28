@@ -396,6 +396,7 @@ async function monitor(type, callback) {
             break;
         case "whitelist":
             callbacks.whitelist.push(callback);
+            break;
         default:
             throw "Unknown observer";
     }
