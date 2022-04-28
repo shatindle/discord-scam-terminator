@@ -367,6 +367,89 @@ function getLogChannel(guildId) {
     return null;
 }
 
+const callbacks = {
+    warning: [],
+    kick: [],
+    ban: [],
+    graylist: [],
+    blacklist: [],
+    verifieddomains: [],
+    whitelist: []
+}
+
+async function monitor(type, callback) {
+    switch (type) {
+        case "warning":
+            callbacks.warning.push(callback);
+            break;
+        case "kick":
+            callbacks.kick.push(callback);
+            break;
+        case "ban":
+            callbacks.ban.push(callback);
+            break;
+        case "graylist":
+            callbacks.graylist.push(callback);
+            break;
+        case "blacklist":
+            callback.blacklist.push(callback);
+            break;
+        case "whitelist":
+            callback.whitelist.push(callback);
+        default:
+            throw "Unknown observer";
+    }
+
+    setupObservers();
+}
+
+const observers = {};
+
+function setupObservers() {
+    if (!observers.warning && callbacks.warning.length > 0)
+        observers.warning = configureObserver("warning", callbacks.warning);
+
+    if (!observers.kick && callbacks.kick.length > 0) 
+        observers.kick = configureObserver("kick", callbacks.kick);
+
+    if (!observers.ban && callbacks.ban.length > 0) 
+        observers.ban = configureObserver("ban", callbacks.ban);
+        
+    if (!observers.whitelist && callbacks.whitelist.length > 0)
+        observers.verifieddomains = configureObserver("verifieddomains", callbacks.whitelist);
+
+    if (!observers.graylist && callbacks.graylist.length > 0)
+        observers.graylist = configureObserver("graylist", callbacks.graylist);
+
+    if (!observers.blacklist && callbacks.blacklist.length > 0)
+        observers.blacklist = configureObserver("blacklist", callbacks.blacklist);
+        
+    if (!observers.verifieddomains && callbacks.verifieddomains.length > 0)
+        observers.verifieddomains = configureObserver("verifieddomains", callbacks.verifieddomains);
+}
+
+function configureObserver(type, callbackGroup) {
+    return db.collection(type).onSnapshot(async querySnapshot => {
+        let changes = {
+            added: [],
+            modified: [],
+            removed: []
+        };
+    
+        querySnapshot.docChanges().forEach(change => {
+            changes[change.type].push(change.doc.data());
+        });
+    
+        for (let i = 0; i < callbackGroup.length; i++) {
+            try {
+                await callbackGroup[i].call(null, changes);
+            } catch (err) {
+                console.log(`Error in callback ${i} of ${type}: ${err.toString()}`);
+            }
+        }
+    });
+}
+
 module.exports = {
     shouldBanUser,
     recordWarning,
@@ -389,5 +472,7 @@ module.exports = {
 
     registerLogs,
     loadAllLogChannels,
-    getLogChannel
+    getLogChannel,
+
+    monitor
 };

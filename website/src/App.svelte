@@ -1,144 +1,129 @@
 <script>
 	import { onMount } from 'svelte';
-	import { getUser, getBlacklist, getGraylist, getWhitelist, move } from './store/scamTerminatorApi';
+	import { getUser } from './store/scamTerminatorApi';
+	import Drawer, {
+		AppContent,
+		Content,
+		Header,
+		Title,
+		Subtitle,
+		Scrim,
+	} from '@smui/drawer';
+	import List, { Item, Text, Graphic, Separator, Subheader } from '@smui/list';
+	import { Router, Route, navigate } from 'svelte-routing';
+    import IconButton from '@smui/icon-button';
+
+	
+	import Graylist from './pages/Graylist.svelte';
+	import Home from './pages/Home.svelte';
+	import Activity from './pages/Activity.svelte';
+
+	let open = false;
+	const menu = () => (open = !open);
+
+	export let url = '';
+	
+	function setActive(value) {
+		url = value;
+		console.log(url);
+		open = false;
+		navigate(url, { replace: true });
+	}
+
 	let user;
-	let blacklist, graylist;
 
 	onMount(async () => {
 		user = await getUser();
-		graylist = await getGraylist();
 	});
 
 	let usermenu = false;
-
 	const toggleUsermenu = () => usermenu = !usermenu;
-
-	const moveToVerified = async (url) => {
-		await move(url, "graylist", "verifieddomains");
-		delete graylist[url];
-		graylist = { ...graylist };
-	};
-
-	const moveToWhitelist = async (url) => {
-		await move(url, "graylist", "whitelist");
-		delete graylist[url];
-		graylist = { ...graylist };
-	};
-
-	const moveToBlacklist = async (url) => {
-		await move(url, "graylist", "blacklist");
-		delete graylist[url];
-		graylist = { ...graylist };
-	};
 </script>
 
-<main>
-	<div class="container">
-		<div class="row">
-			<div class="p-5 mb-4 bg-light rounded-3 jumbotron" style="position:relative;">
-				<div class="col">
-					<h1 style="color:white;padding-bottom:30px;padding-top:30px;">Scam Terminator</h1>
-				</div>
-				<div style="position:absolute;right:12px;top:30%;">
-					{#if user}
-					<div id="userinfo" on:click={toggleUsermenu}>
-						<div class="usermenu" style="{usermenu ? "" : "display: none;"}">
-							<div style="height:70px;width:1px;"></div>
-							<div class="item">
-								<a href="/settings">
-									Settings
+<div class="drawer-container">
+	<Drawer variant="modal" fixed={true} bind:open>
+		<Header>
+			<Title>Scam Hunter</Title>
+			<Subtitle>Save Your Server</Subtitle>
+		</Header>
+		<Content>
+			<List>
+				<Item href="javascript:void(0)" on:click={() => setActive('/')} activated={url === '/'}>
+					<Graphic class="material-icons" aria-hidden="true">home</Graphic>
+					<Text>Home</Text>
+				</Item>
+				{#if user && user.isAdmin}
+				<Item href="javascript:void(0)" on:click={() => setActive('/graylist')} activated={url === '/appt'}>
+					<Graphic class="material-icons" aria-hidden="true">warning</Graphic>
+					<Text>Graylist</Text>
+				</Item>
+				{/if}
+				<Item href="javascript:void(0)" on:click={() => setActive('/activity')} activated={url === '/call'}>
+					<Graphic class="material-icons" aria-hidden="true">show_chart</Graphic>
+					<Text>Activity</Text>
+				</Item>
+			</List>
+		</Content>
+	</Drawer>
+
+	<Scrim fixed={true} />
+	<AppContent class="app-content">
+		<main class="main-content">
+			<div class="container">
+				<div class="row">
+					<div class="p-5 mb-4 bg-light rounded-3 jumbotron mdc-elevation--z6" style="position:relative;">
+						<div class="col">
+							<h1 style="color:white;padding-bottom:30px;padding-top:30px;">Scam Hunter</h1>
+						</div>
+						<div style="position:absolute;left:12px;top:12px;">
+							{#if user}
+							<IconButton on:click={menu} class="material-icons">menu</IconButton>
+							{/if}
+						</div>
+						<div style="position:absolute;right:12px;top:30%;">
+							{#if user}
+							<div id="userinfo" on:click={toggleUsermenu}>
+								<div class="usermenu" style="{usermenu ? "" : "display: none;"}">
+									<div style="height:70px;width:1px;"></div>
+									<div class="item">
+										<a href="/settings">
+											Settings
+										</a>
+									</div>
+									<div class="item">
+										<a href="/logout">
+											Logout
+										</a>
+									</div>
+								</div>
+								<img src="{user.avatar}" id="useravatar" alt="avatar" />
+							</div>
+							{:else} 
+							<div class="needtologin">
+								<a id="loginDiscord" href="/auth/discord">
+									<button class="btn btn-primary" type="button">Discord Login</button>
 								</a>
 							</div>
-							<div class="item">
-								<a href="/logout">
-									Logout
-								</a>
-							</div>
+							{/if}
 						</div>
-						<img src="{user.avatar}" id="useravatar" alt="avatar" />
 					</div>
-					{:else} 
-					<div class="needtologin">
-						<a id="loginDiscord" href="/auth/discord">
-							<button class="btn btn-primary" type="button">Discord Login</button>
-						</a>
+				</div>
+				<div class="row">
+					<div class="col">
+						<Router {url}>
+							<Route path="/" component={Home} {user}/>
+							{#if user && user.isAdmin}
+							<Route path="/graylist" component={Graylist} {user} />
+							{/if}
+							<Route path="/activity" component={Activity} {user} />
+						</Router>
 					</div>
-					{/if}
 				</div>
 			</div>
-		</div>
-		<div class="row">
-			<!-- <div class="col">
-				<h3>Whitelist</h3>
-				<button type="button" on:click={async () => whitelist = await getWhitelist()}>Load</button>
-				{#if whitelist}
-				<ul>
-					{#each whitelist as url}
-					<li>{url}</li>
-					{/each}
-				</ul>
-				{/if}
-			</div> -->
-			<div class="col">
-				<h3>Graylist</h3>
-				<button type="button" on:click={async () => graylist = await getGraylist()}>Reload</button>
-				{#if graylist}
-				{#if Object.keys(graylist).length > 0}
-				<ul>
-					{#each Object.values(graylist) as item}
-					<li>
-						<div style="position:relative;display:block;" class="{item.removed ? "badlink" : ""}">
-							{item.url}{item.removed ? " : MALICIOUS" : ""}
-							<div style="position:relative;">
-								<p>Example: <a href={item.example} target="_blank">{item.example}</a></p>
-							</div>
-						</div>
-						<div class="row">
-							<div class="col" style="text-align:left;">
-								<button type="button" class="btn btn-primary" on:click={async () => await moveToVerified(item.url)}>
-									<i class="bi bi-check-all"></i> Verified
-								</button>
-							</div>
-							<div class="col" style="text-align:center;">
-								<button type="button" class="btn btn-success" on:click={async () => await moveToWhitelist(item.url)}>
-									<i class="bi bi-check"></i> Safe 
-								</button>
-							</div>
-							<div class="col" style="text-align:center;">
-								<button type="button" class="btn btn-warning" on:click={async () => await moveToWhitelist(item.url)}>
-									<i class="bi bi-x"></i> Remove 
-								</button>
-							</div>
-							<div class="col" style="text-align:right;">
-								<button type="button" class="btn btn-danger" on:click={async () => await moveToBlacklist(item.url)}>
-									<i class="bi bi-emoji-dizzy-fill"></i> Malicious
-								</button>
-							</div>
-						</div>
-					</li>
-					{/each}
-				</ul>
-				{:else}
-				<div>
-					There are no items in the gray list
-				</div>
-				{/if}
-				{/if}
-			</div>
-			<!-- <div class="col">
-				<h3>Blacklist</h3>
-				<button type="button" on:click={async () => blacklist = await getBlacklist()}>Load</button>
-				{#if blacklist}
-				<ul>
-					{#each blacklist as url}
-					<li>{url}</li>
-					{/each}
-				</ul>
-				{/if}
-			</div> -->
-		</div>
-	</div>
-</main>
+		</main>
+	  </AppContent>
+</div>
+
 
 <style>
 	.container {

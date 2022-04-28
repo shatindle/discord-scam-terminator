@@ -12,4 +12,6 @@ export const move = async (url, from, to) => await fetch('/api/move', {
     headers: {
         "Content-Type": "application/json"
     }
-})
+});
+export const getWarnings = async () => await (await fetch('/api/activity/warnings')).json();
+export const getKicks = async () => await (await fetch('/api/activity/kicks')).json();

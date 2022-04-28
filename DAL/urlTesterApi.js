@@ -4,7 +4,15 @@ const fetch = require("node-fetch");
 const AbortController = globalThis.AbortController;
 const UserAgents = require('user-agents');
 const { containsKeyIndicators, cleanMessage, MINIMUM_INDICATORS } = require('./bodyparserApi');
-const { loadUrlBlacklist, loadUrlWhitelist, loadUrlGraylist, addUrlToWhitelist, addUrlToGraylist, loadVerifiedDomains } = require('./databaseApi');
+const { 
+    loadUrlBlacklist, 
+    loadUrlWhitelist, 
+    loadUrlGraylist, 
+    addUrlToWhitelist, 
+    addUrlToGraylist, 
+    loadVerifiedDomains,
+    monitor
+} = require('./databaseApi');
 
 function stringIsAValidUrl(s, protocols) {
     try {
@@ -172,6 +180,21 @@ async function init() {
         ...verifiedDomainsList
     };
 }
+
+function addressChanges(changes, list) {
+    try {
+        changes.added.forEach(item => list[item.url] = true);
+        changes.removed.forEach(item => delete list[item.url]);
+        // don't care about changed yet
+    } catch (err) {
+        console.log(`Failed to address changes: ${err.toString()}`);
+    }
+}
+
+monitor("blacklist", async (changes) => addressChanges(changes, blacklist));
+monitor("whitelist", async (changes) => addressChanges(changes, whitelist));
+monitor("graylist", async (changes) => addressChanges(changes, graylist));
+monitor("verifieddomains", async (changes) => addressChanges(changes, verifieddomains));
 
 /**
  * @description Checks if a page is protected things that may interfere with validation

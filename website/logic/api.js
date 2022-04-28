@@ -51,4 +51,6 @@ router.post('/move', adminAuth, express.json(), async (req, res) => {
     return res.sendStatus(200);
 });
 
+router.use(require("./activity"));
+
 module.exports = router;

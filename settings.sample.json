@@ -11,5 +11,6 @@
     },
     "http": 5000,
     "secure": false,
-    "secureCookie": true
+    "secureCookie": true,
+    "testUsers": ["ANY_TEST_USERS_TO_EXCLUDE_FROM_GRAPHING"]
 }
