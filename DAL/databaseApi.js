@@ -397,6 +397,9 @@ async function monitor(type, callback) {
         case "whitelist":
             callbacks.whitelist.push(callback);
             break;
+        case "verifieddomains":
+            callbacks.verifieddomains.push(callback);
+            break;
         default:
             throw "Unknown observer";
     }
@@ -417,7 +420,7 @@ function setupObservers() {
         observers.ban = configureObserver("ban", callbacks.ban);
         
     if (!observers.whitelist && callbacks.whitelist.length > 0)
-        observers.verifieddomains = configureObserver("verifieddomains", callbacks.whitelist);
+        observers.whitelist = configureObserver("whitelist", callbacks.whitelist);
 
     if (!observers.graylist && callbacks.graylist.length > 0)
         observers.graylist = configureObserver("graylist", callbacks.graylist);
