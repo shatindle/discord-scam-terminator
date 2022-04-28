@@ -392,10 +392,10 @@ async function monitor(type, callback) {
             callbacks.graylist.push(callback);
             break;
         case "blacklist":
-            callback.blacklist.push(callback);
+            callbacks.blacklist.push(callback);
             break;
         case "whitelist":
-            callback.whitelist.push(callback);
+            callbacks.whitelist.push(callback);
         default:
             throw "Unknown observer";
     }
