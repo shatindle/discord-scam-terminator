@@ -1,8 +1,12 @@
 # Discord Scam Terminator
 
+[![Bot Deployment Status](https://github.com/shatindle/discord-scam-terminator/actions/workflows/main.yml/badge.svg)](https://github.com/shatindle/discord-scam-terminator/actions/workflows/main.yml)
+
 ## tl;dr
 
 If you're just interested in the invite link, you can invite the bot [here](https://discord.com/api/oauth2/authorize?client_id=924388372854767646&permissions=1099511704578&scope=bot%20applications.commands).
+
+If you want to join the support server, you can do so [here](https://discord.gg/8ykjyQ8wJw).
 
 ## What the bot does
 
@@ -28,7 +32,10 @@ Additionally, in order to kick users, the bot must have a role above all users y
 
 The bot was originally deployed without slash commands.  Some slash commands have been added such as the log command.  To enable it, you may need to re-invite the bot to update the scopes.  You should not need to kick the bot.
 
-To log all malicious detections, do /log to:CHANNEL
+To log all malicious detections, do 
+```
+/log to:CHANNEL
+```
 
 ## System requirements
 
