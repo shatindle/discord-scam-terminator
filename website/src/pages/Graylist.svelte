@@ -21,11 +21,13 @@
         ws.addEventListener("close", (event) => { 
             if (tracking.stop) {
                 // do nothing, we're done
-                console.log(`Connection closed cleanly.  Not reconnecting.`, event.reason);
+                console.log(`Connection closed cleanly.  Not reconnecting.`);
+                console.dir(event);
             } else if (tracking.attempt++ > 5) {
                 location.reload();
             } else {
-                console.log(`Connection closed. Reconnect attempt ${tracking.attempt} of 6.`, event.reason);
+                console.log(`Connection closed. Reconnect attempt ${tracking.attempt} of 6.`);
+                console.dir(event);
                 setTimeout(function() {
                     Object.keys(graylist).forEach(key => graylist[key] = null);
                     Object.keys(whitelist).forEach(key => whitelist[key] = null);
