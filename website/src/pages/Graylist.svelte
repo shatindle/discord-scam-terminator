@@ -79,6 +79,7 @@
     {#if Object.keys(graylist).length > 0}
     <ul>
         {#each Object.values(graylist) as item}
+        {#if item}
         <li>
             <div style="position:relative;display:block;" class="{item.removed ? "badlink" : ""}">
                 {item.url}{item.removed ? " : MALICIOUS" : ""}
@@ -104,6 +105,7 @@
                 </div>
             </div>
         </li>
+        {/if}
         {/each}
     </ul>
     {:else}
