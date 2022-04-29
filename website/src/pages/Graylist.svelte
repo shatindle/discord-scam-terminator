@@ -21,6 +21,7 @@
         ws.addEventListener("close", (event) => { 
             if (tracking.stop) {
                 // do nothing, we're done
+                console.log(`Connection closed cleanly.  Not reconnecting.`, event.reason);
             } else if (tracking.attempt++ > 5) {
                 location.reload();
             } else {
@@ -61,26 +62,8 @@
 
     onDestroy(() => {
         tracking.stop = true;
-        tracking.ws.close();
+        if (tracking.ws) tracking.ws.close();
     })
-
-	const moveToVerified = async (url) => {
-		await move(url, "graylist", "verifieddomains");
-		// delete graylist[url];
-		// graylist = { ...graylist };
-	};
-
-	const moveToWhitelist = async (url) => {
-		await move(url, "graylist", "whitelist");
-		// delete graylist[url];
-		// graylist = { ...graylist };
-	};
-
-	const moveToBlacklist = async (url) => {
-		await move(url, "graylist", "blacklist");
-		// delete graylist[url];
-		// graylist = { ...graylist };
-	};
 </script>
 
 <div>
