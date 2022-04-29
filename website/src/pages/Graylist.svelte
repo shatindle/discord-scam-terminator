@@ -19,7 +19,7 @@
             if (tracking.attempt++ > 5) {
                 location.reload();
             } else {
-                console.log(`Connection closed. Reconnect attempt ${socket.attempt} of 6.`, event.reason);
+                console.log(`Connection closed. Reconnect attempt ${tracking.attempt} of 6.`, event.reason);
                 setTimeout(function() {
                     Object.keys(graylist).forEach(key => graylist[key] = null);
                     Object.keys(whitelist).forEach(key => whitelist[key] = null);
