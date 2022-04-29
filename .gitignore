@@ -106,3 +106,4 @@ settings.json
 package-lock.json
 firebase.json
 /website/lib/build*
+/website/static/sitemap.xml

@@ -21,6 +21,7 @@ app.use(cookieParser());
 
 app
     .use('/lib', express.static(__dirname + '/website/lib'))
+    .use(express.static(__dirname + '/website/static'))
     .use(discordLogin)
     .use('/api', api)
     .get('*', (req, res) => res.sendFile(path.resolve(__dirname, './website/html/index.html')));

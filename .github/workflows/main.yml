@@ -30,8 +30,10 @@ jobs:
           npm install
           npm audit fix || true
           npm run build
+          node ./generate-sitemap.js
           rm -rf $GITHUB_WORKSPACE/node_modules
           npm install --only=prod
+          npm audit fix || true
           pm2 stop scam-hunter-site
           pm2 stop scam-terminator
           cp -r $GITHUB_WORKSPACE/* /home/sha_tindle/repos/discord-scam-terminator
