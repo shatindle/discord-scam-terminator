@@ -1,22 +1,27 @@
 <script>
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { getGraylist, move } from '../store/scamTerminatorApi';
 	let graylist = {}, 
         whitelist = {};
 
     let tracking = {
-        attempt: 0
+        attempt: 0,
+        ws: null,
+        stop: false
     };
 
     const connect = () => {
         // Create a new websocket
         const ws = new WebSocket(document.location.host === "localhost" ? "ws://localhost/" : `wss://${document.location.host}`);
+        tracking.ws = ws;
         ws.addEventListener("open", (event) => {
             console.log('Now connected'); 
             tracking.attempt = 0;
          });
         ws.addEventListener("close", (event) => { 
-            if (tracking.attempt++ > 5) {
+            if (tracking.stop) {
+                // do nothing, we're done
+            } else if (tracking.attempt++ > 5) {
                 location.reload();
             } else {
                 console.log(`Connection closed. Reconnect attempt ${tracking.attempt} of 6.`, event.reason);
@@ -53,6 +58,11 @@
         console.log("opening");
         connect();
 	});
+
+    onDestroy(() => {
+        tracking.stop = true;
+        tracking.ws.close();
+    })
 
 	const moveToVerified = async (url) => {
 		await move(url, "graylist", "verifieddomains");
