@@ -7,7 +7,8 @@
     let tracking = {
         attempt: 0,
         ws: null,
-        stop: false
+        stop: false,
+        heartbeat: null
     };
 
     const connect = () => {
@@ -17,8 +18,16 @@
         ws.addEventListener("open", (event) => {
             console.log('Now connected'); 
             tracking.attempt = 0;
+            tracking.heartbeat = setInterval(() => {
+                ws.send("{}");
+            }, 30000);
          });
         ws.addEventListener("close", (event) => { 
+            if (tracking.heartbeat) {
+                clearInterval(tracking.heartbeat);
+                tracking.heartbeat = null;
+            }
+
             if (tracking.stop) {
                 // do nothing, we're done
                 console.log(`Connection closed cleanly.  Not reconnecting.`);
