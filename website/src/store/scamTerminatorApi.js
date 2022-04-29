@@ -15,3 +15,4 @@ export const move = async (url, from, to) => await fetch('/api/move', {
 });
 export const getWarnings = async () => await (await fetch('/api/activity/warnings')).json();
 export const getKicks = async () => await (await fetch('/api/activity/kicks')).json();
+export const getServers = async () => await (await fetch('/api/activity/servers')).json();
