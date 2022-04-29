@@ -23,16 +23,16 @@ passport.use(new Strategy({
     return done(null, profile);
 }));
 
-router.use(
-    session({
-        secret: settings.sessionSecret,
-        resave: false,
-        saveUninitialized: false,
-        cookie: {
-            maxAge: 1000 * 60 * 60 * 24 * 1
-        }
-    })
-);
+const ourSession = session({
+    secret: settings.sessionSecret,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        maxAge: 1000 * 60 * 60 * 24 * 1
+    }
+});
+
+router.use(ourSession);
 
 router.use(passport.initialize());
 router.use(passport.session());
@@ -59,4 +59,7 @@ router.use((req, res, next) => {
     next();
 });
 
-module.exports = router;
+module.exports = {
+    router,
+    session: ourSession
+};

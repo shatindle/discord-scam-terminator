@@ -190,7 +190,7 @@ async function moveUrl(url, fromList, toList) {
     if (fromList !== "blacklist" && fromList !== "graylist" && fromList !== "whitelist" && fromList !== "verifieddomains")
         throw "Invalid fromList";
         
-    if (toList !== "blacklist" && toList !== "graylist" && toList !== "whitelist" && toList !== "verifieddomains")
+    if (toList && toList !== "blacklist" && toList !== "graylist" && toList !== "whitelist" && toList !== "verifieddomains")
         throw "Invalid toList";
         
     if (fromList === toList)
@@ -208,19 +208,21 @@ async function moveUrl(url, fromList, toList) {
         });
 
     if (found) {
-        switch (toList) {
-            case "blacklist": 
-                await addUrlToBlacklist(url);
-                break;
-            case "graylist": 
-                await addUrlToGraylist(url);
-                break;
-            case "whitelist":
-                await addUrlToWhitelist(url);
-                break;
-            case "verifieddomains":
-                await addUrlToVerifiedDomains(url);
-                break;
+        if (toList) {
+            switch (toList) {
+                case "blacklist": 
+                    await addUrlToBlacklist(url);
+                    break;
+                case "graylist": 
+                    await addUrlToGraylist(url);
+                    break;
+                case "whitelist":
+                    await addUrlToWhitelist(url);
+                    break;
+                case "verifieddomains":
+                    await addUrlToVerifiedDomains(url);
+                    break;
+            }
         }
         
         for (var i = 0; i < ids.length; i++)
@@ -441,7 +443,7 @@ function configureObserver(type, callbackGroup) {
         };
     
         querySnapshot.docChanges().forEach(change => {
-            changes[change.type].push(change.doc.data());
+            changes[change.type].push({...change.doc.data(), _id:change.doc.id});
         });
     
         for (let i = 0; i < callbackGroup.length; i++) {

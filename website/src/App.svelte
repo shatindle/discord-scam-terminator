@@ -53,9 +53,9 @@
 					<Text>Home</Text>
 				</Item>
 				{#if user && user.isAdmin}
-				<Item href="javascript:void(0)" on:click={() => setActive('/graylist')} activated={url === '/appt'}>
+				<Item href="javascript:void(0)" on:click={() => setActive('/review')} activated={url === '/appt'}>
 					<Graphic class="material-icons" aria-hidden="true">warning</Graphic>
-					<Text>Graylist</Text>
+					<Text>Review</Text>
 				</Item>
 				{/if}
 				<Item href="javascript:void(0)" on:click={() => setActive('/activity')} activated={url === '/call'}>
@@ -113,7 +113,7 @@
 						<Router {url}>
 							<Route path="/" component={Home} {user}/>
 							{#if user && user.isAdmin}
-							<Route path="/graylist" component={Graylist} {user} />
+							<Route path="/review" component={Graylist} {user} />
 							{/if}
 							<Route path="/activity" component={Activity} {user} />
 						</Router>
@@ -187,26 +187,5 @@
 
 	.col {
 		position: relative;
-	}
-
-	ul {
-		margin: 0;
-		padding: 0;
-	}
-	li {
-		width: 100%;
-		list-style-type: none;
-		margin: 4px 6px;
-		padding: 4px 6px;
-		box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
-	}
-
-	.float-right {
-		position: absolute;
-		right: 0;
-	}
-
-	.badlink {
-		background-color: yellow;
 	}
 </style>

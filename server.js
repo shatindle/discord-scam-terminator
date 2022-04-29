@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-const discordLogin = require('./website/logic/discordLogin');
+const { router:discordLogin } = require('./website/logic/discordLogin');
 const api = require('./website/logic/api');
 const cookieParser = require('cookie-parser');
 const appSettings = require('./settings.json');
@@ -22,7 +22,12 @@ app.use(cookieParser());
 app
     .use('/lib', express.static(__dirname + '/website/lib'))
     .use(express.static(__dirname + '/website/static'))
-    .use(discordLogin)
+    .use(discordLogin);
+
+// setup websocket logic
+require('./website/logic/ws')(server);
+
+app
     .use('/api', api)
     .get('*', (req, res) => res.sendFile(path.resolve(__dirname, './website/html/index.html')));
 

@@ -34,7 +34,8 @@
     "passport": "^0.5.2",
     "passport-discord": "^0.1.4",
     "user-agents": "^1.0.962",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "ws": "^8.5.0"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^21.0.3",

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const { Permissions } = require('discord.js');
-const { loadUrlBlacklist, loadUrlGraylist, loadUrlWhitelist, moveUrl, loadVerifiedDomains } = require('../../DAL/databaseApi');
+const { moveUrl } = require('../../DAL/databaseApi');
 
 function adminAuth(req, res, next) {
     if (!req.session || !req.session.admin)
@@ -41,14 +41,19 @@ router.get('/user', (req, res) => {
     return res.status(401);
 });
 
-router.get('/blacklist', adminAuth, async (req, res) => res.json(Object.keys(await loadUrlBlacklist())));
-router.get('/graylist', adminAuth, async (req, res) => res.json(await loadUrlGraylist(true)));
-router.get('/whitelist', adminAuth, async (req, res) => res.json(Object.keys(await loadUrlWhitelist())));
-router.get('/verifieddomains', adminAuth, async (req, res) => res.json(Object.keys(await loadVerifiedDomains())));
+// router.get('/blacklist', adminAuth, async (req, res) => res.json(Object.keys(await loadUrlBlacklist())));
+// router.get('/graylist', adminAuth, async (req, res) => res.json(await loadUrlGraylist(true)));
+// router.get('/whitelist', adminAuth, async (req, res) => res.json(Object.keys(await loadUrlWhitelist())));
+// router.get('/verifieddomains', adminAuth, async (req, res) => res.json(Object.keys(await loadVerifiedDomains())));
 router.post('/move', adminAuth, express.json(), async (req, res) => {
     await moveUrl(req.body.url, req.body.from, req.body.to);
 
-    return res.sendStatus(200);
+    return res.sendStatus(202);
+});
+router.post('/remove', adminAuth, express.json(), async (req, res) => {
+    await moveUrl(req.body.url, req.body.from);
+
+    return res.sendStatus(202);
 });
 
 router.use(require("./activity"));
