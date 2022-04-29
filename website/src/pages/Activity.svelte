@@ -97,7 +97,7 @@
             if (!formattedData[time])
                 formattedData[time] = 0;
 
-            if (server === "" || server === item.guildId) formattedData[time]++;
+            if (!server || server === item.guildId) formattedData[time]++;
         });
 
         return formattedData;
