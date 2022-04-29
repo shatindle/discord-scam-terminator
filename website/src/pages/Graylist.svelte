@@ -4,12 +4,33 @@
 	let graylist = {}, 
         whitelist = {};
 
+    let tracking = {
+        attempt: 0
+    };
+
     const connect = () => {
         // Create a new websocket
         const ws = new WebSocket(document.location.host === "localhost" ? "ws://localhost/" : `wss://${document.location.host}`);
-        ws.addEventListener("open", (event) => { });
-        ws.addEventListener("close", (event) => { });
-        ws.addEventListener("error", (event) => { });
+        ws.addEventListener("open", (event) => {
+            console.log('Now connected'); 
+            tracking.attempt = 0;
+         });
+        ws.addEventListener("close", (event) => { 
+            if (tracking.attempt++ > 5) {
+                location.reload();
+            } else {
+                console.log(`Connection closed. Reconnect attempt ${socket.attempt} of 6.`, event.reason);
+                setTimeout(function() {
+                    Object.keys(graylist).forEach(key => graylist[key] = null);
+                    Object.keys(whitelist).forEach(key => whitelist[key] = null);
+                    connect();
+                }, 1000);
+            }
+        });
+        ws.addEventListener("error", (event) => {
+            console.error('Socket encountered error: ', event.message, 'Closing socket');
+            ws.close();
+        });
         ws.addEventListener("message", (message) => {
             // Parse the incoming message here
             const item = JSON.parse(message.data);
