@@ -5,6 +5,7 @@
     let xAxis, warningYAxis, kickYAxis, data, element, chart, servers, warnings, kicks;
 
     let selectedServer = "";
+    let serverFilter = "";
 
     onMount(async () => {
         warnings = await getWarnings();
@@ -149,13 +150,22 @@
     {#if servers}
     <div id="server-list">
         <h3>Servers</h3>
+        <div class="input-group mb-3">
+            <input id="serverfilter" type="text" bind:value={serverFilter} class="full form-control" placeholder="Search" aria-label="Search">
+        </div>
         <div class="row">
-            {#each servers as server}
+            {#each servers.filter(server => server.id.toLowerCase().indexOf(serverFilter.toLowerCase()) > -1 || server.name.toLowerCase().indexOf(serverFilter.toLowerCase()) > -1) as server}
             <div class="col-12 col-sm-6 col-md-3 server-icon {selectedServer === server.id ? "selected" : ""} {server.count === 0 ? "safe" : ""}" on:click={() => setSelectedServer(server.id)}>
-                <div>
-                    <img src={server.avatar} alt={server.name + "Server Icon"} class="mdc-elevation--z2"/>
-                    <span>{server.name}</span>
-                    <span class="incidents">{server.count}</span>
+                <div class="row">
+                    <div class="col-3">
+                        <img src={server.avatar} alt={server.name + "Server Icon"} class="mdc-elevation--z2"/>
+                    </div>
+                    <div class="col-7">
+                        <div>{server.name}</div>
+                    </div>
+                    <div class="col-2">
+                        <span class="incidents">{server.count}</span>
+                    </div>
                 </div>
             </div>
             {/each}
@@ -198,5 +208,9 @@
     .server-icon img {
         width: 50px;
         border-radius: 25px;
+    }
+
+    .full {
+        width: 100%;
     }
 </style>

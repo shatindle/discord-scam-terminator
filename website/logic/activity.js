@@ -65,11 +65,21 @@ router.get("/activity/servers", (req, res) => {
         return res.json([]);
 
     const allGuilds = [];
+    const adminGuilds = [];
 
     client.guilds.cache.forEach(guild => {
         allGuilds.push(guild.id);
+        adminGuilds.push({
+            id: guild.id,
+            name: guild.name,
+            avatar: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}` : 'https://cdn.discordapp.com/embed/avatars/0.png'
+        });
     });
         
+    if (req.session && req.session.admin) {
+        return res.json(adminGuilds);
+    }
+    
     res.json(req.user.guilds.filter(guild => new Permissions(guild.permissions_new).has(Permissions.FLAGS.MANAGE_MESSAGES)).filter(guild => allGuilds.indexOf(guild.id) > -1).map(guild => {
         return {
             id: guild.id,
