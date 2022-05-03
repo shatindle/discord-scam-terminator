@@ -100,8 +100,8 @@
 							</div>
 							{:else} 
 							<div class="needtologin">
-								<a id="loginDiscord" href="/auth/discord">
-									<button class="btn btn-primary" type="button">Discord Login</button>
+								<a href="/auth/oauth2">
+									<button class="btn btn-primary" type="button">Login to Scam Hunter</button>
 								</a>
 							</div>
 							{/if}

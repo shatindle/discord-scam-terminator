@@ -1,5 +1,5 @@
 
-(function(l, r) { if (!l || l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (self.location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(self.document);
+(function(l, r) { if (!l || l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (self.location.host || 'localhost').split(':')[0] + ':35730/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(self.document);
 var app = (function () {
     'use strict';
 
@@ -14160,12 +14160,11 @@ var app = (function () {
     			div = element("div");
     			a = element("a");
     			button = element("button");
-    			button.textContent = "Discord Login";
+    			button.textContent = "Login to Scam Hunter";
     			attr_dev(button, "class", "btn btn-primary");
     			attr_dev(button, "type", "button");
-    			add_location(button, file, 103, 9, 3111);
-    			attr_dev(a, "id", "loginDiscord");
-    			attr_dev(a, "href", "/auth/discord");
+    			add_location(button, file, 103, 9, 3092);
+    			attr_dev(a, "href", "/auth/oauth2");
     			add_location(a, file, 102, 8, 3058);
     			attr_dev(div, "class", "needtologin svelte-102cayy");
     			add_location(div, file, 101, 7, 3023);
@@ -14531,9 +14530,9 @@ var app = (function () {
     			attr_dev(div4, "class", "row");
     			add_location(div4, file, 72, 4, 1985);
     			attr_dev(div5, "class", "col svelte-102cayy");
-    			add_location(div5, file, 111, 5, 3291);
+    			add_location(div5, file, 111, 5, 3279);
     			attr_dev(div6, "class", "row");
-    			add_location(div6, file, 110, 4, 3267);
+    			add_location(div6, file, 110, 4, 3255);
     			attr_dev(div7, "class", "container svelte-102cayy");
     			add_location(div7, file, 71, 3, 1956);
     			attr_dev(main, "class", "main-content");
