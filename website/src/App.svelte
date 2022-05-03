@@ -19,7 +19,7 @@
 	import Activity from './pages/Activity.svelte';
 
 	let open = false;
-	const menu = () => (open = !open);
+	const menu = () => (user ? (open = !open) : "");
 
 	export let url = '';
 	
@@ -71,28 +71,31 @@
 		<main class="main-content">
 			<div class="container">
 				<div class="row">
-					<div class="p-5 mb-4 bg-light rounded-3 jumbotron mdc-elevation--z6" style="position:relative;">
+					<div class="p-2 mb-4 bg-light rounded-3 jumbotron mdc-elevation--z6" style="position:relative;">
 						<div class="col">
-							<h1 style="color:white;padding-bottom:30px;padding-top:30px;">Scam Hunter</h1>
+							<h1 style="color:white;padding-top:16px">
+								<IconButton on:click={menu} class="material-icons" style="color:white;{user ? "" : "opacity:0;cursor:auto;"}">menu</IconButton>
+								Scam Hunter 
+							</h1>
 						</div>
-						<div style="position:absolute;left:12px;top:12px;">
+						<!-- <div style="position:absolute;left:12px;top:12px;">
 							{#if user}
-							<IconButton on:click={menu} class="material-icons">menu</IconButton>
+							<IconButton on:click={menu} class="material-icons" style="color:white">menu</IconButton>
 							{/if}
-						</div>
-						<div style="position:absolute;right:12px;top:30%;">
+						</div> -->
+						<div style="position:absolute;right:12px;top:8px;">
 							{#if user}
 							<div id="userinfo" on:click={toggleUsermenu}>
 								<div class="usermenu" style="{usermenu ? "" : "display: none;"}">
-									<div style="height:70px;width:1px;"></div>
-									<div class="item">
+									<!-- <div style="height:70px;width:1px;"></div> -->
+									<!-- <div class="item">
 										<a href="/settings">
 											Settings
 										</a>
-									</div>
-									<div class="item">
+									</div> -->
+									<div class="item" style="padding-top:10px;">
 										<a href="/logout">
-											Logout
+											<button type="button" class="btn btn-primary">Logout</button>
 										</a>
 									</div>
 								</div>
@@ -101,7 +104,7 @@
 							{:else} 
 							<div class="needtologin">
 								<a href="/auth/oauth2">
-									<button class="btn btn-primary" type="button">Login to Scam Hunter</button>
+									<button class="btn btn-success" type="button" style="margin-top:14px;">Login</button>
 								</a>
 							</div>
 							{/if}
@@ -144,13 +147,14 @@
 	}
 
 	.jumbotron {
-		background-image: url("/lib/img/header.jpg");
+		background-color: #3f0d6d !important;
 		background-size:cover;
 		background-position: left;
 		padding-top:10px;
 		margin-bottom: 10px;
 		padding-bottom: 10px;
 		position: relative;
+		color: black;
 	}
 
 	.needtologin {
@@ -170,7 +174,7 @@
 		position: absolute;
 		right: 4px;
 		border-radius: 2%;
-		top: 0;
+		top: 4px;
 		box-shadow: 2px 2px 7px black;
 		opacity: 0.9;
 	}
