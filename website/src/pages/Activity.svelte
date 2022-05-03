@@ -1,11 +1,17 @@
 <script>
 	import { onMount, afterUpdate } from 'svelte';
     import { getWarnings, getKicks, getServers } from '../store/scamTerminatorApi';
+    import SegmentedButton, { Segment } from '@smui/segmented-button';
+    import { Label } from '@smui/common';
 
     let xAxis, warningYAxis, kickYAxis, data, element, chart, servers, warnings, kicks;
 
     let selectedServer = "";
     let serverFilter = "";
+
+    let groupChoices = ["Month", "Week", "Day"];
+    let groupSelected = "Month";
+    let previousGroupSelected = "Month";
 
     onMount(async () => {
         warnings = await getWarnings();
@@ -22,10 +28,10 @@
         servers = servers.sort((a, b) => (a.count > b.count ? -1 : 1));
 
         // massage the data down to month groups
-        xAxis = getMonths();
+        xAxis = getX(groupSelected);
 
-        let warningTemp = groupData(warnings);
-        let kickTemp = groupData(kicks);
+        let warningTemp = getY(warnings, null, groupSelected, xAxis);
+        let kickTemp = getY(kicks, null, groupSelected, xAxis);
 
         warningYAxis = [];
         kickYAxis = [];
@@ -63,56 +69,80 @@
 
     let rendered = false;
 
-
-
     const monthFormatter = new Intl.DateTimeFormat('en', { month: 'short' });
 
-    function formatTime(date) {
-        return monthFormatter.format(date) + "-" + date.getFullYear();
+    function formatTime(date, format) {
+        if (!format) return `${monthFormatter.format(date)}-${date.getFullYear()}`;
+        
+        switch (format.toLowerCase()) {
+            case "day":
+                return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+            case "week":
+                const oneJan = new Date(date.getFullYear(),0,1);
+                const numberOfDays = Math.floor((date - oneJan) / (24 * 60 * 60 * 1000));
+                const result = Math.ceil(( date.getDay() + 1 + numberOfDays) / 7);
+                return `${date.getFullYear()}-${result}`;
+            case "month":
+            default:
+                return `${monthFormatter.format(date)}-${date.getFullYear()}`;
+        }
     }
 
-    function getMonths() {
+    function getX(format) {
         // TODO: get rid of magic number...
-        let then = new Date(2021, 11, 1);
+        let then;
         const now = new Date();
-        const currentMonYear = formatTime(now);
+        const computedNow = new Date(now);
+
+        switch (format.toLowerCase()) {
+            case "month":
+                then = new Date(computedNow.setMonth(computedNow.getMonth() - 4));
+                break;
+            case "week":
+                then = new Date(computedNow.setDate(computedNow.getDate() - 28));
+                break;
+            case "day":
+                then = new Date(computedNow.setDate(computedNow.getDate() - 7));
+                break;
+        }
+
+        const currentMonYear = formatTime(now, format);
 
         let instance;
 
         let allTime = [];
+        const gotAllTime = {};
 
         do {
-            instance = formatTime(then);
-            allTime.push(instance);
-            then = new Date(then.setMonth(then.getMonth() + 1));
+            instance = formatTime(then, format);
+            if (!gotAllTime[instance]) {
+                allTime.push(instance);
+                gotAllTime[instance] = true;
+            }
+            then = new Date(then.setDate(then.getDate() + 1));
         } while (instance !== currentMonYear);
 
         return allTime;
     }
 
-    function groupData(data, server) {
+    function getY(data, server, format, xAxis) {
         let formattedData = {};
 
         data.forEach(item => {
-            let time = formatTime(new Date(Date.parse(item.date)));
+            let time = formatTime(new Date(Date.parse(item.date)), format);
             if (!formattedData[time])
                 formattedData[time] = 0;
 
-            if (!server || server === item.guildId) formattedData[time]++;
+            if ((!server || server === item.guildId) && xAxis.indexOf(time) > -1) formattedData[time]++;
         });
 
         return formattedData;
     }
 
-    const setSelectedServer = (server) => {
-        if (selectedServer === server) {
-            selectedServer = "";
-        } else {
-            selectedServer = server;
-        }
-
-        let warningTemp = groupData(warnings, selectedServer);
-        let kickTemp = groupData(kicks, selectedServer);
+    const recalculateData = () => {
+        xAxis = getX(groupSelected);
+        let warningTemp = getY(warnings, selectedServer, groupSelected, xAxis);
+        let kickTemp = getY(kicks, selectedServer, groupSelected, xAxis);
 
         warningYAxis = [];
         kickYAxis = [];
@@ -123,7 +153,7 @@
         }
 
         data = {
-            labels: xAxis,
+            labels: groupSelected.toLowerCase() === "day" ? xAxis.map(day => day.substring(5)) : xAxis,
             datasets: [
                 {
                     name: "Warnings",
@@ -140,6 +170,24 @@
 
         chart.update(data);
     }
+
+    const setSelectedServer = (server) => {
+        if (selectedServer === server) {
+            selectedServer = "";
+        } else {
+            selectedServer = server;
+        }
+
+        recalculateData();
+    }
+
+    afterUpdate(() => {
+        if (previousGroupSelected !== groupSelected) {
+            previousGroupSelected = groupSelected;
+
+            recalculateData();
+        }
+    });
 </script>
 
 <div id="activity">
@@ -148,10 +196,21 @@
         <div id="chart" bind:this={element} class="mdc-elevation--z4"></div>
     </div>
     {#if servers}
-    <div id="server-list">
+    <div id="server-list" style="position:relative;">
         <h3>Servers</h3>
-        <div class="input-group mb-3">
-            <input id="serverfilter" type="text" bind:value={serverFilter} class="full form-control" placeholder="Search" aria-label="Search">
+        <SegmentedButton segments={groupChoices} let:segment singleSelect bind:selected={groupSelected} style="width:100%;">
+            <!-- Note: the `segment` property is required! -->
+            <Segment {segment}>
+                <Label>{segment}</Label>
+            </Segment>
+        </SegmentedButton>
+        
+        <div class="row">
+            <div class="col">
+                <div class="input-group mb-3">
+                    <input id="serverfilter" type="text" bind:value={serverFilter} class="full form-control" placeholder="Search servers by name or ID" aria-label="Search">
+                </div>
+            </div>
         </div>
         <div class="row">
             {#each servers.filter(server => server.id.toLowerCase().indexOf(serverFilter.toLowerCase()) > -1 || server.name.toLowerCase().indexOf(serverFilter.toLowerCase()) > -1) as server}
@@ -212,5 +271,9 @@
 
     .full {
         width: 100%;
+    }
+
+    #server-list :global(.mdc-segmented-button__segment--selected) {
+        color: white;
     }
 </style>
