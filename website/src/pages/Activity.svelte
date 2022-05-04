@@ -214,16 +214,15 @@
         </div>
         <div class="row">
             {#each servers.filter(server => server.id.toLowerCase().indexOf(serverFilter.toLowerCase()) > -1 || server.name.toLowerCase().indexOf(serverFilter.toLowerCase()) > -1) as server}
-            <div class="col-12 col-sm-6 col-md-3 server-icon {selectedServer === server.id ? "selected" : ""} {server.count === 0 ? "safe" : ""}" on:click={() => setSelectedServer(server.id)}>
-                <div class="row">
+            <div class="col-12 col-sm-6 col-md-4 server-icon {selectedServer === server.id ? "selected" : ""} {server.count === 0 ? "safe" : ""}" on:click={() => setSelectedServer(server.id)}>
+                <div class="row mdc-elevation--z6">
                     <div class="col-3">
                         <img src={server.avatar} alt={server.name + "Server Icon"} class="mdc-elevation--z2"/>
                     </div>
                     <div class="col-7">
                         <div>{server.name}</div>
-                    </div>
-                    <div class="col-2">
-                        <span class="incidents">{server.count}</span>
+                        <div class="usercount">Users: {server.members}</div>
+                        <div class="incidents">Scams: {server.count}</div>
                     </div>
                 </div>
             </div>
@@ -254,19 +253,36 @@
         color: #777;
     }
 
-    .server-icon.selected {
+    .server-icon.selected > div {
         background: white;
         color: black;
-        border-radius: 25px;
+        /* border-radius: 25px; */
     }
 
     .server-icon > div {
-        padding: 6px 8px;
+        margin: 6px 8px;
+        /* padding: 6px 10px; */
     }
 
     .server-icon img {
         width: 50px;
         border-radius: 25px;
+    }
+
+    .usercount {
+        color: #999;
+    }
+
+    .incidents {
+        color: #999;
+    }
+
+    .selected .usercount, .selected .incidents {
+        color: black;
+    }
+
+    .safe .incidents {
+        opacity: 0;
     }
 
     .full {

@@ -72,7 +72,8 @@ router.get("/activity/servers", (req, res) => {
         adminGuilds.push({
             id: guild.id,
             name: guild.name,
-            avatar: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}` : 'https://cdn.discordapp.com/embed/avatars/0.png'
+            avatar: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}` : 'https://cdn.discordapp.com/embed/avatars/0.png',
+            members: guild.memberCount
         });
     });
         
@@ -81,10 +82,13 @@ router.get("/activity/servers", (req, res) => {
     }
     
     res.json(req.user.guilds.filter(guild => new Permissions(guild.permissions_new).has(Permissions.FLAGS.MANAGE_MESSAGES)).filter(guild => allGuilds.indexOf(guild.id) > -1).map(guild => {
+        let thisguild = adminGuilds.filter(g => g.id === guild.id);
+
         return {
             id: guild.id,
             name: guild.name,
-            avatar: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}` : 'https://cdn.discordapp.com/embed/avatars/0.png'
+            avatar: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}` : 'https://cdn.discordapp.com/embed/avatars/0.png',
+            members: thisguild.length === 1 ? thisguild[0].members : '?'
         }
     }));
 });
