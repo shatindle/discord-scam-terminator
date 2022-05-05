@@ -16,7 +16,7 @@ if (!appSettings.secure && appSettings.secureCookie) {
 app.engine('html', require('ejs').renderFile);
 app.set('view engine', 'html');
 
-app.use(express.urlencoded());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app
