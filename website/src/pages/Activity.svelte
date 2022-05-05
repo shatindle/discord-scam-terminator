@@ -1,5 +1,5 @@
 <script>
-	import { onMount, afterUpdate } from 'svelte';
+	import { onMount, afterUpdate, beforeUpdate } from 'svelte';
     import { getWarnings, getKicks, getServers } from '../store/scamTerminatorApi';
     import SegmentedButton, { Segment } from '@smui/segmented-button';
     import { Label } from '@smui/common';
@@ -12,6 +12,10 @@
     let groupChoices = ["Month", "Week", "Day"];
     let groupSelected = "Month";
     let previousGroupSelected = "Month";
+
+    let sortChoices = ["Scams Caught", "Name", "User Count"];
+    let sortSelected = "Scams Caught";
+    let previousSortSelected = "Scams Caught";
 
     onMount(async () => {
         warnings = await getWarnings();
@@ -181,6 +185,20 @@
         recalculateData();
     }
 
+    beforeUpdate(() => {
+        if (previousSortSelected !== sortSelected) {
+            servers.sort((a, b) => {
+                if (sortSelected === "User Count") return a.members > b.members ? -1 : 1;
+                if (sortSelected === "Scams Caught") return a.count > b.count ? -1 : 1;
+                return a.name > b.name ? 1 : -1;
+            });
+
+            servers = [...servers];
+
+            previousSortSelected = sortSelected;
+        }
+    })
+
     afterUpdate(() => {
         if (previousGroupSelected !== groupSelected) {
             previousGroupSelected = groupSelected;
@@ -198,12 +216,26 @@
     {#if servers}
     <div id="server-list" style="position:relative;">
         <h3>Servers</h3>
-        <SegmentedButton segments={groupChoices} let:segment singleSelect bind:selected={groupSelected} style="width:100%;">
-            <!-- Note: the `segment` property is required! -->
-            <Segment {segment}>
-                <Label>{segment}</Label>
-            </Segment>
-        </SegmentedButton>
+        <div class="row">
+            <div class="col-12 col-sm-6">
+                <label for="grouplist">Group by</label>
+                <SegmentedButton segments={groupChoices} let:segment singleSelect bind:selected={groupSelected} style="width:100%;" name="grouplist">
+                    <!-- Note: the `segment` property is required! -->
+                    <Segment {segment}>
+                        <Label>{segment}</Label>
+                    </Segment>
+                </SegmentedButton>
+            </div>
+            <div class="col-12 col-sm-6">
+                <label for="sortlist">Sort by</label>
+                <SegmentedButton segments={sortChoices} let:segment singleSelect bind:selected={sortSelected} style="width:100%;" name="sortlist">
+                    <!-- Note: the `segment` property is required! -->
+                    <Segment {segment}>
+                        <Label>{segment}</Label>
+                    </Segment>
+                </SegmentedButton>
+            </div>
+        </div>
         
         <div class="row">
             <div class="col">
@@ -219,7 +251,7 @@
                     <div class="col-3">
                         <img src={server.avatar} alt={server.name + "Server Icon"} class="mdc-elevation--z2"/>
                     </div>
-                    <div class="col-7">
+                    <div class="col-9">
                         <div>{server.name}</div>
                         <div class="usercount">Users: {server.members}</div>
                         <div class="incidents">Scams: {server.count}</div>
