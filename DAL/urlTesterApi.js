@@ -248,6 +248,17 @@ function isVerifiedDomain(hostname) {
     return false;
 }
 
+function isYouTube(hostname) {
+    if ((hostname.length === "youtube.com".length && hostname.endsWith("youtube.com")) || hostname.endsWith(".youtube.com")) {
+        return true;
+         // TODO: add other youtube URLs
+    } else if ((hostname.length === "youtu.be".length && hostname.endsWith("youtu.be")) || hostname.endsWith(".youtu.be")) {
+        return true;
+    }
+    
+    return false;
+}
+
 /**
  * @description Checks to see if the URL is likely a scam by inspecting the head part of the HTML
  * @param {string} url The URL we need to perform a head check on
@@ -272,6 +283,25 @@ async function isSafeDeepCheck(url) {
     //     return null;
 
     try {
+        if (isYouTube(hostname)) {
+            try {
+                // this is youtube, perform extra checks
+                var youtubeData = await fetch(url);
+                var text = await youtubeData.text();
+                if (text.indexOf('<meta itemprop="unlisted" content="True">') > -1) {
+                    // this is a public video.  Log it, but trust it because it's public and more likely to be reported
+                    // manual review will still be performed
+                    whitelist[hostname] = true;
+                    await addUrlToWhitelist(hostname, url);
+                    return true;
+                }
+
+                // if we are here, we need to perform the full check since this is likely an unlisted video
+            } catch (youtube_check_error) {
+                console.log(`YouTube check failed: ${youtube_check_error.toString()}`);
+            }
+        }
+
         const agent = new UserAgents();
         const metadata = await ogs({ url, headers: agent.data });
 
