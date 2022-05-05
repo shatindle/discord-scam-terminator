@@ -288,7 +288,7 @@ async function isSafeDeepCheck(url) {
                 // this is youtube, perform extra checks
                 var youtubeData = await fetch(url);
                 var text = await youtubeData.text();
-                if (text.indexOf('<meta itemprop="unlisted" content="True">') > -1) {
+                if (text.indexOf('<meta itemprop="unlisted" content="False">') > -1) {
                     // this is a public video.  Log it, but trust it because it's public and more likely to be reported
                     // manual review will still be performed
                     whitelist[hostname] = true;
