@@ -1,5 +1,5 @@
 <script>
-	import { onMount, afterUpdate, beforeUpdate } from 'svelte';
+	import { onMount, afterUpdate, beforeUpdate, onDestroy } from 'svelte';
     import { getWarnings, getKicks, getServers } from '../store/scamTerminatorApi';
     import SegmentedButton, { Segment } from '@smui/segmented-button';
     import { Label } from '@smui/common';
@@ -70,6 +70,8 @@
             colors: ['#ffc107', '#dc3545']
         });
     });
+
+    onDestroy(() => chart.unbindWindowEvents() && chart.destroy());
 
     let rendered = false;
 

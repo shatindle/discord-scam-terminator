@@ -9,10 +9,11 @@ const collections = {
     blacklist: {},
     whitelist: {},
     verifieddomains: {},
-    graylist: {}
+    graylist: {},
+    contentreview: {}
 };
 
-["blacklist", "whitelist", "verifieddomains", "graylist"].forEach(list => {
+["blacklist", "whitelist", "verifieddomains", "graylist", "contentreview"].forEach(list => {
     monitor(list, async (changes) => {
         changes.added.forEach(data => {
             collections[list][data._id] = data;
@@ -34,7 +35,7 @@ wss.on('connection', (ws, req) => {
     console.log(`${new Date().toISOString()}: WebSocket added: ${connections.length}`);
 
     // hydrate the list
-    ["blacklist", "whitelist", "verifieddomains", "graylist"].forEach(list => {
+    ["blacklist", "whitelist", "verifieddomains", "graylist", "contentreview"].forEach(list => {
         Object.values(collections[list]).forEach(data => {
             if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({data, list, action:"add"}));
         });

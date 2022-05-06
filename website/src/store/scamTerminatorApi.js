@@ -23,6 +23,15 @@ export const remove = async (url, from) => await fetch('/api/remove', {
         "Content-Type": "application/json"
     }
 });
+export const clearContentReview = async (id) => await fetch('/api/clearcontentreview', {
+    method: "POST",
+    body: JSON.stringify({
+        id
+    }),
+    headers: {
+        "Content-Type": "application/json"
+    }
+});
 export const getWarnings = async () => await (await fetch('/api/activity/warnings')).json();
 export const getKicks = async () => await (await fetch('/api/activity/kicks')).json();
 export const getServers = async () => await (await fetch('/api/activity/servers')).json();

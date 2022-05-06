@@ -230,6 +230,13 @@ async function moveUrl(url, fromList, toList) {
     }
 }
 
+async function deleteById(collection, id) {
+    var ref = await db.collection(collection).doc(id);
+
+    if (ref)
+        await ref.delete();
+}
+
 async function addUrlToGraylist(url, example, removed) {
     var moment = Date.now().valueOf().toString();
 
@@ -376,7 +383,8 @@ const callbacks = {
     graylist: [],
     blacklist: [],
     verifieddomains: [],
-    whitelist: []
+    whitelist: [],
+    contentreview: []
 }
 
 async function monitor(type, callback) {
@@ -401,6 +409,9 @@ async function monitor(type, callback) {
             break;
         case "verifieddomains":
             callbacks.verifieddomains.push(callback);
+            break;
+        case "contentreview": 
+            callbacks.contentreview.push(callback);
             break;
         default:
             throw "Unknown observer";
@@ -432,6 +443,9 @@ function setupObservers() {
         
     if (!observers.verifieddomains && callbacks.verifieddomains.length > 0)
         observers.verifieddomains = configureObserver("verifieddomains", callbacks.verifieddomains);
+
+    if (!observers.contentreview && callbacks.contentreview.length > 0)
+        observers.contentreview = configureObserver("contentreview", callbacks.contentreview);
 }
 
 function configureObserver(type, callbackGroup) {
@@ -480,5 +494,7 @@ module.exports = {
     loadAllLogChannels,
     getLogChannel,
 
-    monitor
+    monitor,
+
+    deleteById
 };

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const { Permissions } = require('discord.js');
-const { moveUrl } = require('../../DAL/databaseApi');
+const { moveUrl, deleteById } = require('../../DAL/databaseApi');
 
 function adminAuth(req, res, next) {
     if (!req.session || !req.session.admin)
@@ -53,6 +53,14 @@ router.post('/move', adminAuth, express.json(), async (req, res) => {
 router.post('/remove', adminAuth, express.json(), async (req, res) => {
     await moveUrl(req.body.url, req.body.from);
 
+    return res.sendStatus(202);
+});
+
+router.post('/clearcontentreview', adminAuth, express.json(), async (req, res) => {
+    if (!req.body.id) 
+        return res.sendStatus(404);
+
+    await deleteById('contentreview', req.body.id);
     return res.sendStatus(202);
 });
 

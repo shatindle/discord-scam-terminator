@@ -1,91 +1,23 @@
 <script>
-	import { onMount, onDestroy } from 'svelte';
-	import { getGraylist, move } from '../store/scamTerminatorApi';
-	let graylist = {}, 
-        whitelist = {};
-
-    let tracking = {
-        attempt: 0,
-        ws: null,
-        stop: false,
-        heartbeat: null
-    };
-
-    const connect = () => {
-        // Create a new websocket
-        const ws = new WebSocket(document.location.host === "localhost" ? "ws://localhost/" : `wss://${document.location.host}`);
-        tracking.ws = ws;
-        ws.addEventListener("open", (event) => {
-            console.log('Now connected'); 
-            tracking.attempt = 0;
-            tracking.heartbeat = setInterval(() => {
-                ws.send("{}");
-            }, 30000);
-         });
-        ws.addEventListener("close", (event) => { 
-            if (tracking.heartbeat) {
-                clearInterval(tracking.heartbeat);
-                tracking.heartbeat = null;
-            }
-
-            if (tracking.stop) {
-                // do nothing, we're done
-                console.log(`Connection closed cleanly.  Not reconnecting.`);
-                console.dir(event);
-            } else if (tracking.attempt++ > 5) {
-                location.reload();
-            } else {
-                console.log(`Connection closed. Reconnect attempt ${tracking.attempt} of 6.`);
-                console.dir(event);
-                setTimeout(function() {
-                    Object.keys(graylist).forEach(key => graylist[key] = null);
-                    Object.keys(whitelist).forEach(key => whitelist[key] = null);
-                    connect();
-                }, 1000);
-            }
-        });
-        ws.addEventListener("error", (event) => {
-            console.error('Socket encountered error: ', event.message, 'Closing socket');
-            ws.close();
-        });
-        ws.addEventListener("message", (message) => {
-            // Parse the incoming message here
-            const item = JSON.parse(message.data);
-
-            switch (item.list) {
-                case "graylist":
-                    if (item.action === "add") graylist[item.data._id] = item.data;
-                    else graylist[item.data._id] = null;
-                    break;
-                case "whitelist":
-                    if (item.action === "add") whitelist[item.data._id] = item.data;
-                    else whitelist[item.data._id] = null;
-                    break;
-            }
-        });
-    };
+	import { onMount } from 'svelte';
+	import { move } from '../store/scamTerminatorApi';
+    import { startWebsocket, graylist, whitelist } from '../store/adminContent';
 
 	onMount(async () => {
-		// graylist = await getGraylist();
         console.log("opening");
-        connect();
+        startWebsocket();
 	});
-
-    onDestroy(() => {
-        tracking.stop = true;
-        if (tracking.ws) tracking.ws.close();
-    })
 </script>
 
 <div>
     <h3>Graylist</h3>
-    {#if graylist}
-    {#if Object.keys(graylist).length > 0}
+    {#if $graylist}
+    {#if Object.keys($graylist).length > 0}
     <ul>
-        {#each Object.values(graylist) as item}
+        {#each Object.values($graylist) as item}
         {#if item}
         <li>
-            <div style="position:relative;display:block;" class="{item.removed ? "badlink" : ""}">
+            <div style="position:relative;display:block;" class:badlink="{item.removed}">
                 {item.url}{item.removed ? " : MALICIOUS" : ""}
                 <div style="position:relative;">
                     <p>Example: <a href={item.example} target="_blank">{item.example}</a></p>
@@ -121,10 +53,10 @@
 
     <hr class="rounded">
     <h3>Whitelist</h3>
-    {#if whitelist}
-    {#if Object.keys(whitelist).length > 0}
+    {#if $whitelist}
+    {#if Object.keys($whitelist).length > 0}
     <ul>
-        {#each Object.values(whitelist) as item}
+        {#each Object.values($whitelist) as item}
         {#if item}
         <li>
             <div style="position:relative;display:block;">

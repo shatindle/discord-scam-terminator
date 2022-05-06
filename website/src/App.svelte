@@ -17,6 +17,7 @@
 	import Graylist from './pages/Graylist.svelte';
 	import Home from './pages/Home.svelte';
 	import Activity from './pages/Activity.svelte';
+	import ContentReview from './pages/ContentReview.svelte';
 
 	let open = false;
 	const menu = () => (user ? (open = !open) : "");
@@ -53,12 +54,16 @@
 					<Text>Home</Text>
 				</Item>
 				{#if user && user.isAdmin}
-				<Item href="javascript:void(0)" on:click={() => setActive('/review')} activated={url === '/appt'}>
+				<Item href="javascript:void(0)" on:click={() => setActive('/review')} activated={url === '/review'}>
 					<Graphic class="material-icons" aria-hidden="true">warning</Graphic>
 					<Text>Review</Text>
 				</Item>
+				<Item href="javascript:void(0)" on:click={() => setActive('/maliciouscontent')} activated={url === '/maliciouscontent'}>
+					<Graphic class="material-icons" aria-hidden="true">gpp_bad</Graphic>
+					<Text>Malicious Content</Text>
+				</Item>
 				{/if}
-				<Item href="javascript:void(0)" on:click={() => setActive('/activity')} activated={url === '/call'}>
+				<Item href="javascript:void(0)" on:click={() => setActive('/activity')} activated={url === '/activity'}>
 					<Graphic class="material-icons" aria-hidden="true">show_chart</Graphic>
 					<Text>Activity</Text>
 				</Item>
@@ -117,6 +122,7 @@
 							<Route path="/" component={Home} {user}/>
 							{#if user && user.isAdmin}
 							<Route path="/review" component={Graylist} {user} />
+							<Route path="/maliciouscontent" component={ContentReview} {user} />
 							{/if}
 							<Route path="/activity" component={Activity} {user} />
 						</Router>
