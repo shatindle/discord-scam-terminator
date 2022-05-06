@@ -2,7 +2,8 @@ const { readable } = require("svelte/store");
 
 let graylist = {}, 
     whitelist = {},
-    contentreview = {};
+    contentreview = {},
+    blacklist = {};
 
 let tracking = {
     attempt: 0,
@@ -15,26 +16,37 @@ let tracking = {
 const subscriptions = {
     graylist: [], 
     whitelist: [],
-    contentreview: []
+    contentreview: [],
+    blacklist: []
 };
 
 const graylistStore = readable(undefined, set => {
     subscriptions.graylist.push(set);
+    set(graylist);
 
     return () => subscriptions.graylist.slice(subscriptions.graylist.indexOf(set), 1);
 });
 
 const whitelistStore = readable(undefined, set => {
     subscriptions.whitelist.push(set);
+    set(whitelist);
 
     return () => subscriptions.whitelist.slice(subscriptions.whitelist.indexOf(set), 1);
 });
 
 const contentreviewStore = readable(undefined, set => {
     subscriptions.contentreview.push(set);
+    set(contentreview);
 
     return () => subscriptions.contentreview.slice(subscriptions.contentreview.indexOf(set), 1);
 });
+
+const blacklistStore = readable(undefined, set => {
+    subscriptions.blacklist.push(set);
+    set(blacklist);
+
+    return () => subscriptions.blacklist.slice(subscriptions.blacklist.indexOf(set), 1);
+})
 
 const connect = () => {
     // Create a new websocket
@@ -69,6 +81,9 @@ const connect = () => {
 
                 Object.keys(contentreview).forEach(key => contentreview[key] = null);
                 subscriptions.contentreview.forEach(set => set(contentreview));
+
+                Object.keys(blacklist).forEach(key => blacklist[key] = null);
+                subscriptions.blacklist.forEach(set => set(blacklist));
                 connect();
             }, 1000);
         }
@@ -97,6 +112,11 @@ const connect = () => {
                 else contentreview[item.data._id] = null;
                 subscriptions.contentreview.forEach(set => set(contentreview));
                 break;
+            case "blacklist":
+                if (item.action === "add") blacklist[item.data._id] = item.data;
+                else blacklist[item.data._id] = null;
+                subscriptions.blacklist.forEach(set => set(blacklist));
+                break;
         }
     });
 };
@@ -112,5 +132,6 @@ module.exports = {
     startWebsocket: init,
     graylist: graylistStore,
     whitelist: whitelistStore,
-    contentreview: contentreviewStore
+    contentreview: contentreviewStore,
+    blacklist: blacklistStore
 };

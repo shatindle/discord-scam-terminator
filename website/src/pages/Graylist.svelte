@@ -6,6 +6,7 @@
 	onMount(async () => {
         console.log("opening");
         startWebsocket();
+        console.dir($graylist);
 	});
 </script>
 

@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { clearContentReview } from '../store/scamTerminatorApi';
-    import { startWebsocket, contentreview } from '../store/adminContent';
+    import { startWebsocket, contentreview, blacklist } from '../store/adminContent';
 
 	onMount(async () => {
         console.log("opening");
@@ -37,14 +37,24 @@
     function onlyUnique(value, index, self) {
         return self.indexOf(value) === index;
     }
+
+    const inBlacklist = (message) => {
+        const urls = extractUrlsFromContent(message);
+        for (let url of urls) {
+            if ($blacklist.map(b => b.url).indexOf(url) !== -1)
+                return true;
+        }
+
+        return false;
+    }
 </script>
 
 <div>
-    <h3>Content Review</h3>
+    <h3>Malicious Content</h3>
     {#if $contentreview}
     {#each Object.keys($contentreview) as id}
     {#if $contentreview[id]}
-    <div class="card">
+    <div class="card {$contentreview[id].action}" class:in-blacklist={() => inBlacklist($contentreview[id].message)}>
         <div class="card-body">
             <div class="row">
                 <div class="col-8">
@@ -54,9 +64,11 @@
                     {new Date(parseInt(id)).toLocaleString()}
                 </div>
             </div>
-            <div class="row usercontent mdc-elevation--z4">
+            <div class="row">
                 <div class="col">
-                    {$contentreview[id].message}
+                    <div class="usercontent mdc-elevation--z4">
+                        {$contentreview[id].message}
+                    </div>
                 </div>
             </div>
             <div class="row">
@@ -68,7 +80,11 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col">
+                <div class="col-8">
+                    <div>Guild ID {$contentreview[id].guildId}</div>
+                    <div>{$contentreview[id].action}</div>
+                </div>
+                <div class="col-4">
                     <button type="button" class="btn btn-primary dismiss float-end" on:click={async () => await clearContentReview(id)}>Dismiss</button>
                 </div>
             </div>
@@ -81,7 +97,7 @@
 
 <style>
     .card {
-        background-color: #666;
+        background-color: darkgoldenrod;
         border: none;
         margin-bottom: 14px;
     }
@@ -89,6 +105,7 @@
         color: black;
         background-color: white;
         margin-top:14px;
+        margin-bottom: 14px;
         padding: 4px 8px;
         border-radius: 4px;
     }
@@ -96,6 +113,18 @@
     .dismiss {
         text-align: right;
         margin-top: 14px;
+    }
+
+    .kick-success {
+        background-color: darkgreen;
+    }
+
+    .kick-fail {
+        background-color: darkred;
+    }
+
+    .in-blacklist {
+        background-color: #444;
     }
 
     input {
