@@ -1,4 +1,4 @@
-const { Permissions } = require("discord.js");
+const { Permissions, MessageAttachment } = require("discord.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { registerLogs } = require("../DAL/databaseApi");
 const { logActivity } = require("../DAL/logApi");
@@ -44,9 +44,12 @@ module.exports = {
                 const image = await getScreenshot(url);
 
                 if (image) {
-                    await interaction.editReply({ 
+                    await interaction.followUp({ 
                         content: `Extracted the following screenshot for:\n\`${url.replace('`','')}\``,
-                        attachment: [image]
+                        files: [{
+                            attachment: image,
+                            name: "screenshot.jpg"
+                        }]
                     });
                 } else {
                     await interaction.editReply({ 
