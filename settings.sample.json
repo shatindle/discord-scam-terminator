@@ -12,5 +12,6 @@
     "http": 5000,
     "secure": false,
     "secureCookie": true,
-    "testUsers": ["ANY_TEST_USERS_TO_EXCLUDE_FROM_GRAPHING"]
+    "testUsers": ["ANY_TEST_USERS_TO_EXCLUDE_FROM_GRAPHING"],
+    "realisticWebScraperKey": "API_KEY_FOR_REALISTIC_WEBSCRAPER"
 }

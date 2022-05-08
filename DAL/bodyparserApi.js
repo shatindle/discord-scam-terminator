@@ -178,5 +178,6 @@ module.exports = {
     cleanMessage,
     MINIMUM_INDICATORS: 1,
 
-    isRedlineStealer
+    isRedlineStealer,
+    urlRegex
 };
