@@ -13,8 +13,8 @@ async function getScreenshot(url) {
     });
 
     if (response.ok) {
-        const image = await response.blob();
-        return image;
+        const image = await response.arrayBuffer();
+        return Buffer.from(image);;
     }
 
     return null;
