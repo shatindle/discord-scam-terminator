@@ -44,16 +44,15 @@ module.exports = {
                 const image = await getScreenshot(url);
 
                 if (image) {
-                    await interaction.reply({ 
+                    await interaction.editReply({ 
                         content: `Extracted the following screenshot for:\n\`${url.replace('`','')}\``,
                         attachment: [image]
                     });
                 } else {
-                    await interaction.reply({ 
+                    await interaction.editReply({ 
                         content: `Unable to load screenshot for:\n\`${url.replace('`','')}\``
                     });
                 }
-
             }
 
             await interaction.reply({ content: 'Invalid URL.  Please try again.', ephemeral: false });
