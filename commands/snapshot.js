@@ -15,7 +15,7 @@ module.exports = {
                 .setRequired(true)),
 	async execute(interaction) {
         try {
-            await logActivity(interaction.client, interaction.guild.id, "Snapshot command", `<@${interaction.user.id}> used:\n ${interaction.toString()}`);                
+            await logActivity(interaction.client, interaction.guild.id, "Snapshot command", `<@${interaction.user.id}> used:\n \`${interaction.toString()}\``);                
 
             let url = interaction.options.getString("url");
 
