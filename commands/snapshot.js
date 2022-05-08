@@ -3,7 +3,7 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 const { registerLogs } = require("../DAL/databaseApi");
 const { logActivity } = require("../DAL/logApi");
 const { urlRegex } = require("../DAL/bodyparserApi");
-const { getScreenshot } = require("../DAL/realisticWebScraperApi");
+const { getScreenshot, isScraperOnline } = require("../DAL/realisticWebScraperApi");
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -40,6 +40,11 @@ module.exports = {
                 await interaction.deferReply();
 
                 // this could take up to 20 seconds...
+
+                if (!isScraperOnline) {
+                    await interaction.reply({ content: 'Snapshot is currently offline.  Please try again later.', ephemeral: false });
+                    return;
+                }
 
                 const image = await getScreenshot(url);
 
