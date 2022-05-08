@@ -2,7 +2,7 @@ const fetch = require("node-fetch");
 const { realisticWebScraperKey, realisticWebScraperEndpoint } = require("../settings.json");
 
 async function isScraperOnline() {
-    const response = await fetch(`${realisticWebScraperEndpoint}/screenshot`, {
+    const response = await fetch(`${realisticWebScraperEndpoint}/up`, {
         method: "POST",
         headers: {
             "x-api-key": realisticWebScraperKey
