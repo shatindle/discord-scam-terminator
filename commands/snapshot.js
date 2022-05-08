@@ -41,8 +41,8 @@ module.exports = {
 
                 // this could take up to 20 seconds...
 
-                if (!isScraperOnline()) {
-                    await interaction.reply({ content: 'Snapshot is currently offline.  Please try again later.', ephemeral: false });
+                if (!await isScraperOnline()) {
+                    await interaction.editReply({ content: 'Snapshot is currently offline.  Please try again later.', ephemeral: false });
                     return;
                 }
 
