@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { move } from '../store/scamTerminatorApi';
+	import { move, getSnapshot } from '../store/scamTerminatorApi';
     import { startWebsocket, graylist, whitelist } from '../store/adminContent';
 
 	onMount(async () => {
@@ -8,6 +8,20 @@
         startWebsocket();
         console.dir($graylist);
 	});
+
+    let selectedUrl = "";
+
+    const snapshot = async (url) => {
+        jQuery('#snapshotmodal').modal('show');
+        const response = await getSnapshot(url);
+        const imageBlob = await response.blob();
+        const reader = new FileReader();
+        reader.readAsDataURL(imageBlob);
+        reader.onloadend = () => {
+            const base64data = reader.result;
+            selectedUrl = base64data;
+        }
+    }
 </script>
 
 <div>
@@ -18,11 +32,12 @@
         {#each Object.values($graylist) as item}
         {#if item}
         <li>
-            <div style="position:relative;display:block;" class:badlink="{item.removed}">
+            <div style="position:relative;display:block;width:100%;" class:badlink="{item.removed}">
                 {item.url}{item.removed ? " : MALICIOUS" : ""}
                 <div style="position:relative;">
                     <p>Example: <a href={item.example} target="_blank">{item.example}</a></p>
                 </div>
+                <button style="position:absolute;top:0;right:0;" type="button" class="btn btn-info" on:click={async () => await snapshot(item.example)}>View</button>
             </div>
             <div class="row">
                 <div class="col" style="text-align:left;">
@@ -67,6 +82,7 @@
                     <p>Example: <a href={item.example} target="_blank">{item.example}</a></p>
                 </div>
                 {/if}
+                <button style="position:absolute;top:0;right:0;" type="button" class="btn btn-info" on:click={async () => await snapshot(item.example)}>View</button>
             </div>
             <div class="row">
                 <div class="col" style="text-align:left;">
@@ -95,6 +111,31 @@
     </div>
     {/if}
     {/if}
+</div>
+
+<!-- Modal -->
+<div style="color:black;" id="snapshotmodal" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="staticBackdropLabel">Screenshot of Content</h5>
+            </div>
+            <div class="modal-body" style="position:relative">
+                {#if selectedUrl}
+                <img src={selectedUrl} style="width:100%" alt="snapshot" />
+                {:else}
+                <div class="d-flex justify-content-center">
+                    <div class="spinner-border" role="status">
+                        <span class="sr-only"></span>
+                    </div>
+                </div>
+                {/if}
+            </div>
+            <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" on:click={() => selectedUrl = ""}>Close</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <style>

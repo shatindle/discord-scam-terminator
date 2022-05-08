@@ -754,6 +754,15 @@ var app = (function () {
     const getWarnings = async () => await (await fetch('/api/activity/warnings')).json();
     const getKicks = async () => await (await fetch('/api/activity/kicks')).json();
     const getServers = async () => await (await fetch('/api/activity/servers')).json();
+    const getSnapshot = async (url) => await fetch('/api/snapshot', {
+        method: "POST",
+        body: JSON.stringify({
+            url
+        }),
+        headers: {
+            "Content-Type": "application/json"
+        }
+    });
 
     /*! *****************************************************************************
     Copyright (c) Microsoft Corporation.
@@ -14703,26 +14712,26 @@ var app = (function () {
 
     function get_each_context$3(ctx, list, i) {
     	const child_ctx = ctx.slice();
-    	child_ctx[8] = list[i];
+    	child_ctx[13] = list[i];
     	return child_ctx;
     }
 
     function get_each_context_1$1(ctx, list, i) {
     	const child_ctx = ctx.slice();
-    	child_ctx[8] = list[i];
+    	child_ctx[13] = list[i];
     	return child_ctx;
     }
 
-    // (15:4) {#if $graylist}
-    function create_if_block_4(ctx) {
+    // (29:4) {#if $graylist}
+    function create_if_block_5(ctx) {
     	let show_if;
     	let if_block_anchor;
 
     	function select_block_type(ctx, dirty) {
-    		if (dirty & /*$graylist*/ 1) show_if = null;
-    		if (show_if == null) show_if = !!(Object.keys(/*$graylist*/ ctx[0]).length > 0);
-    		if (show_if) return create_if_block_5;
-    		return create_else_block_1;
+    		if (dirty & /*$graylist*/ 2) show_if = null;
+    		if (show_if == null) show_if = !!(Object.keys(/*$graylist*/ ctx[1]).length > 0);
+    		if (show_if) return create_if_block_6;
+    		return create_else_block_2;
     	}
 
     	let current_block_type = select_block_type(ctx, -1);
@@ -14758,24 +14767,24 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_if_block_4.name,
+    		id: create_if_block_5.name,
     		type: "if",
-    		source: "(15:4) {#if $graylist}",
+    		source: "(29:4) {#if $graylist}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (48:4) {:else}
-    function create_else_block_1(ctx) {
+    // (63:4) {:else}
+    function create_else_block_2(ctx) {
     	let div;
 
     	const block = {
     		c: function create() {
     			div = element("div");
     			div.textContent = "There are no items in the gray list";
-    			add_location(div, file$6, 48, 4, 1933);
+    			add_location(div, file$6, 63, 4, 2567);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -14788,19 +14797,19 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_else_block_1.name,
+    		id: create_else_block_2.name,
     		type: "else",
-    		source: "(48:4) {:else}",
+    		source: "(63:4) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (16:4) {#if Object.keys($graylist).length > 0}
-    function create_if_block_5(ctx) {
+    // (30:4) {#if Object.keys($graylist).length > 0}
+    function create_if_block_6(ctx) {
     	let ul;
-    	let each_value_1 = Object.values(/*$graylist*/ ctx[0]);
+    	let each_value_1 = Object.values(/*$graylist*/ ctx[1]);
     	validate_each_argument(each_value_1);
     	let each_blocks = [];
 
@@ -14817,7 +14826,7 @@ var app = (function () {
     			}
 
     			attr_dev(ul, "class", "svelte-1fr6isi");
-    			add_location(ul, file$6, 16, 4, 419);
+    			add_location(ul, file$6, 30, 4, 875);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, ul, anchor);
@@ -14827,8 +14836,8 @@ var app = (function () {
     			}
     		},
     		p: function update(ctx, dirty) {
-    			if (dirty & /*move, Object, $graylist*/ 1) {
-    				each_value_1 = Object.values(/*$graylist*/ ctx[0]);
+    			if (dirty & /*move, Object, $graylist, snapshot*/ 10) {
+    				each_value_1 = Object.values(/*$graylist*/ ctx[1]);
     				validate_each_argument(each_value_1);
     				let i;
 
@@ -14859,61 +14868,67 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_if_block_5.name,
+    		id: create_if_block_6.name,
     		type: "if",
-    		source: "(16:4) {#if Object.keys($graylist).length > 0}",
+    		source: "(30:4) {#if Object.keys($graylist).length > 0}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (19:8) {#if item}
-    function create_if_block_6(ctx) {
+    // (33:8) {#if item}
+    function create_if_block_7(ctx) {
     	let li;
     	let div1;
-    	let t0_value = /*item*/ ctx[8].url + "";
+    	let t0_value = /*item*/ ctx[13].url + "";
     	let t0;
-    	let t1_value = (/*item*/ ctx[8].removed ? " : MALICIOUS" : "") + "";
+    	let t1_value = (/*item*/ ctx[13].removed ? " : MALICIOUS" : "") + "";
     	let t1;
     	let t2;
     	let div0;
     	let p;
     	let t3;
     	let a;
-    	let t4_value = /*item*/ ctx[8].example + "";
+    	let t4_value = /*item*/ ctx[13].example + "";
     	let t4;
     	let a_href_value;
     	let t5;
+    	let button0;
+    	let t7;
     	let div5;
     	let div2;
-    	let button0;
-    	let i0;
-    	let t6;
-    	let t7;
-    	let div3;
     	let button1;
-    	let i1;
+    	let i0;
     	let t8;
     	let t9;
-    	let div4;
+    	let div3;
     	let button2;
-    	let i2;
+    	let i1;
     	let t10;
     	let t11;
+    	let div4;
+    	let button3;
+    	let i2;
+    	let t12;
+    	let t13;
     	let mounted;
     	let dispose;
 
     	function click_handler() {
-    		return /*click_handler*/ ctx[2](/*item*/ ctx[8]);
+    		return /*click_handler*/ ctx[4](/*item*/ ctx[13]);
     	}
 
     	function click_handler_1() {
-    		return /*click_handler_1*/ ctx[3](/*item*/ ctx[8]);
+    		return /*click_handler_1*/ ctx[5](/*item*/ ctx[13]);
     	}
 
     	function click_handler_2() {
-    		return /*click_handler_2*/ ctx[4](/*item*/ ctx[8]);
+    		return /*click_handler_2*/ ctx[6](/*item*/ ctx[13]);
+    	}
+
+    	function click_handler_3() {
+    		return /*click_handler_3*/ ctx[7](/*item*/ ctx[13]);
     	}
 
     	const block = {
@@ -14929,61 +14944,71 @@ var app = (function () {
     			a = element("a");
     			t4 = text(t4_value);
     			t5 = space();
+    			button0 = element("button");
+    			button0.textContent = "View";
+    			t7 = space();
     			div5 = element("div");
     			div2 = element("div");
-    			button0 = element("button");
-    			i0 = element("i");
-    			t6 = text(" Verified");
-    			t7 = space();
-    			div3 = element("div");
     			button1 = element("button");
-    			i1 = element("i");
-    			t8 = text(" Remove");
+    			i0 = element("i");
+    			t8 = text(" Verified");
     			t9 = space();
-    			div4 = element("div");
+    			div3 = element("div");
     			button2 = element("button");
-    			i2 = element("i");
-    			t10 = text(" Malicious");
+    			i1 = element("i");
+    			t10 = text(" Remove");
     			t11 = space();
-    			attr_dev(a, "href", a_href_value = /*item*/ ctx[8].example);
+    			div4 = element("div");
+    			button3 = element("button");
+    			i2 = element("i");
+    			t12 = text(" Malicious");
+    			t13 = space();
+    			attr_dev(a, "href", a_href_value = /*item*/ ctx[13].example);
     			attr_dev(a, "target", "_blank");
-    			add_location(a, file$6, 23, 32, 746);
-    			add_location(p, file$6, 23, 20, 734);
+    			add_location(a, file$6, 37, 32, 1213);
+    			add_location(p, file$6, 37, 20, 1201);
     			set_style(div0, "position", "relative");
-    			add_location(div0, file$6, 22, 16, 680);
+    			add_location(div0, file$6, 36, 16, 1147);
+    			set_style(button0, "position", "absolute");
+    			set_style(button0, "top", "0");
+    			set_style(button0, "right", "0");
+    			attr_dev(button0, "type", "button");
+    			attr_dev(button0, "class", "btn btn-info");
+    			add_location(button0, file$6, 39, 16, 1316);
     			set_style(div1, "position", "relative");
     			set_style(div1, "display", "block");
+    			set_style(div1, "width", "100%");
     			attr_dev(div1, "class", "svelte-1fr6isi");
-    			toggle_class(div1, "badlink", /*item*/ ctx[8].removed);
-    			add_location(div1, file$6, 20, 12, 521);
+    			toggle_class(div1, "badlink", /*item*/ ctx[13].removed);
+    			add_location(div1, file$6, 34, 12, 977);
     			attr_dev(i0, "class", "bi bi-check-all");
-    			add_location(i0, file$6, 29, 24, 1111);
-    			attr_dev(button0, "type", "button");
-    			attr_dev(button0, "class", "btn btn-primary");
-    			add_location(button0, file$6, 28, 20, 964);
+    			add_location(i0, file$6, 44, 24, 1745);
+    			attr_dev(button1, "type", "button");
+    			attr_dev(button1, "class", "btn btn-primary");
+    			add_location(button1, file$6, 43, 20, 1598);
     			attr_dev(div2, "class", "col");
     			set_style(div2, "text-align", "left");
-    			add_location(div2, file$6, 27, 16, 900);
+    			add_location(div2, file$6, 42, 16, 1534);
     			attr_dev(i1, "class", "bi bi-x");
-    			add_location(i1, file$6, 34, 24, 1424);
-    			attr_dev(button1, "type", "button");
-    			attr_dev(button1, "class", "btn btn-warning");
-    			add_location(button1, file$6, 33, 20, 1290);
+    			add_location(i1, file$6, 49, 24, 2058);
+    			attr_dev(button2, "type", "button");
+    			attr_dev(button2, "class", "btn btn-warning");
+    			add_location(button2, file$6, 48, 20, 1924);
     			attr_dev(div3, "class", "col");
     			set_style(div3, "text-align", "center");
-    			add_location(div3, file$6, 32, 16, 1224);
+    			add_location(div3, file$6, 47, 16, 1858);
     			attr_dev(i2, "class", "bi bi-emoji-dizzy-fill");
-    			add_location(i2, file$6, 39, 24, 1733);
-    			attr_dev(button2, "type", "button");
-    			attr_dev(button2, "class", "btn btn-danger");
-    			add_location(button2, file$6, 38, 20, 1593);
+    			add_location(i2, file$6, 54, 24, 2367);
+    			attr_dev(button3, "type", "button");
+    			attr_dev(button3, "class", "btn btn-danger");
+    			add_location(button3, file$6, 53, 20, 2227);
     			attr_dev(div4, "class", "col");
     			set_style(div4, "text-align", "right");
-    			add_location(div4, file$6, 37, 16, 1528);
+    			add_location(div4, file$6, 52, 16, 2162);
     			attr_dev(div5, "class", "row");
-    			add_location(div5, file$6, 26, 12, 865);
+    			add_location(div5, file$6, 41, 12, 1499);
     			attr_dev(li, "class", "svelte-1fr6isi");
-    			add_location(li, file$6, 19, 8, 503);
+    			add_location(li, file$6, 33, 8, 959);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, li, anchor);
@@ -14996,29 +15021,32 @@ var app = (function () {
     			append_dev(p, t3);
     			append_dev(p, a);
     			append_dev(a, t4);
-    			append_dev(li, t5);
+    			append_dev(div1, t5);
+    			append_dev(div1, button0);
+    			append_dev(li, t7);
     			append_dev(li, div5);
     			append_dev(div5, div2);
-    			append_dev(div2, button0);
-    			append_dev(button0, i0);
-    			append_dev(button0, t6);
-    			append_dev(div5, t7);
-    			append_dev(div5, div3);
-    			append_dev(div3, button1);
-    			append_dev(button1, i1);
+    			append_dev(div2, button1);
+    			append_dev(button1, i0);
     			append_dev(button1, t8);
     			append_dev(div5, t9);
-    			append_dev(div5, div4);
-    			append_dev(div4, button2);
-    			append_dev(button2, i2);
+    			append_dev(div5, div3);
+    			append_dev(div3, button2);
+    			append_dev(button2, i1);
     			append_dev(button2, t10);
-    			append_dev(li, t11);
+    			append_dev(div5, t11);
+    			append_dev(div5, div4);
+    			append_dev(div4, button3);
+    			append_dev(button3, i2);
+    			append_dev(button3, t12);
+    			append_dev(li, t13);
 
     			if (!mounted) {
     				dispose = [
     					listen_dev(button0, "click", click_handler, false, false, false),
     					listen_dev(button1, "click", click_handler_1, false, false, false),
-    					listen_dev(button2, "click", click_handler_2, false, false, false)
+    					listen_dev(button2, "click", click_handler_2, false, false, false),
+    					listen_dev(button3, "click", click_handler_3, false, false, false)
     				];
 
     				mounted = true;
@@ -15026,16 +15054,16 @@ var app = (function () {
     		},
     		p: function update(new_ctx, dirty) {
     			ctx = new_ctx;
-    			if (dirty & /*$graylist*/ 1 && t0_value !== (t0_value = /*item*/ ctx[8].url + "")) set_data_dev(t0, t0_value);
-    			if (dirty & /*$graylist*/ 1 && t1_value !== (t1_value = (/*item*/ ctx[8].removed ? " : MALICIOUS" : "") + "")) set_data_dev(t1, t1_value);
-    			if (dirty & /*$graylist*/ 1 && t4_value !== (t4_value = /*item*/ ctx[8].example + "")) set_data_dev(t4, t4_value);
+    			if (dirty & /*$graylist*/ 2 && t0_value !== (t0_value = /*item*/ ctx[13].url + "")) set_data_dev(t0, t0_value);
+    			if (dirty & /*$graylist*/ 2 && t1_value !== (t1_value = (/*item*/ ctx[13].removed ? " : MALICIOUS" : "") + "")) set_data_dev(t1, t1_value);
+    			if (dirty & /*$graylist*/ 2 && t4_value !== (t4_value = /*item*/ ctx[13].example + "")) set_data_dev(t4, t4_value);
 
-    			if (dirty & /*$graylist*/ 1 && a_href_value !== (a_href_value = /*item*/ ctx[8].example)) {
+    			if (dirty & /*$graylist*/ 2 && a_href_value !== (a_href_value = /*item*/ ctx[13].example)) {
     				attr_dev(a, "href", a_href_value);
     			}
 
-    			if (dirty & /*Object, $graylist*/ 1) {
-    				toggle_class(div1, "badlink", /*item*/ ctx[8].removed);
+    			if (dirty & /*Object, $graylist*/ 2) {
+    				toggle_class(div1, "badlink", /*item*/ ctx[13].removed);
     			}
     		},
     		d: function destroy(detaching) {
@@ -15047,19 +15075,19 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_if_block_6.name,
+    		id: create_if_block_7.name,
     		type: "if",
-    		source: "(19:8) {#if item}",
+    		source: "(33:8) {#if item}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (18:8) {#each Object.values($graylist) as item}
+    // (32:8) {#each Object.values($graylist) as item}
     function create_each_block_1$1(ctx) {
     	let if_block_anchor;
-    	let if_block = /*item*/ ctx[8] && create_if_block_6(ctx);
+    	let if_block = /*item*/ ctx[13] && create_if_block_7(ctx);
 
     	const block = {
     		c: function create() {
@@ -15071,11 +15099,11 @@ var app = (function () {
     			insert_dev(target, if_block_anchor, anchor);
     		},
     		p: function update(ctx, dirty) {
-    			if (/*item*/ ctx[8]) {
+    			if (/*item*/ ctx[13]) {
     				if (if_block) {
     					if_block.p(ctx, dirty);
     				} else {
-    					if_block = create_if_block_6(ctx);
+    					if_block = create_if_block_7(ctx);
     					if_block.c();
     					if_block.m(if_block_anchor.parentNode, if_block_anchor);
     				}
@@ -15094,23 +15122,23 @@ var app = (function () {
     		block,
     		id: create_each_block_1$1.name,
     		type: "each",
-    		source: "(18:8) {#each Object.values($graylist) as item}",
+    		source: "(32:8) {#each Object.values($graylist) as item}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (57:4) {#if $whitelist}
-    function create_if_block$4(ctx) {
+    // (72:4) {#if $whitelist}
+    function create_if_block_1$3(ctx) {
     	let show_if;
     	let if_block_anchor;
 
     	function select_block_type_1(ctx, dirty) {
-    		if (dirty & /*$whitelist*/ 2) show_if = null;
-    		if (show_if == null) show_if = !!(Object.keys(/*$whitelist*/ ctx[1]).length > 0);
-    		if (show_if) return create_if_block_1$3;
-    		return create_else_block$1;
+    		if (dirty & /*$whitelist*/ 4) show_if = null;
+    		if (show_if == null) show_if = !!(Object.keys(/*$whitelist*/ ctx[2]).length > 0);
+    		if (show_if) return create_if_block_2$1;
+    		return create_else_block_1;
     	}
 
     	let current_block_type = select_block_type_1(ctx, -1);
@@ -15146,24 +15174,24 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_if_block$4.name,
+    		id: create_if_block_1$3.name,
     		type: "if",
-    		source: "(57:4) {#if $whitelist}",
+    		source: "(72:4) {#if $whitelist}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (92:4) {:else}
-    function create_else_block$1(ctx) {
+    // (108:4) {:else}
+    function create_else_block_1(ctx) {
     	let div;
 
     	const block = {
     		c: function create() {
     			div = element("div");
     			div.textContent = "There are no items in the gray list";
-    			add_location(div, file$6, 92, 4, 3653);
+    			add_location(div, file$6, 108, 4, 4454);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -15176,19 +15204,19 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_else_block$1.name,
+    		id: create_else_block_1.name,
     		type: "else",
-    		source: "(92:4) {:else}",
+    		source: "(108:4) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (58:4) {#if Object.keys($whitelist).length > 0}
-    function create_if_block_1$3(ctx) {
+    // (73:4) {#if Object.keys($whitelist).length > 0}
+    function create_if_block_2$1(ctx) {
     	let ul;
-    	let each_value = Object.values(/*$whitelist*/ ctx[1]);
+    	let each_value = Object.values(/*$whitelist*/ ctx[2]);
     	validate_each_argument(each_value);
     	let each_blocks = [];
 
@@ -15205,7 +15233,7 @@ var app = (function () {
     			}
 
     			attr_dev(ul, "class", "svelte-1fr6isi");
-    			add_location(ul, file$6, 58, 4, 2143);
+    			add_location(ul, file$6, 73, 4, 2777);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, ul, anchor);
@@ -15215,8 +15243,8 @@ var app = (function () {
     			}
     		},
     		p: function update(ctx, dirty) {
-    			if (dirty & /*move, Object, $whitelist*/ 2) {
-    				each_value = Object.values(/*$whitelist*/ ctx[1]);
+    			if (dirty & /*move, Object, $whitelist, snapshot*/ 12) {
+    				each_value = Object.values(/*$whitelist*/ ctx[2]);
     				validate_each_argument(each_value);
     				let i;
 
@@ -15247,53 +15275,59 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_if_block_1$3.name,
+    		id: create_if_block_2$1.name,
     		type: "if",
-    		source: "(58:4) {#if Object.keys($whitelist).length > 0}",
+    		source: "(73:4) {#if Object.keys($whitelist).length > 0}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (61:8) {#if item}
-    function create_if_block_2$1(ctx) {
+    // (76:8) {#if item}
+    function create_if_block_3(ctx) {
     	let li;
     	let div0;
-    	let t0_value = /*item*/ ctx[8].url + "";
+    	let t0_value = /*item*/ ctx[13].url + "";
     	let t0;
     	let t1;
     	let t2;
+    	let button0;
+    	let t4;
     	let div4;
     	let div1;
-    	let button0;
-    	let i0;
-    	let t3;
-    	let t4;
-    	let div2;
     	let button1;
-    	let i1;
+    	let i0;
     	let t5;
     	let t6;
-    	let div3;
+    	let div2;
     	let button2;
-    	let i2;
+    	let i1;
     	let t7;
     	let t8;
+    	let div3;
+    	let button3;
+    	let i2;
+    	let t9;
+    	let t10;
     	let mounted;
     	let dispose;
-    	let if_block = /*item*/ ctx[8].example && create_if_block_3(ctx);
-
-    	function click_handler_3() {
-    		return /*click_handler_3*/ ctx[5](/*item*/ ctx[8]);
-    	}
+    	let if_block = /*item*/ ctx[13].example && create_if_block_4(ctx);
 
     	function click_handler_4() {
-    		return /*click_handler_4*/ ctx[6](/*item*/ ctx[8]);
+    		return /*click_handler_4*/ ctx[8](/*item*/ ctx[13]);
     	}
 
     	function click_handler_5() {
-    		return /*click_handler_5*/ ctx[7](/*item*/ ctx[8]);
+    		return /*click_handler_5*/ ctx[9](/*item*/ ctx[13]);
+    	}
+
+    	function click_handler_6() {
+    		return /*click_handler_6*/ ctx[10](/*item*/ ctx[13]);
+    	}
+
+    	function click_handler_7() {
+    		return /*click_handler_7*/ ctx[11](/*item*/ ctx[13]);
     	}
 
     	const block = {
@@ -15304,53 +15338,62 @@ var app = (function () {
     			t1 = space();
     			if (if_block) if_block.c();
     			t2 = space();
+    			button0 = element("button");
+    			button0.textContent = "View";
+    			t4 = space();
     			div4 = element("div");
     			div1 = element("div");
-    			button0 = element("button");
-    			i0 = element("i");
-    			t3 = text(" Verified");
-    			t4 = space();
-    			div2 = element("div");
     			button1 = element("button");
-    			i1 = element("i");
-    			t5 = text(" Remove");
+    			i0 = element("i");
+    			t5 = text(" Verified");
     			t6 = space();
-    			div3 = element("div");
+    			div2 = element("div");
     			button2 = element("button");
-    			i2 = element("i");
-    			t7 = text(" Malicious");
+    			i1 = element("i");
+    			t7 = text(" Remove");
     			t8 = space();
+    			div3 = element("div");
+    			button3 = element("button");
+    			i2 = element("i");
+    			t9 = text(" Malicious");
+    			t10 = space();
+    			set_style(button0, "position", "absolute");
+    			set_style(button0, "top", "0");
+    			set_style(button0, "right", "0");
+    			attr_dev(button0, "type", "button");
+    			attr_dev(button0, "class", "btn btn-info");
+    			add_location(button0, file$6, 84, 16, 3200);
     			set_style(div0, "position", "relative");
     			set_style(div0, "display", "block");
-    			add_location(div0, file$6, 62, 12, 2246);
+    			add_location(div0, file$6, 77, 12, 2880);
     			attr_dev(i0, "class", "bi bi-check-all");
-    			add_location(i0, file$6, 73, 24, 2829);
-    			attr_dev(button0, "type", "button");
-    			attr_dev(button0, "class", "btn btn-primary");
-    			add_location(button0, file$6, 72, 20, 2681);
+    			add_location(i0, file$6, 89, 24, 3630);
+    			attr_dev(button1, "type", "button");
+    			attr_dev(button1, "class", "btn btn-primary");
+    			add_location(button1, file$6, 88, 20, 3482);
     			attr_dev(div1, "class", "col");
     			set_style(div1, "text-align", "left");
-    			add_location(div1, file$6, 71, 16, 2617);
+    			add_location(div1, file$6, 87, 16, 3418);
     			attr_dev(i1, "class", "bi bi-x");
-    			add_location(i1, file$6, 78, 24, 3143);
-    			attr_dev(button1, "type", "button");
-    			attr_dev(button1, "class", "btn btn-warning");
-    			add_location(button1, file$6, 77, 20, 3008);
+    			add_location(i1, file$6, 94, 24, 3944);
+    			attr_dev(button2, "type", "button");
+    			attr_dev(button2, "class", "btn btn-warning");
+    			add_location(button2, file$6, 93, 20, 3809);
     			attr_dev(div2, "class", "col");
     			set_style(div2, "text-align", "center");
-    			add_location(div2, file$6, 76, 16, 2942);
+    			add_location(div2, file$6, 92, 16, 3743);
     			attr_dev(i2, "class", "bi bi-emoji-dizzy-fill");
-    			add_location(i2, file$6, 83, 24, 3453);
-    			attr_dev(button2, "type", "button");
-    			attr_dev(button2, "class", "btn btn-danger");
-    			add_location(button2, file$6, 82, 20, 3312);
+    			add_location(i2, file$6, 99, 24, 4254);
+    			attr_dev(button3, "type", "button");
+    			attr_dev(button3, "class", "btn btn-danger");
+    			add_location(button3, file$6, 98, 20, 4113);
     			attr_dev(div3, "class", "col");
     			set_style(div3, "text-align", "right");
-    			add_location(div3, file$6, 81, 16, 3247);
+    			add_location(div3, file$6, 97, 16, 4048);
     			attr_dev(div4, "class", "row");
-    			add_location(div4, file$6, 70, 12, 2582);
+    			add_location(div4, file$6, 86, 12, 3383);
     			attr_dev(li, "class", "svelte-1fr6isi");
-    			add_location(li, file$6, 61, 8, 2228);
+    			add_location(li, file$6, 76, 8, 2862);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, li, anchor);
@@ -15358,29 +15401,32 @@ var app = (function () {
     			append_dev(div0, t0);
     			append_dev(div0, t1);
     			if (if_block) if_block.m(div0, null);
-    			append_dev(li, t2);
+    			append_dev(div0, t2);
+    			append_dev(div0, button0);
+    			append_dev(li, t4);
     			append_dev(li, div4);
     			append_dev(div4, div1);
-    			append_dev(div1, button0);
-    			append_dev(button0, i0);
-    			append_dev(button0, t3);
-    			append_dev(div4, t4);
-    			append_dev(div4, div2);
-    			append_dev(div2, button1);
-    			append_dev(button1, i1);
+    			append_dev(div1, button1);
+    			append_dev(button1, i0);
     			append_dev(button1, t5);
     			append_dev(div4, t6);
-    			append_dev(div4, div3);
-    			append_dev(div3, button2);
-    			append_dev(button2, i2);
+    			append_dev(div4, div2);
+    			append_dev(div2, button2);
+    			append_dev(button2, i1);
     			append_dev(button2, t7);
-    			append_dev(li, t8);
+    			append_dev(div4, t8);
+    			append_dev(div4, div3);
+    			append_dev(div3, button3);
+    			append_dev(button3, i2);
+    			append_dev(button3, t9);
+    			append_dev(li, t10);
 
     			if (!mounted) {
     				dispose = [
-    					listen_dev(button0, "click", click_handler_3, false, false, false),
-    					listen_dev(button1, "click", click_handler_4, false, false, false),
-    					listen_dev(button2, "click", click_handler_5, false, false, false)
+    					listen_dev(button0, "click", click_handler_4, false, false, false),
+    					listen_dev(button1, "click", click_handler_5, false, false, false),
+    					listen_dev(button2, "click", click_handler_6, false, false, false),
+    					listen_dev(button3, "click", click_handler_7, false, false, false)
     				];
 
     				mounted = true;
@@ -15388,15 +15434,15 @@ var app = (function () {
     		},
     		p: function update(new_ctx, dirty) {
     			ctx = new_ctx;
-    			if (dirty & /*$whitelist*/ 2 && t0_value !== (t0_value = /*item*/ ctx[8].url + "")) set_data_dev(t0, t0_value);
+    			if (dirty & /*$whitelist*/ 4 && t0_value !== (t0_value = /*item*/ ctx[13].url + "")) set_data_dev(t0, t0_value);
 
-    			if (/*item*/ ctx[8].example) {
+    			if (/*item*/ ctx[13].example) {
     				if (if_block) {
     					if_block.p(ctx, dirty);
     				} else {
-    					if_block = create_if_block_3(ctx);
+    					if_block = create_if_block_4(ctx);
     					if_block.c();
-    					if_block.m(div0, null);
+    					if_block.m(div0, t2);
     				}
     			} else if (if_block) {
     				if_block.d(1);
@@ -15413,22 +15459,22 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_if_block_2$1.name,
+    		id: create_if_block_3.name,
     		type: "if",
-    		source: "(61:8) {#if item}",
+    		source: "(76:8) {#if item}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (65:16) {#if item.example}
-    function create_if_block_3(ctx) {
+    // (80:16) {#if item.example}
+    function create_if_block_4(ctx) {
     	let div;
     	let p;
     	let t0;
     	let a;
-    	let t1_value = /*item*/ ctx[8].example + "";
+    	let t1_value = /*item*/ ctx[13].example + "";
     	let t1;
     	let a_href_value;
 
@@ -15439,12 +15485,12 @@ var app = (function () {
     			t0 = text("Example: ");
     			a = element("a");
     			t1 = text(t1_value);
-    			attr_dev(a, "href", a_href_value = /*item*/ ctx[8].example);
+    			attr_dev(a, "href", a_href_value = /*item*/ ctx[13].example);
     			attr_dev(a, "target", "_blank");
-    			add_location(a, file$6, 66, 32, 2440);
-    			add_location(p, file$6, 66, 20, 2428);
+    			add_location(a, file$6, 81, 32, 3074);
+    			add_location(p, file$6, 81, 20, 3062);
     			set_style(div, "position", "relative");
-    			add_location(div, file$6, 65, 16, 2374);
+    			add_location(div, file$6, 80, 16, 3008);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -15454,9 +15500,9 @@ var app = (function () {
     			append_dev(a, t1);
     		},
     		p: function update(ctx, dirty) {
-    			if (dirty & /*$whitelist*/ 2 && t1_value !== (t1_value = /*item*/ ctx[8].example + "")) set_data_dev(t1, t1_value);
+    			if (dirty & /*$whitelist*/ 4 && t1_value !== (t1_value = /*item*/ ctx[13].example + "")) set_data_dev(t1, t1_value);
 
-    			if (dirty & /*$whitelist*/ 2 && a_href_value !== (a_href_value = /*item*/ ctx[8].example)) {
+    			if (dirty & /*$whitelist*/ 4 && a_href_value !== (a_href_value = /*item*/ ctx[13].example)) {
     				attr_dev(a, "href", a_href_value);
     			}
     		},
@@ -15467,19 +15513,19 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_if_block_3.name,
+    		id: create_if_block_4.name,
     		type: "if",
-    		source: "(65:16) {#if item.example}",
+    		source: "(80:16) {#if item.example}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (60:8) {#each Object.values($whitelist) as item}
+    // (75:8) {#each Object.values($whitelist) as item}
     function create_each_block$3(ctx) {
     	let if_block_anchor;
-    	let if_block = /*item*/ ctx[8] && create_if_block_2$1(ctx);
+    	let if_block = /*item*/ ctx[13] && create_if_block_3(ctx);
 
     	const block = {
     		c: function create() {
@@ -15491,11 +15537,11 @@ var app = (function () {
     			insert_dev(target, if_block_anchor, anchor);
     		},
     		p: function update(ctx, dirty) {
-    			if (/*item*/ ctx[8]) {
+    			if (/*item*/ ctx[13]) {
     				if (if_block) {
     					if_block.p(ctx, dirty);
     				} else {
-    					if_block = create_if_block_2$1(ctx);
+    					if_block = create_if_block_3(ctx);
     					if_block.c();
     					if_block.m(if_block_anchor.parentNode, if_block_anchor);
     				}
@@ -15514,7 +15560,85 @@ var app = (function () {
     		block,
     		id: create_each_block$3.name,
     		type: "each",
-    		source: "(60:8) {#each Object.values($whitelist) as item}",
+    		source: "(75:8) {#each Object.values($whitelist) as item}",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    // (126:16) {:else}
+    function create_else_block$1(ctx) {
+    	let div1;
+    	let div0;
+    	let span;
+
+    	const block = {
+    		c: function create() {
+    			div1 = element("div");
+    			div0 = element("div");
+    			span = element("span");
+    			attr_dev(span, "class", "sr-only");
+    			add_location(span, file$6, 128, 24, 5335);
+    			attr_dev(div0, "class", "spinner-border");
+    			attr_dev(div0, "role", "status");
+    			add_location(div0, file$6, 127, 20, 5267);
+    			attr_dev(div1, "class", "d-flex justify-content-center");
+    			add_location(div1, file$6, 126, 16, 5202);
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, div1, anchor);
+    			append_dev(div1, div0);
+    			append_dev(div0, span);
+    		},
+    		p: noop,
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(div1);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_else_block$1.name,
+    		type: "else",
+    		source: "(126:16) {:else}",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    // (124:16) {#if selectedUrl}
+    function create_if_block$4(ctx) {
+    	let img;
+    	let img_src_value;
+
+    	const block = {
+    		c: function create() {
+    			img = element("img");
+    			if (!src_url_equal(img.src, img_src_value = /*selectedUrl*/ ctx[0])) attr_dev(img, "src", img_src_value);
+    			set_style(img, "width", "100%");
+    			attr_dev(img, "alt", "snapshot");
+    			add_location(img, file$6, 124, 16, 5100);
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, img, anchor);
+    		},
+    		p: function update(ctx, dirty) {
+    			if (dirty & /*selectedUrl*/ 1 && !src_url_equal(img.src, img_src_value = /*selectedUrl*/ ctx[0])) {
+    				attr_dev(img, "src", img_src_value);
+    			}
+    		},
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(img);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_if_block$4.name,
+    		type: "if",
+    		source: "(124:16) {#if selectedUrl}",
     		ctx
     	});
 
@@ -15522,7 +15646,7 @@ var app = (function () {
     }
 
     function create_fragment$6(ctx) {
-    	let div;
+    	let div0;
     	let h30;
     	let t1;
     	let t2;
@@ -15530,12 +15654,33 @@ var app = (function () {
     	let t3;
     	let h31;
     	let t5;
-    	let if_block0 = /*$graylist*/ ctx[0] && create_if_block_4(ctx);
-    	let if_block1 = /*$whitelist*/ ctx[1] && create_if_block$4(ctx);
+    	let t6;
+    	let div6;
+    	let div5;
+    	let div4;
+    	let div1;
+    	let h5;
+    	let t8;
+    	let div2;
+    	let t9;
+    	let div3;
+    	let button;
+    	let mounted;
+    	let dispose;
+    	let if_block0 = /*$graylist*/ ctx[1] && create_if_block_5(ctx);
+    	let if_block1 = /*$whitelist*/ ctx[2] && create_if_block_1$3(ctx);
+
+    	function select_block_type_2(ctx, dirty) {
+    		if (/*selectedUrl*/ ctx[0]) return create_if_block$4;
+    		return create_else_block$1;
+    	}
+
+    	let current_block_type = select_block_type_2(ctx);
+    	let if_block2 = current_block_type(ctx);
 
     	const block = {
     		c: function create() {
-    			div = element("div");
+    			div0 = element("div");
     			h30 = element("h3");
     			h30.textContent = "Graylist";
     			t1 = space();
@@ -15547,60 +15692,135 @@ var app = (function () {
     			h31.textContent = "Whitelist";
     			t5 = space();
     			if (if_block1) if_block1.c();
-    			add_location(h30, file$6, 13, 4, 330);
+    			t6 = space();
+    			div6 = element("div");
+    			div5 = element("div");
+    			div4 = element("div");
+    			div1 = element("div");
+    			h5 = element("h5");
+    			h5.textContent = "Screenshot of Content";
+    			t8 = space();
+    			div2 = element("div");
+    			if_block2.c();
+    			t9 = space();
+    			div3 = element("div");
+    			button = element("button");
+    			button.textContent = "Close";
+    			add_location(h30, file$6, 27, 4, 786);
     			attr_dev(hr, "class", "rounded");
-    			add_location(hr, file$6, 54, 4, 2025);
-    			add_location(h31, file$6, 55, 4, 2051);
-    			add_location(div, file$6, 12, 0, 319);
+    			add_location(hr, file$6, 69, 4, 2659);
+    			add_location(h31, file$6, 70, 4, 2685);
+    			add_location(div0, file$6, 26, 0, 775);
+    			attr_dev(h5, "class", "modal-title");
+    			attr_dev(h5, "id", "staticBackdropLabel");
+    			add_location(h5, file$6, 120, 16, 4888);
+    			attr_dev(div1, "class", "modal-header");
+    			add_location(div1, file$6, 119, 12, 4844);
+    			attr_dev(div2, "class", "modal-body");
+    			set_style(div2, "position", "relative");
+    			add_location(div2, file$6, 122, 12, 4997);
+    			attr_dev(button, "type", "button");
+    			attr_dev(button, "class", "btn btn-secondary");
+    			attr_dev(button, "data-bs-dismiss", "modal");
+    			add_location(button, file$6, 134, 12, 5513);
+    			attr_dev(div3, "class", "modal-footer");
+    			add_location(div3, file$6, 133, 12, 5473);
+    			attr_dev(div4, "class", "modal-content");
+    			add_location(div4, file$6, 118, 8, 4803);
+    			attr_dev(div5, "class", "modal-dialog modal-lg");
+    			add_location(div5, file$6, 117, 4, 4758);
+    			set_style(div6, "color", "black");
+    			attr_dev(div6, "id", "snapshotmodal");
+    			attr_dev(div6, "class", "modal fade");
+    			attr_dev(div6, "data-bs-backdrop", "static");
+    			attr_dev(div6, "data-bs-keyboard", "false");
+    			attr_dev(div6, "tabindex", "-1");
+    			attr_dev(div6, "aria-labelledby", "staticBackdropLabel");
+    			attr_dev(div6, "aria-hidden", "true");
+    			add_location(div6, file$6, 116, 0, 4566);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
-    			insert_dev(target, div, anchor);
-    			append_dev(div, h30);
-    			append_dev(div, t1);
-    			if (if_block0) if_block0.m(div, null);
-    			append_dev(div, t2);
-    			append_dev(div, hr);
-    			append_dev(div, t3);
-    			append_dev(div, h31);
-    			append_dev(div, t5);
-    			if (if_block1) if_block1.m(div, null);
+    			insert_dev(target, div0, anchor);
+    			append_dev(div0, h30);
+    			append_dev(div0, t1);
+    			if (if_block0) if_block0.m(div0, null);
+    			append_dev(div0, t2);
+    			append_dev(div0, hr);
+    			append_dev(div0, t3);
+    			append_dev(div0, h31);
+    			append_dev(div0, t5);
+    			if (if_block1) if_block1.m(div0, null);
+    			insert_dev(target, t6, anchor);
+    			insert_dev(target, div6, anchor);
+    			append_dev(div6, div5);
+    			append_dev(div5, div4);
+    			append_dev(div4, div1);
+    			append_dev(div1, h5);
+    			append_dev(div4, t8);
+    			append_dev(div4, div2);
+    			if_block2.m(div2, null);
+    			append_dev(div4, t9);
+    			append_dev(div4, div3);
+    			append_dev(div3, button);
+
+    			if (!mounted) {
+    				dispose = listen_dev(button, "click", /*click_handler_8*/ ctx[12], false, false, false);
+    				mounted = true;
+    			}
     		},
     		p: function update(ctx, [dirty]) {
-    			if (/*$graylist*/ ctx[0]) {
+    			if (/*$graylist*/ ctx[1]) {
     				if (if_block0) {
     					if_block0.p(ctx, dirty);
     				} else {
-    					if_block0 = create_if_block_4(ctx);
+    					if_block0 = create_if_block_5(ctx);
     					if_block0.c();
-    					if_block0.m(div, t2);
+    					if_block0.m(div0, t2);
     				}
     			} else if (if_block0) {
     				if_block0.d(1);
     				if_block0 = null;
     			}
 
-    			if (/*$whitelist*/ ctx[1]) {
+    			if (/*$whitelist*/ ctx[2]) {
     				if (if_block1) {
     					if_block1.p(ctx, dirty);
     				} else {
-    					if_block1 = create_if_block$4(ctx);
+    					if_block1 = create_if_block_1$3(ctx);
     					if_block1.c();
-    					if_block1.m(div, null);
+    					if_block1.m(div0, null);
     				}
     			} else if (if_block1) {
     				if_block1.d(1);
     				if_block1 = null;
     			}
+
+    			if (current_block_type === (current_block_type = select_block_type_2(ctx)) && if_block2) {
+    				if_block2.p(ctx, dirty);
+    			} else {
+    				if_block2.d(1);
+    				if_block2 = current_block_type(ctx);
+
+    				if (if_block2) {
+    					if_block2.c();
+    					if_block2.m(div2, null);
+    				}
+    			}
     		},
     		i: noop,
     		o: noop,
     		d: function destroy(detaching) {
-    			if (detaching) detach_dev(div);
+    			if (detaching) detach_dev(div0);
     			if (if_block0) if_block0.d();
     			if (if_block1) if_block1.d();
+    			if (detaching) detach_dev(t6);
+    			if (detaching) detach_dev(div6);
+    			if_block2.d();
+    			mounted = false;
+    			dispose();
     		}
     	};
 
@@ -15619,9 +15839,9 @@ var app = (function () {
     	let $graylist;
     	let $whitelist;
     	validate_store(adminContent.graylist, 'graylist');
-    	component_subscribe($$self, adminContent.graylist, $$value => $$invalidate(0, $graylist = $$value));
+    	component_subscribe($$self, adminContent.graylist, $$value => $$invalidate(1, $graylist = $$value));
     	validate_store(adminContent.whitelist, 'whitelist');
-    	component_subscribe($$self, adminContent.whitelist, $$value => $$invalidate(1, $whitelist = $$value));
+    	component_subscribe($$self, adminContent.whitelist, $$value => $$invalidate(2, $whitelist = $$value));
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots('Graylist', slots, []);
 
@@ -15631,38 +15851,72 @@ var app = (function () {
     		console.dir($graylist);
     	});
 
+    	let selectedUrl = "";
+
+    	const snapshot = async url => {
+    		jQuery('#snapshotmodal').modal('show');
+    		const response = await getSnapshot(url);
+    		const imageBlob = await response.blob();
+    		const reader = new FileReader();
+    		reader.readAsDataURL(imageBlob);
+
+    		reader.onloadend = () => {
+    			const base64data = reader.result;
+    			$$invalidate(0, selectedUrl = base64data);
+    		};
+    	};
+
     	const writable_props = [];
 
     	Object_1$1.keys($$props).forEach(key => {
     		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console_1$2.warn(`<Graylist> was created with unknown prop '${key}'`);
     	});
 
-    	const click_handler = async item => await move(item.url, "graylist", "verifieddomains");
-    	const click_handler_1 = async item => await move(item.url, "graylist", null);
-    	const click_handler_2 = async item => await move(item.url, "graylist", "blacklist");
-    	const click_handler_3 = async item => await move(item.url, "whitelist", "verifieddomains");
-    	const click_handler_4 = async item => await move(item.url, "whitelist", null);
-    	const click_handler_5 = async item => await move(item.url, "whitelist", "blacklist");
+    	const click_handler = async item => await snapshot(item.example);
+    	const click_handler_1 = async item => await move(item.url, "graylist", "verifieddomains");
+    	const click_handler_2 = async item => await move(item.url, "graylist", null);
+    	const click_handler_3 = async item => await move(item.url, "graylist", "blacklist");
+    	const click_handler_4 = async item => await snapshot(item.example);
+    	const click_handler_5 = async item => await move(item.url, "whitelist", "verifieddomains");
+    	const click_handler_6 = async item => await move(item.url, "whitelist", null);
+    	const click_handler_7 = async item => await move(item.url, "whitelist", "blacklist");
+    	const click_handler_8 = () => $$invalidate(0, selectedUrl = "");
 
     	$$self.$capture_state = () => ({
     		onMount,
     		move,
+    		getSnapshot,
     		startWebsocket: adminContent.startWebsocket,
     		graylist: adminContent.graylist,
     		whitelist: adminContent.whitelist,
+    		selectedUrl,
+    		snapshot,
     		$graylist,
     		$whitelist
     	});
 
+    	$$self.$inject_state = $$props => {
+    		if ('selectedUrl' in $$props) $$invalidate(0, selectedUrl = $$props.selectedUrl);
+    	};
+
+    	if ($$props && "$$inject" in $$props) {
+    		$$self.$inject_state($$props.$$inject);
+    	}
+
     	return [
+    		selectedUrl,
     		$graylist,
     		$whitelist,
+    		snapshot,
     		click_handler,
     		click_handler_1,
     		click_handler_2,
     		click_handler_3,
     		click_handler_4,
-    		click_handler_5
+    		click_handler_5,
+    		click_handler_6,
+    		click_handler_7,
+    		click_handler_8
     	];
     }
 

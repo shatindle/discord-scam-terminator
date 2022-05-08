@@ -35,3 +35,12 @@ export const clearContentReview = async (id) => await fetch('/api/clearcontentre
 export const getWarnings = async () => await (await fetch('/api/activity/warnings')).json();
 export const getKicks = async () => await (await fetch('/api/activity/kicks')).json();
 export const getServers = async () => await (await fetch('/api/activity/servers')).json();
+export const getSnapshot = async (url) => await fetch('/api/snapshot', {
+    method: "POST",
+    body: JSON.stringify({
+        url
+    }),
+    headers: {
+        "Content-Type": "application/json"
+    }
+});

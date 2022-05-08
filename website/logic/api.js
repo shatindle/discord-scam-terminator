@@ -3,6 +3,7 @@ const router = express.Router();
 const path = require('path');
 const { Permissions } = require('discord.js');
 const { moveUrl, deleteById } = require('../../DAL/databaseApi');
+const { getScreenshot, isScraperOnline } = require("../../DAL/realisticWebScraperApi");
 
 function adminAuth(req, res, next) {
     if (!req.session || !req.session.admin)
@@ -62,6 +63,27 @@ router.post('/clearcontentreview', adminAuth, express.json(), async (req, res) =
 
     await deleteById('contentreview', req.body.id);
     return res.sendStatus(202);
+});
+
+router.post('/snapshot', adminAuth, express.json(), async (req, res) => {
+    if (!req.body.url)
+        return res.sendStatus(404);
+
+    if (!await isScraperOnline())
+        return res.sendStatus(501);
+
+    try {
+        const image = await getScreenshot(req.body.url);
+
+        res.writeHead(200, {
+            'Content-Type': 'image/jpeg',
+            'Content-Length': image.length
+        });
+
+        return res.end(image);
+    } catch (err) {
+        return res.sendStatus(502);
+    }
 });
 
 router.use(require("./activity"));
