@@ -20,14 +20,13 @@ module.exports = {
             let url = interaction.options.getString("url");
 
             if (url) {
-                let urls = [];
+                const urls = [];
+
                 const test = url.match(urlRegex);
                 if (test && test.forEach) {
                     test.forEach((match) => {
                         urls.push(match);
                     });
-                } else {
-                    return [];
                 }
 
                 if (urls.length !== 1) {
