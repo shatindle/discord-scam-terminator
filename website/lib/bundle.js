@@ -18909,17 +18909,17 @@ var app = (function () {
 
     function get_each_context(ctx, list, i) {
     	const child_ctx = ctx.slice();
-    	child_ctx[5] = list[i];
+    	child_ctx[4] = list[i];
     	return child_ctx;
     }
 
     function get_each_context_1(ctx, list, i) {
     	const child_ctx = ctx.slice();
-    	child_ctx[8] = list[i];
+    	child_ctx[7] = list[i];
     	return child_ctx;
     }
 
-    // (54:4) {#if $contentreview}
+    // (72:4) {#if $contentreview}
     function create_if_block$1(ctx) {
     	let each_1_anchor;
     	let each_value = Object.keys(/*$contentreview*/ ctx[0]);
@@ -18980,35 +18980,35 @@ var app = (function () {
     		block,
     		id: create_if_block$1.name,
     		type: "if",
-    		source: "(54:4) {#if $contentreview}",
+    		source: "(72:4) {#if $contentreview}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (56:4) {#if $contentreview[id]}
+    // (74:4) {#if $contentreview[id]}
     function create_if_block_1$1(ctx) {
     	let div15;
     	let div14;
     	let div3;
     	let div1;
     	let div0;
-    	let t0_value = /*$contentreview*/ ctx[0][/*id*/ ctx[5]].username + "";
+    	let t0_value = /*$contentreview*/ ctx[0][/*id*/ ctx[4]].username + "";
     	let t0;
     	let t1;
-    	let t2_value = /*$contentreview*/ ctx[0][/*id*/ ctx[5]].userId + "";
+    	let t2_value = /*$contentreview*/ ctx[0][/*id*/ ctx[4]].userId + "";
     	let t2;
     	let t3;
     	let t4;
     	let div2;
-    	let t5_value = new Date(parseInt(/*id*/ ctx[5])).toLocaleString() + "";
+    	let t5_value = new Date(parseInt(/*id*/ ctx[4])).toLocaleString() + "";
     	let t5;
     	let t6;
     	let div6;
     	let div5;
     	let div4;
-    	let t7_value = /*$contentreview*/ ctx[0][/*id*/ ctx[5]].message + "";
+    	let t7_value = /*$contentreview*/ ctx[0][/*id*/ ctx[4]].message + "";
     	let t7;
     	let t8;
     	let div8;
@@ -19020,11 +19020,11 @@ var app = (function () {
     	let div11;
     	let div9;
     	let t12;
-    	let t13_value = /*$contentreview*/ ctx[0][/*id*/ ctx[5]].guildId + "";
+    	let t13_value = /*$contentreview*/ ctx[0][/*id*/ ctx[4]].guildId + "";
     	let t13;
     	let t14;
     	let div10;
-    	let t15_value = /*$contentreview*/ ctx[0][/*id*/ ctx[5]].action + "";
+    	let t15_value = /*$contentreview*/ ctx[0][/*id*/ ctx[4]].action + "";
     	let t15;
     	let t16;
     	let div12;
@@ -19033,7 +19033,7 @@ var app = (function () {
     	let div15_class_value;
     	let mounted;
     	let dispose;
-    	let each_value_1 = extractUrlsFromContent(/*$contentreview*/ ctx[0][/*id*/ ctx[5]].message);
+    	let each_value_1 = extractUrlsFromContent(/*$contentreview*/ ctx[0][/*id*/ ctx[4]].message);
     	validate_each_argument(each_value_1);
     	let each_blocks = [];
 
@@ -19042,11 +19042,7 @@ var app = (function () {
     	}
 
     	function click_handler() {
-    		return /*click_handler*/ ctx[2](/*id*/ ctx[5]);
-    	}
-
-    	function func() {
-    		return /*func*/ ctx[3](/*id*/ ctx[5]);
+    		return /*click_handler*/ ctx[2](/*id*/ ctx[4]);
     	}
 
     	const block = {
@@ -19093,41 +19089,41 @@ var app = (function () {
     			button = element("button");
     			button.textContent = "Dismiss";
     			t18 = space();
-    			add_location(div0, file$1, 60, 20, 12017);
+    			add_location(div0, file$1, 78, 20, 12498);
     			attr_dev(div1, "class", "col-8");
-    			add_location(div1, file$1, 59, 16, 11976);
+    			add_location(div1, file$1, 77, 16, 12457);
     			attr_dev(div2, "class", "col-4");
     			set_style(div2, "text-align", "right");
-    			add_location(div2, file$1, 62, 16, 12129);
+    			add_location(div2, file$1, 80, 16, 12610);
     			attr_dev(div3, "class", "row");
-    			add_location(div3, file$1, 58, 12, 11941);
+    			add_location(div3, file$1, 76, 12, 12422);
     			attr_dev(div4, "class", "usercontent mdc-elevation--z4 svelte-k3dthz");
-    			add_location(div4, file$1, 68, 20, 12370);
+    			add_location(div4, file$1, 86, 20, 12851);
     			attr_dev(div5, "class", "col");
-    			add_location(div5, file$1, 67, 16, 12331);
+    			add_location(div5, file$1, 85, 16, 12812);
     			attr_dev(div6, "class", "row");
-    			add_location(div6, file$1, 66, 12, 12296);
-    			add_location(h4, file$1, 75, 20, 12627);
+    			add_location(div6, file$1, 84, 12, 12777);
+    			add_location(h4, file$1, 93, 20, 13108);
     			attr_dev(div7, "class", "col");
-    			add_location(div7, file$1, 74, 16, 12588);
+    			add_location(div7, file$1, 92, 16, 13069);
     			attr_dev(div8, "class", "row");
-    			add_location(div8, file$1, 73, 12, 12553);
-    			add_location(div9, file$1, 83, 20, 12942);
-    			add_location(div10, file$1, 84, 20, 13012);
+    			add_location(div8, file$1, 91, 12, 13034);
+    			add_location(div9, file$1, 101, 20, 13423);
+    			add_location(div10, file$1, 102, 20, 13493);
     			attr_dev(div11, "class", "col-8");
-    			add_location(div11, file$1, 82, 16, 12901);
+    			add_location(div11, file$1, 100, 16, 13382);
     			attr_dev(button, "type", "button");
     			attr_dev(button, "class", "btn btn-primary dismiss float-end svelte-k3dthz");
-    			add_location(button, file$1, 87, 20, 13133);
+    			add_location(button, file$1, 105, 20, 13614);
     			attr_dev(div12, "class", "col-4");
-    			add_location(div12, file$1, 86, 16, 13092);
+    			add_location(div12, file$1, 104, 16, 13573);
     			attr_dev(div13, "class", "row");
-    			add_location(div13, file$1, 81, 12, 12866);
+    			add_location(div13, file$1, 99, 12, 13347);
     			attr_dev(div14, "class", "card-body");
-    			add_location(div14, file$1, 57, 8, 11904);
-    			attr_dev(div15, "class", div15_class_value = "card " + /*$contentreview*/ ctx[0][/*id*/ ctx[5]].action + " svelte-k3dthz");
-    			toggle_class(div15, "in-blacklist", func);
-    			add_location(div15, file$1, 56, 4, 11781);
+    			add_location(div14, file$1, 75, 8, 12385);
+    			attr_dev(div15, "class", div15_class_value = "card " + /*$contentreview*/ ctx[0][/*id*/ ctx[4]].action + " svelte-k3dthz");
+    			toggle_class(div15, "in-blacklist", /*inBlacklist*/ ctx[1](/*$contentreview*/ ctx[0][/*id*/ ctx[4]].message));
+    			add_location(div15, file$1, 74, 4, 12268);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div15, anchor);
@@ -19178,13 +19174,13 @@ var app = (function () {
     		},
     		p: function update(new_ctx, dirty) {
     			ctx = new_ctx;
-    			if (dirty & /*$contentreview*/ 1 && t0_value !== (t0_value = /*$contentreview*/ ctx[0][/*id*/ ctx[5]].username + "")) set_data_dev(t0, t0_value);
-    			if (dirty & /*$contentreview*/ 1 && t2_value !== (t2_value = /*$contentreview*/ ctx[0][/*id*/ ctx[5]].userId + "")) set_data_dev(t2, t2_value);
-    			if (dirty & /*$contentreview*/ 1 && t5_value !== (t5_value = new Date(parseInt(/*id*/ ctx[5])).toLocaleString() + "")) set_data_dev(t5, t5_value);
-    			if (dirty & /*$contentreview*/ 1 && t7_value !== (t7_value = /*$contentreview*/ ctx[0][/*id*/ ctx[5]].message + "")) set_data_dev(t7, t7_value);
+    			if (dirty & /*$contentreview*/ 1 && t0_value !== (t0_value = /*$contentreview*/ ctx[0][/*id*/ ctx[4]].username + "")) set_data_dev(t0, t0_value);
+    			if (dirty & /*$contentreview*/ 1 && t2_value !== (t2_value = /*$contentreview*/ ctx[0][/*id*/ ctx[4]].userId + "")) set_data_dev(t2, t2_value);
+    			if (dirty & /*$contentreview*/ 1 && t5_value !== (t5_value = new Date(parseInt(/*id*/ ctx[4])).toLocaleString() + "")) set_data_dev(t5, t5_value);
+    			if (dirty & /*$contentreview*/ 1 && t7_value !== (t7_value = /*$contentreview*/ ctx[0][/*id*/ ctx[4]].message + "")) set_data_dev(t7, t7_value);
 
     			if (dirty & /*extractUrlsFromContent, $contentreview, Object*/ 1) {
-    				each_value_1 = extractUrlsFromContent(/*$contentreview*/ ctx[0][/*id*/ ctx[5]].message);
+    				each_value_1 = extractUrlsFromContent(/*$contentreview*/ ctx[0][/*id*/ ctx[4]].message);
     				validate_each_argument(each_value_1);
     				let i;
 
@@ -19207,15 +19203,15 @@ var app = (function () {
     				each_blocks.length = each_value_1.length;
     			}
 
-    			if (dirty & /*$contentreview*/ 1 && t13_value !== (t13_value = /*$contentreview*/ ctx[0][/*id*/ ctx[5]].guildId + "")) set_data_dev(t13, t13_value);
-    			if (dirty & /*$contentreview*/ 1 && t15_value !== (t15_value = /*$contentreview*/ ctx[0][/*id*/ ctx[5]].action + "")) set_data_dev(t15, t15_value);
+    			if (dirty & /*$contentreview*/ 1 && t13_value !== (t13_value = /*$contentreview*/ ctx[0][/*id*/ ctx[4]].guildId + "")) set_data_dev(t13, t13_value);
+    			if (dirty & /*$contentreview*/ 1 && t15_value !== (t15_value = /*$contentreview*/ ctx[0][/*id*/ ctx[4]].action + "")) set_data_dev(t15, t15_value);
 
-    			if (dirty & /*$contentreview*/ 1 && div15_class_value !== (div15_class_value = "card " + /*$contentreview*/ ctx[0][/*id*/ ctx[5]].action + " svelte-k3dthz")) {
+    			if (dirty & /*$contentreview*/ 1 && div15_class_value !== (div15_class_value = "card " + /*$contentreview*/ ctx[0][/*id*/ ctx[4]].action + " svelte-k3dthz")) {
     				attr_dev(div15, "class", div15_class_value);
     			}
 
     			if (dirty & /*$contentreview, inBlacklist, $contentreview, Object*/ 3) {
-    				toggle_class(div15, "in-blacklist", func);
+    				toggle_class(div15, "in-blacklist", /*inBlacklist*/ ctx[1](/*$contentreview*/ ctx[0][/*id*/ ctx[4]].message));
     			}
     		},
     		d: function destroy(detaching) {
@@ -19230,14 +19226,14 @@ var app = (function () {
     		block,
     		id: create_if_block_1$1.name,
     		type: "if",
-    		source: "(56:4) {#if $contentreview[id]}",
+    		source: "(74:4) {#if $contentreview[id]}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (77:20) {#each extractUrlsFromContent($contentreview[id].message) as url}
+    // (95:20) {#each extractUrlsFromContent($contentreview[id].message) as url}
     function create_each_block_1(ctx) {
     	let input;
     	let input_value_value;
@@ -19246,15 +19242,15 @@ var app = (function () {
     		c: function create() {
     			input = element("input");
     			input.readOnly = true;
-    			input.value = input_value_value = /*url*/ ctx[8];
+    			input.value = input_value_value = /*url*/ ctx[7];
     			attr_dev(input, "class", "svelte-k3dthz");
-    			add_location(input, file$1, 77, 20, 12749);
+    			add_location(input, file$1, 95, 20, 13230);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, input, anchor);
     		},
     		p: function update(ctx, dirty) {
-    			if (dirty & /*$contentreview*/ 1 && input_value_value !== (input_value_value = /*url*/ ctx[8]) && input.value !== input_value_value) {
+    			if (dirty & /*$contentreview*/ 1 && input_value_value !== (input_value_value = /*url*/ ctx[7]) && input.value !== input_value_value) {
     				prop_dev(input, "value", input_value_value);
     			}
     		},
@@ -19267,17 +19263,17 @@ var app = (function () {
     		block,
     		id: create_each_block_1.name,
     		type: "each",
-    		source: "(77:20) {#each extractUrlsFromContent($contentreview[id].message) as url}",
+    		source: "(95:20) {#each extractUrlsFromContent($contentreview[id].message) as url}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (55:4) {#each Object.keys($contentreview) as id}
+    // (73:4) {#each Object.keys($contentreview) as id}
     function create_each_block(ctx) {
     	let if_block_anchor;
-    	let if_block = /*$contentreview*/ ctx[0][/*id*/ ctx[5]] && create_if_block_1$1(ctx);
+    	let if_block = /*$contentreview*/ ctx[0][/*id*/ ctx[4]] && create_if_block_1$1(ctx);
 
     	const block = {
     		c: function create() {
@@ -19289,7 +19285,7 @@ var app = (function () {
     			insert_dev(target, if_block_anchor, anchor);
     		},
     		p: function update(ctx, dirty) {
-    			if (/*$contentreview*/ ctx[0][/*id*/ ctx[5]]) {
+    			if (/*$contentreview*/ ctx[0][/*id*/ ctx[4]]) {
     				if (if_block) {
     					if_block.p(ctx, dirty);
     				} else {
@@ -19312,7 +19308,7 @@ var app = (function () {
     		block,
     		id: create_each_block.name,
     		type: "each",
-    		source: "(55:4) {#each Object.keys($contentreview) as id}",
+    		source: "(73:4) {#each Object.keys($contentreview) as id}",
     		ctx
     	});
 
@@ -19332,8 +19328,8 @@ var app = (function () {
     			h3.textContent = "Malicious Content";
     			t1 = space();
     			if (if_block) if_block.c();
-    			add_location(h3, file$1, 52, 4, 11646);
-    			add_location(div, file$1, 51, 0, 11635);
+    			add_location(h3, file$1, 70, 4, 12133);
+    			add_location(div, file$1, 69, 0, 12122);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -19405,11 +19401,23 @@ var app = (function () {
     	return self.indexOf(value) === index;
     }
 
+    function extractHostname(url) {
+    	url = url.toLowerCase();
+
+    	try {
+    		const urlObject = new URL(url);
+    		return urlObject.hostname;
+    	} catch {
+    		if (url.indexOf("https://") === 0) url = url.substring(8); else if (url.indexOf("http://") === 0) url = url.substring(7);
+    		return url;
+    	}
+    }
+
     function instance$1($$self, $$props, $$invalidate) {
     	let $blacklist;
     	let $contentreview;
     	validate_store(adminContent.blacklist, 'blacklist');
-    	component_subscribe($$self, adminContent.blacklist, $$value => $$invalidate(4, $blacklist = $$value));
+    	component_subscribe($$self, adminContent.blacklist, $$value => $$invalidate(3, $blacklist = $$value));
     	validate_store(adminContent.contentreview, 'contentreview');
     	component_subscribe($$self, adminContent.contentreview, $$value => $$invalidate(0, $contentreview = $$value));
     	let { $$slots: slots = {}, $$scope } = $$props;
@@ -19424,7 +19432,8 @@ var app = (function () {
     		const urls = extractUrlsFromContent(message);
 
     		for (let url of urls) {
-    			if ($blacklist.map(b => b.url).indexOf(url) !== -1) return true;
+    			url = extractHostname(url);
+    			if (Object.values($blacklist).map(b => b.url).indexOf(url) !== -1) return true;
     		}
 
     		return false;
@@ -19437,7 +19446,6 @@ var app = (function () {
     	});
 
     	const click_handler = async id => await clearContentReview(id);
-    	const func = id => inBlacklist($contentreview[id].message);
 
     	$$self.$capture_state = () => ({
     		onMount,
@@ -19448,12 +19456,13 @@ var app = (function () {
     		urlRegex,
     		extractUrlsFromContent,
     		onlyUnique,
+    		extractHostname,
     		inBlacklist,
     		$blacklist,
     		$contentreview
     	});
 
-    	return [$contentreview, inBlacklist, click_handler, func];
+    	return [$contentreview, inBlacklist, click_handler];
     }
 
     class ContentReview extends SvelteComponentDev {

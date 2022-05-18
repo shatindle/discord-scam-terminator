@@ -38,10 +38,28 @@
         return self.indexOf(value) === index;
     }
 
+    function extractHostname(url) {
+        url = url.toLowerCase();
+        
+        try {
+            const urlObject = new URL(url);
+
+            return urlObject.hostname;
+        } catch {
+            if (url.indexOf("https://") === 0)
+                url = url.substring(8);
+            else if (url.indexOf("http://") === 0)
+                url = url.substring(7);
+
+            return url;
+        }
+    }
+
     const inBlacklist = (message) => {
         const urls = extractUrlsFromContent(message);
         for (let url of urls) {
-            if ($blacklist.map(b => b.url).indexOf(url) !== -1)
+            url = extractHostname(url);
+            if (Object.values($blacklist).map(b => b.url).indexOf(url) !== -1)
                 return true;
         }
 
@@ -54,7 +72,7 @@
     {#if $contentreview}
     {#each Object.keys($contentreview) as id}
     {#if $contentreview[id]}
-    <div class="card {$contentreview[id].action}" class:in-blacklist={() => inBlacklist($contentreview[id].message)}>
+    <div class="card {$contentreview[id].action}" class:in-blacklist={inBlacklist($contentreview[id].message)}>
         <div class="card-body">
             <div class="row">
                 <div class="col-8">
