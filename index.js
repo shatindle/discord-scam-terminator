@@ -1,6 +1,9 @@
 const { Client, Collection, Intents } = require('discord.js');
 const fs = require('fs');
-
+const { init:initUrlTesterApi } = require("./DAL/urlTesterApi");
+const { loadAllLogChannels } = require("./DAL/databaseApi");
+const nitroSteamScam = require("./Monitors/nitroSteamScam");
+const antiLinkSpam = require("./Monitors/antiLinkSpam");
 
 const client = new Client({ 
     intents: [
@@ -23,9 +26,11 @@ for (const file of commandFiles) {
 }
 
 client.once('ready', async () => {
+    await initUrlTesterApi();
+    await loadAllLogChannels();
+
     require("./Monitors/clonex")(client);
     require("./Monitors/serverCount")(client);
-    await require("./Monitors/nitroSteamScam")(client);
 });
 
 client.on('interactionCreate', async interaction => {
@@ -41,6 +46,14 @@ client.on('interactionCreate', async interaction => {
 		console.error(error);
 		await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
 	}
+});
+
+client.on('messageCreate', async (message) => {
+    if (await nitroSteamScam(message))
+		return; // it was addressed here
+
+	if (await antiLinkSpam(message))
+		return; // it was addressed here
 });
 
 // login to client - we should auto reconnect automatically

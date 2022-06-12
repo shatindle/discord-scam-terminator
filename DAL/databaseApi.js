@@ -162,6 +162,12 @@ function shouldBanUser(userId, message) {
     }
 }
 
+function hashMessage(userId, guildId, message) {
+    const data = JSON.stringify({i: userId, m: message, g: guildId});
+
+    return getId(data);
+}
+
 async function addUrlToBlacklist(url) {
     var moment = Date.now().valueOf().toString();
 
@@ -496,5 +502,7 @@ module.exports = {
 
     monitor,
 
-    deleteById
+    deleteById, 
+
+    hashMessage
 };
