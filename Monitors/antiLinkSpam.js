@@ -6,12 +6,14 @@ const { spamUrlDetected } = require("../DAL/maliciousUrlTracking");
 const reason = "Link spam";
 
 const messageLogs = {};
+const time = 1000 * 10;
 
 function expire() {
     const expired = [];
+    const expirationTime = new Date().valueOf() - time;
 
     for (const [key, value] of Object.entries(messageLogs)) {
-        if (value.last < Date.now().valueOf()) {
+        if (value.last < expirationTime) {
             expired.push(key);
         }
     }
@@ -19,7 +21,7 @@ function expire() {
     expired.forEach(k => delete messageLogs[k]);
 }
 
-let expireTimer = setInterval(expire, 1000 * 10);
+let expireTimer = setInterval(expire, time);
 
 async function cleanup(client, messageList, guildId, userId) {
     for (var i = 0; i < messageList.length; i++) {
