@@ -14,9 +14,7 @@ function expire() {
     const expirationTime = new Date().valueOf() - time;
 
     for (const [key, value] of Object.entries(messageLogs)) {
-        // try comparing to the time of the first link to calculate cooldown
-        // if too much stuff slips by, switch to last link
-        if (value.first < expirationTime) {
+        if (value.last < expirationTime) {
             expired.push(key);
         }
     }
