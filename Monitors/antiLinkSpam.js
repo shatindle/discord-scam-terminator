@@ -6,14 +6,16 @@ const { spamUrlDetected } = require("../DAL/maliciousUrlTracking");
 const reason = "Link spam";
 
 const messageLogs = {};
-const time = 1000 * 10;
+const time = 1000 * 5;
 
 function expire() {
     const expired = [];
     const expirationTime = new Date().valueOf() - time;
 
     for (const [key, value] of Object.entries(messageLogs)) {
-        if (value.last < expirationTime) {
+        // try comparing to the time of the first link to calculate cooldown
+        // if too much stuff slips by, switch to last link
+        if (value.first < expirationTime) {
             expired.push(key);
         }
     }
