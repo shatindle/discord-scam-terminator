@@ -385,6 +385,8 @@ async function getServerIdFromInvite(url) {
     try {
         let code = discordUrl(url, true);
         if (!code) return null;
+        if (code.indexOf("friend-invite/") === 0) code = code.substring("friend-invite/".length);
+        if (code.indexOf("invite/") === 0) code = code.substring("invite/".length);
         if (code.indexOf("/") > -1) return null;
 
         const response = await fetch(`https://discord.com/api/v10/invites/${code}`);
