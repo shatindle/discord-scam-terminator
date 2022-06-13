@@ -2,12 +2,12 @@ const DiscordApi = require('discord.js');
 const { extractUrlsFromContent, containsKeyIndicators, MINIMUM_INDICATORS } = require("../DAL/bodyparserApi");
 const { recordError, hashMessage } = require("../DAL/databaseApi");
 const { spamUrlDetected } = require("../DAL/maliciousUrlTracking");
-const { getServerIdFromInvite } = require("../DAL/urlTesterApi");
+const { getServerIdFromInvite, extractHostname } = require("../DAL/urlTesterApi");
 
 const reason = "Link spam";
 
 const messageLogs = {};
-const time = 1000 * 10;
+const time = 1000 * 7;
 
 function expire() {
     const expired = [];
@@ -72,20 +72,26 @@ async function monitor(message) {
         if (urlsFound.length > 0) {
             // check if the link is an invite code.  If it is, get the server ID
             let isThisServer = true;
+            // ignore tenor.com since that's Discord's native GIF integration
+            let allApprovedDomains = true;
             for (let url of urlsFound) {
-                let linkServer = await getServerIdFromInvite(url);
+                if (isThisServer) {
+                    let linkServer = await getServerIdFromInvite(url);
 
-                if (linkServer) {
-                    if (linkServer === guildId) {
-                        continue;
+                    if (linkServer) {
+                        if (linkServer === guildId) {
+                            continue;
+                        }
                     }
+    
+                    isThisServer = false;
                 }
 
-                isThisServer = false;
-                break;
+                if (extractHostname(url) !== "tenor.com") allApprovedDomains = false;
             }
 
             if (isThisServer) return false;
+            if (allApprovedDomains) return false;
 
             // get a key for the user + message + guild
             const hash = hashMessage(userId, guildId, message.content);

@@ -411,6 +411,7 @@ module.exports = {
     isUrlInWhitelist,
     isSafeDeepCheck,
     getServerIdFromInvite,
-
+    extractHostname,
+    
     init
 };
