@@ -53,29 +53,32 @@ function domainsMatch(url, compare) {
     return url.endsWith("." + compare) || url === compare;
 }
 
-function discordUrl(url) {
+const discordUrlList = [
+    "discord.com",
+    "discord.gg",
+    "discord.gift",
+    "discord.media",
+    "discordapp.com",
+    "discordapp.net",
+    "discordstatus.com"
+]
+
+function discordUrl(url, stripDomain = false) {
     const hostname = extractHostname(url);
-    
-    if (domainsMatch(hostname, "discord.com"))
-        return true;
 
-    if (domainsMatch(hostname, "discord.gg"))
-        return true;
+    for (var domain of discordUrlList) {
+        if (domainsMatch(hostname, domain)) {
+            if (stripDomain) {
+                url = url.substring(url.indexOf(domain) + domain.length);
+                if (url.indexOf("/") === 0) url = url.substring(1);
+                if (url.indexOf("?") > -1) url = url.substring(0, url.indexOf("?"));
 
-    if (domainsMatch(hostname, "discord.gift"))
-        return true;
-
-    if (domainsMatch(hostname, "discord.media"))
-        return true;
-
-    if (domainsMatch(hostname, "discordapp.com"))
-        return true;
-
-    if (domainsMatch(hostname, "discordapp.net"))
-        return true;
-    
-    if (domainsMatch(hostname, "discordstatus.com"))
-        return true;
+                return url;
+            } else {
+                return true;
+            }
+        }
+    }
 
     return false;
 }
@@ -378,6 +381,25 @@ async function isSafeDeepCheck(url) {
     return null;
 }
 
+async function getServerIdFromInvite(url) {
+    try {
+        let code = discordUrl(url, true);
+        if (!code) return null;
+        if (code.indexOf("/") > -1) return null;
+
+        const response = await fetch(`https://discord.com/api/v10/invites/${code}`);
+        const json = await response.json();
+
+        if (json && json.guild && json.guild.id) {
+            return json.guild.id;
+        }
+    } catch (err) {
+        console.log(`Unable to get server ID from invite ${url}: ${err.toString()}`);
+    }
+
+    return null;
+}
+
 module.exports = {
     validUrl,
     discordUrl,
@@ -385,6 +407,7 @@ module.exports = {
     whitelistedUrl,
     isUrlInWhitelist,
     isSafeDeepCheck,
+    getServerIdFromInvite,
 
     init
 };

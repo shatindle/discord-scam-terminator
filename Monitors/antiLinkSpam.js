@@ -2,6 +2,7 @@ const DiscordApi = require('discord.js');
 const { extractUrlsFromContent, containsKeyIndicators, MINIMUM_INDICATORS } = require("../DAL/bodyparserApi");
 const { recordError, hashMessage } = require("../DAL/databaseApi");
 const { spamUrlDetected } = require("../DAL/maliciousUrlTracking");
+const { getServerIdFromInvite } = require("../DAL/urlTesterApi");
 
 const reason = "Link spam";
 
@@ -71,6 +72,23 @@ async function monitor(message) {
         // if the user keeps spamming, kick the user, and back-delete all prior messages
 
         if (urlsFound.length > 0) {
+            // check if the link is an invite code.  If it is, get the server ID
+            let isThisServer = true;
+            for (let url of urlsFound) {
+                let linkServer = await getServerIdFromInvite(url);
+
+                if (linkServer) {
+                    if (linkServer === guildId) {
+                        continue;
+                    }
+                }
+
+                isThisServer = false;
+                break;
+            }
+
+            if (isThisServer) return false;
+
             // get a key for the user + message + guild
             const hash = hashMessage(userId, guildId, message.content);
 
@@ -119,7 +137,6 @@ async function monitor(message) {
                 // be more lax - it could just be spam
                 if (log.messages.length === 2) {
                     // do nothing
-                    await spamUrlDetected(message, guildId, userId, username, reason, "no-action");
                     return false;
                 } else if (log.messages.length === 3) {
                     // delete just this one and warn
