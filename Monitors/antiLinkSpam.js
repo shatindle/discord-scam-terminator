@@ -7,7 +7,7 @@ const { getServerIdFromInvite } = require("../DAL/urlTesterApi");
 const reason = "Link spam";
 
 const messageLogs = {};
-const time = 1000 * 5;
+const time = 1000 * 10;
 
 function expire() {
     const expired = [];
