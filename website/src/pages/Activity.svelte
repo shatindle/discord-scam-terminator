@@ -58,6 +58,13 @@
                     values: kickYAxis,
                     chartType: 'line'
                 }
+            ],
+            yMarkers: [
+                {
+                    label: '',
+                    value: 0,
+                    type: 'solid'
+                }
             ]
         };
 
@@ -170,6 +177,13 @@
                     name: "Kicks",
                     values: kickYAxis,
                     chartType: 'line'
+                }
+            ],
+            yMarkers: [
+                {
+                    label: '',
+                    value: 0,
+                    type: 'solid'
                 }
             ]
         };
