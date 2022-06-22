@@ -19,7 +19,7 @@ function extractUrlsFromContent(content) {
             });
 
             // remove Discord channel URLs as there is not a known scam involving those
-            urls = urls.filter((a) => discordChannelPattern.test(a));
+            urls = urls.filter((a) => !discordChannelPattern.test(a));
         } else {
             return [];
         }
