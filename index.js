@@ -1,6 +1,5 @@
 const { Client, Collection, Intents } = require('discord.js');
 const fs = require('fs');
-const { init:initUrlTesterApi } = require("./DAL/urlTesterApi");
 const { loadAllLogChannels } = require("./DAL/databaseApi");
 const nitroSteamScam = require("./Monitors/nitroSteamScam");
 const antiLinkSpam = require("./Monitors/antiLinkSpam");
@@ -27,7 +26,6 @@ for (const file of commandFiles) {
 }
 
 client.once('ready', async () => {
-    await initUrlTesterApi();
     await loadAllLogChannels();
 
     require("./Monitors/clonex")(client);
