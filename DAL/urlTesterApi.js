@@ -4,19 +4,15 @@ const fetch = require("node-fetch");
 const AbortController = globalThis.AbortController;
 const UserAgents = require('user-agents');
 const { containsKeyIndicators, cleanMessage, MINIMUM_INDICATORS } = require('./bodyparserApi');
-const { 
-    loadUrlBlacklist, 
-    loadUrlWhitelist, 
-    loadUrlGraylist, 
+const {
     addUrlToWhitelist, 
-    addUrlToGraylist, 
-    loadVerifiedDomains,
+    addUrlToGraylist,
     monitor
 } = require('./databaseApi');
 
 function stringIsAValidUrl(s, protocols) {
     try {
-        url = new URL(s);
+        let url = new URL(s);
         return protocols
             ? url.protocol
                 ? protocols.map(x => `${x.toLowerCase()}:`).includes(url.protocol)
@@ -61,7 +57,7 @@ const discordUrlList = [
     "discordapp.com",
     "discordapp.net",
     "discordstatus.com"
-]
+];
 
 function discordUrl(url, stripDomain = false) {
     const hostname = extractHostname(url);
@@ -153,38 +149,6 @@ let whitelist = {};
 let graylist = {};
 let verifieddomains = {};
 
-// load the blacklist and whitelists
-async function init() {
-    // TODO: confirm we no longer need this
-    // const databaseBlacklist = await loadUrlBlacklist();
-
-    // blacklist = {
-    //     ...blacklist,
-    //     ...databaseBlacklist
-    // };
-
-    // const databaseWhitelist = await loadUrlWhitelist();
-
-    // whitelist = {
-    //     ...whitelist,
-    //     ...databaseWhitelist
-    // };
-
-    // const databaseGraylist = await loadUrlGraylist();
-
-    // graylist = {
-    //     ...graylist,
-    //     ...databaseGraylist
-    // };
-
-    // const verifiedDomainsList = await loadVerifiedDomains();
-
-    // verifieddomains = {
-    //     ...verifieddomains,
-    //     ...verifiedDomainsList
-    // };
-}
-
 function addressChanges(changes, list) {
     try {
         changes.added.forEach(item => list[item.url] = true);
@@ -260,6 +224,17 @@ function isYouTube(hostname) {
     }
     
     return false;
+}
+
+/**
+ * @description Checks if a URL's domain is in the blacklist
+ * @param {string} url The URL to investigate
+ * @returns {Boolean} Whether or not the domain is blacklisted
+ */
+function isBlacklisted(url) {
+    const hostname = extractHostname(url);
+
+    return hostname in blacklist;
 }
 
 /**
@@ -412,6 +387,5 @@ module.exports = {
     isSafeDeepCheck,
     getServerIdFromInvite,
     extractHostname,
-    
-    init
+    isBlacklisted
 };

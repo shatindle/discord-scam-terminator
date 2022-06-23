@@ -47,7 +47,7 @@ async function cleanup(client, messageList, guildId, userId) {
 /**
  * @description Looks for nitro/steam scams and removes them
  * @param {DiscordApi.Message} message The message object
- * @returns {boolean} Whether or not the message was acted on in some way
+ * @returns {Promise<Boolean>} Whether or not the message was acted on in some way
  */
 async function monitor(message) {
     // ignore posts from bots

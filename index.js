@@ -4,6 +4,7 @@ const { init:initUrlTesterApi } = require("./DAL/urlTesterApi");
 const { loadAllLogChannels } = require("./DAL/databaseApi");
 const nitroSteamScam = require("./Monitors/nitroSteamScam");
 const antiLinkSpam = require("./Monitors/antiLinkSpam");
+const maliciousRedirect = require("./Monitors/maliciousRedirect");
 
 const client = new Client({ 
     intents: [
@@ -53,6 +54,9 @@ client.on('messageCreate', async (message) => {
 		return; // it was addressed here
 
 	if (await antiLinkSpam(message))
+		return; // it was addressed here
+
+	if (await maliciousRedirect(message))
 		return; // it was addressed here
 });
 
