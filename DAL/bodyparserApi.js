@@ -132,6 +132,105 @@ function containsKeyIndicators(message, removeUrl = true) {
     return indicators;
 }
 
+function suspiciousDmRequests(message) {
+    message = cleanMessage(message);
+
+    try {
+        const urls = extractUrlsFromContent(message);
+
+        if (urls.length > 0) {
+            urls.forEach(url => message = message.replace(url, " "));
+
+            message = message.replace(":", " ");
+            message = message.replace(/\s\s+/g, " ");
+        }
+    } catch { /* we don't really care if this fails */}
+
+    let words = message.match(/\b(\w+)\b/g);
+    words = [...new Set(words)];
+
+    let actionRequest = false;
+
+    if (words && words.length)
+    for (var word of words) {
+        if (word === "@everyone")
+        indicators += 3;
+
+        if (word === "discord")
+            indicators += 1;
+
+        if (word === "nitro")
+            indicators += 1;
+
+        if (word === "free")
+            indicators += 1;
+
+        if (word === "giveaway")
+            indicators += 1;
+        
+        if (word === "steam")
+            indicators += 1;
+
+        if (word === "month")
+            indicators += 1;
+
+        if (word === "airdrop")
+            indicators += 1;
+
+        if (word === "pass") 
+            indicators += 1;
+        
+        if (word === "password") 
+            indicators += 1;
+
+        if (word === "crypto")
+            indicators += 1;
+
+        if (word === "profit")
+            indicators += 1;
+
+        if (word === "nft")
+            indicators += 1;
+
+        // these indicators are action requests
+        if (word === "dm")
+            actionRequest = true;
+
+        if (word === "message")
+            actionRequest = true;
+        
+        if (word === "talk")
+            actionRequest = true;
+    }
+
+    if (message.indexOf("gifted a subscription") > -1)
+        indicators += 1;
+
+    if (message.indexOf("trade offer with") > -1)
+        indicators += 1;
+
+    if (message.indexOf("discord has gifted you") > -1)
+        indicators += 2;
+
+    if (message.indexOf("who is first? :)") > -1)
+        indicators += 2;
+
+    if (message.indexOf("take it guys :)") > -1)
+        indicators += 2;
+
+    if (message.indexOf("test my first game") > -1) 
+        indicators += 1;
+
+    // these indicators are action requests
+    if (message.indexOf("reach out") > -1)
+        actionRequest = true;
+
+    if (message.indexOf("send me") > -1)
+        actionRequest = true;
+
+    return actionRequest && indicators > 1;
+}
+
 function extractHostname(url) {
     url = url.toLowerCase();
     
@@ -183,5 +282,7 @@ module.exports = {
     MINIMUM_INDICATORS: 1,
 
     isRedlineStealer,
-    urlRegex
+    urlRegex, 
+
+    suspiciousDmRequests
 };

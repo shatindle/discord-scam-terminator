@@ -1,5 +1,5 @@
 const DiscordApi = require('discord.js');
-const { extractUrlsFromContent, containsKeyIndicators, MINIMUM_INDICATORS } = require("../DAL/bodyparserApi");
+const { extractUrlsFromContent, containsKeyIndicators, MINIMUM_INDICATORS, suspiciousDmRequests } = require("../DAL/bodyparserApi");
 const { recordError, hashMessage } = require("../DAL/databaseApi");
 const { spamUrlDetected } = require("../DAL/maliciousUrlTracking");
 const { getServerIdFromInvite, extractHostname } = require("../DAL/urlTesterApi");
@@ -65,33 +65,36 @@ async function monitor(message) {
     try {
         const username = message.member.user.username + "#" + message.member.user.discriminator;
         const urlsFound = extractUrlsFromContent(message.content);
+        const isTextSus = suspiciousDmRequests(message.content);
 
         // if the message contains a URL, log it.  If the same message is being spammed, remove it
         // if the user keeps spamming, kick the user, and back-delete all prior messages
 
-        if (urlsFound.length > 0) {
-            // check if the link is an invite code.  If it is, get the server ID
-            let isThisServer = true;
-            // ignore tenor.com since that's Discord's native GIF integration
-            let allApprovedDomains = true;
-            for (let url of urlsFound) {
-                if (isThisServer) {
-                    let linkServer = await getServerIdFromInvite(url);
+        if (urlsFound.length > 0 || isTextSus) {
+            if (!isTextSus) {
+                // check if the link is an invite code.  If it is, get the server ID
+                let isThisServer = true;
+                // ignore tenor.com since that's Discord's native GIF integration
+                let allApprovedDomains = true;
+                for (let url of urlsFound) {
+                    if (isThisServer) {
+                        let linkServer = await getServerIdFromInvite(url);
 
-                    if (linkServer) {
-                        if (linkServer === guildId) {
-                            continue;
+                        if (linkServer) {
+                            if (linkServer === guildId) {
+                                continue;
+                            }
                         }
+        
+                        isThisServer = false;
                     }
-    
-                    isThisServer = false;
+
+                    if (extractHostname(url) !== "tenor.com") allApprovedDomains = false;
                 }
 
-                if (extractHostname(url) !== "tenor.com") allApprovedDomains = false;
+                if (isThisServer) return false;
+                if (allApprovedDomains) return false;
             }
-
-            if (isThisServer) return false;
-            if (allApprovedDomains) return false;
 
             // get a key for the user + message + guild
             const hash = hashMessage(userId, guildId, message.content);
