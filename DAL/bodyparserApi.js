@@ -146,6 +146,8 @@ function suspiciousDmRequests(message) {
         }
     } catch { /* we don't really care if this fails */}
 
+    let indicators = 0;
+
     let words = message.match(/\b(\w+)\b/g);
     words = [...new Set(words)];
 
@@ -154,7 +156,7 @@ function suspiciousDmRequests(message) {
     if (words && words.length)
     for (var word of words) {
         if (word === "@everyone")
-        indicators += 3;
+            indicators += 3;
 
         if (word === "discord")
             indicators += 1;
