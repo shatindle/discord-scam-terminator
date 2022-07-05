@@ -51,14 +51,10 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
 
         if (allRedirects.length > 1) {
             // check if the domain is too new
-            for (let redirect of allRedirects) {
-                let thisHost = extractHostname(redirect);
+            let thisHost = extractHostname(allRedirects[allRedirects.length - 1]);
 
-                if (thisHost === domain) continue;
-
+            if (thisHost !== domain) {
                 domainTooNew = await isDomainTooNew(thisHost);
-
-                if (domainTooNew) break; // exit if one of the domains in the chain is too new
             }
         }
     }
