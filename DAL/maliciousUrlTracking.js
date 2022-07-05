@@ -12,7 +12,9 @@ async function isDomainTooNew(domain) {
         sixMonthsAgo.setDate(sixMonthsAgo.getDate() - 180);
 
         return domainCreation.valueOf() > sixMonthsAgo.valueOf();
-    } catch { /* discard this error for now */}
+    } catch (err) {
+        console.error(`Error in domain too new check: ${err.toString()}`)
+    }
 
     return false;
 }
