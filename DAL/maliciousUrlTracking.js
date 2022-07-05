@@ -1,8 +1,23 @@
 const { shouldBanUser, recordKick, recordError, recordWarning, recordFail, recordContentReview } = require("./databaseApi");
 const { logWarning, logKick } = require("./logApi");
 const { getDomainCreationDate } = require("./domainLookup");
+const { getAllRedirects } = require("./redirectExtractor");
+const { extractHostname } = require("./urlTesterApi");
 
-async function maliciousUrlDetected(message, guildId, userId, username, reason, domain) {
+async function isDomainTooNew(domain) {
+    try {
+        const domainCreation = await getDomainCreationDate(domain);
+
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setDate(sixMonthsAgo.getDate() - 180);
+
+        return domainCreation.valueOf() > sixMonthsAgo.valueOf();
+    } catch { /* discard this error for now */}
+
+    return false;
+}
+
+async function maliciousUrlDetected(message, guildId, userId, username, reason, domain, maliciousUrl) {
     const content = message.content;
     const client = message.client;
     const channelId = message.channel.id;
@@ -25,14 +40,25 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
 
     // perform domain check to see if the domain is too new
     if (domain) {
-        try {
-            const domainCreation = await getDomainCreationDate(domain);
+        domainTooNew = await isDomainTooNew(domain);
+    }
 
-            const sixMonthsAgo = new Date();
-            sixMonthsAgo.setDate(sixMonthsAgo.getDate() - 180);
+    if (!domainTooNew && maliciousUrl) {
+        // get all redirects (maliciousUrl will be undefined if this is not necessary)
+        const allRedirects = await getAllRedirects(maliciousUrl);
 
-            domainTooNew = domainCreation.valueOf() > sixMonthsAgo.valueOf();
-        } catch { /* discard this error for now */}
+        if (allRedirects.length > 1) {
+            // check if the domain is too new
+            for (let redirect of allRedirects) {
+                let thisHost = extractHostname(redirect);
+
+                if (thisHost === domain) continue;
+
+                domainTooNew = await isDomainTooNew(thisHost);
+
+                if (domainTooNew) break; // exit if one of the domains in the chain is too new
+            }
+        }
     }
 
     // should we ban the user? 

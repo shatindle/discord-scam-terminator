@@ -39,6 +39,7 @@ async function monitor(message) {
                     if (isBlacklisted(redirectUrl)) {
                         if (!messageRemoved) {
                             // if it doesn't have key indicators but fails the deep check, mark it as malicious
+                            // because we already evaluated the redirects, no need to do it again.  Leave off the malicousUrl
                             await maliciousUrlDetected(message, guildId, userId, username, reason, extractHostname(redirectUrl));
                             messageRemoved = true;
                         }
