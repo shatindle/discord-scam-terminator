@@ -31,7 +31,7 @@ async function domainRegistrationParser(domain, lookupPart = null) {
                         return;
                     }
         
-                    reject("domain lookup failed");
+                    reject(`domain lookup failed for ${domain}`);
                 } catch (lookup_err) {
                     reject(lookup_err);
                     return;
