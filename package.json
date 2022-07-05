@@ -32,10 +32,12 @@
     "follow-redirect-url": "^2.0.1",
     "node-fetch": "^2.6.7",
     "open-graph-scraper-bypasshtmlcheck": "^4.11.0-1",
+    "parse-whois": "^1.0.0",
     "passport": "^0.6.0",
     "passport-discord": "^0.1.4",
     "user-agents": "^1.0.1045",
     "uuid": "^8.3.2",
+    "whois": "^2.13.9",
     "ws": "^8.8.0"
   },
   "devDependencies": {

@@ -1,6 +1,6 @@
 const DiscordApi = require('discord.js');
 const { extractUrlsFromContent, containsKeyIndicators, MINIMUM_INDICATORS, isRedlineStealer } = require("../DAL/bodyparserApi");
-const { validUrl, isSafeDeepCheck, isUrlInWhitelist } = require("../DAL/urlTesterApi");
+const { validUrl, isSafeDeepCheck, isUrlInWhitelist, extractHostname } = require("../DAL/urlTesterApi");
 const { recordError } = require("../DAL/databaseApi");
 const { maliciousUrlDetected } = require("../DAL/maliciousUrlTracking");
 
@@ -36,7 +36,7 @@ async function monitor(message) {
                 if (redlineStealer) {
                     if (!messageRemoved) {
                         // if it has key indicators, then mark it as malicious and run the deep check after
-                        await maliciousUrlDetected(message, guildId, userId, username, reason);
+                        await maliciousUrlDetected(message, guildId, userId, username, reason, extractHostname(urlsFound[i]));
                         messageRemoved = true;
                     }
                 }
@@ -51,7 +51,7 @@ async function monitor(message) {
                 if (keyIndicators) {
                     if (!messageRemoved) {
                         // if it has key indicators, then mark it as malicious and run the deep check after
-                        await maliciousUrlDetected(message, guildId, userId, username, reason);
+                        await maliciousUrlDetected(message, guildId, userId, username, reason, extractHostname(urlsFound[i]));
                         messageRemoved = true;
                     }
 
@@ -68,7 +68,7 @@ async function monitor(message) {
                 } else {
                     if (!messageRemoved) {
                         // if it doesn't have key indicators but fails the deep check, mark it as malicious
-                        await maliciousUrlDetected(message, guildId, userId, username, reason);
+                        await maliciousUrlDetected(message, guildId, userId, username, reason, extractHostname(urlsFound[i]));
                         messageRemoved = true;
                     }
                 }

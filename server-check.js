@@ -9,7 +9,7 @@ const client = new Client({
 client.once('ready', async () => {
     console.log(client.guilds.cache.size);
     let total = 0;
-    client.guilds.cache.forEach(guild => {
+    client.guilds.cache.sort((a, b) => a.memberCount > b.memberCount ? -1 : 1).forEach(guild => {
         console.log(`${guild.id}: ${guild.name}: ${guild.memberCount}`);
         total += guild.memberCount;
     });

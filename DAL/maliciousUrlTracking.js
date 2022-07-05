@@ -1,7 +1,8 @@
 const { shouldBanUser, recordKick, recordError, recordWarning, recordFail, recordContentReview } = require("./databaseApi");
 const { logWarning, logKick } = require("./logApi");
+const { getDomainCreationDate } = require("./domainLookup");
 
-async function maliciousUrlDetected(message, guildId, userId, username, reason) {
+async function maliciousUrlDetected(message, guildId, userId, username, reason, domain) {
     const content = message.content;
     const client = message.client;
     const channelId = message.channel.id;
@@ -20,9 +21,22 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason) 
     }, 5000);
 
     let action = null;
+    let domainTooNew = false;
+
+    // perform domain check to see if the domain is too new
+    if (domain) {
+        try {
+            const domainCreation = await getDomainCreationDate(domain);
+
+            const sixMonthsAgo = new Date();
+            sixMonthsAgo.setDate(sixMonthsAgo.getDate() - 180);
+
+            domainTooNew = domainCreation.valueOf() > sixMonthsAgo.valueOf();
+        } catch { /* discard this error for now */}
+    }
 
     // should we ban the user? 
-    if (shouldBanUser(message.member.id, content)) {
+    if (domainTooNew || shouldBanUser(message.member.id, content)) {
         if (message.member.kickable) {
             
             await message.member.kick();

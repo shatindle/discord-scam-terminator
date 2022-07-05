@@ -1,6 +1,6 @@
 const DiscordApi = require('discord.js');
 const { extractUrlsFromContent } = require("../DAL/bodyparserApi");
-const { validUrl, isBlacklisted } = require("../DAL/urlTesterApi");
+const { validUrl, isBlacklisted, extractHostname } = require("../DAL/urlTesterApi");
 const { recordError } = require("../DAL/databaseApi");
 const { maliciousUrlDetected } = require("../DAL/maliciousUrlTracking");
 const { getAllRedirects } = require("../DAL/redirectExtractor");
@@ -39,7 +39,7 @@ async function monitor(message) {
                     if (isBlacklisted(redirectUrl)) {
                         if (!messageRemoved) {
                             // if it doesn't have key indicators but fails the deep check, mark it as malicious
-                            await maliciousUrlDetected(message, guildId, userId, username, reason);
+                            await maliciousUrlDetected(message, guildId, userId, username, reason, extractHostname(redirectUrl));
                             messageRemoved = true;
                         }
                     }
