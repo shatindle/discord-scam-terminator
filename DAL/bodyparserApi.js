@@ -191,6 +191,12 @@ function suspiciousDmRequests(message) {
         if (word === "profit")
             indicators += 1;
 
+        if (word === "earn")
+            indicators += 1;
+
+        if (word === "earned")
+            indicators += 1;
+
         if (word === "nft")
             indicators += 1;
 
