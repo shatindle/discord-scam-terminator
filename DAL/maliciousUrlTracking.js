@@ -30,7 +30,7 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
     }
 
     var response = await message.channel.send(
-        "Malicious URL detected.  If this was in error, please let a Mod know.");
+        "Potentially dangerous URL or message pattern detected.  If this was in error, please let a Mod know.");
 
     setTimeout(async function() {
         if (response.deletable)
@@ -70,7 +70,7 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
                 username,
                 reason);
 
-            await logKick(client, guildId, userId, channelId, content);
+            await logKick(client, guildId, userId, channelId, content, reason);
 
             action = "kick-success";
         } else {
@@ -80,7 +80,7 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
                 username,
                 reason);
 
-            await logWarning(client, guildId, userId, channelId, content);
+            await logWarning(client, guildId, userId, channelId, content, reason);
 
             action = "kick-fail"
         }
@@ -91,7 +91,7 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
             username,
             reason);
 
-        await logWarning(client, guildId, userId, channelId, content);
+        await logWarning(client, guildId, userId, channelId, content, reason);
 
         action = "warn";
     }
@@ -138,7 +138,7 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
             username,
             reason);
 
-        await logWarning(client, guildId, userId, channelId, content);
+        await logWarning(client, guildId, userId, channelId, content, reason);
 
         action = "warn";
     } else if (perform === "kick") {
@@ -151,7 +151,7 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
                 username,
                 reason);
 
-            await logKick(client, guildId, userId, channelId, content);
+            await logKick(client, guildId, userId, channelId, content, reason);
 
             action = "kick-success";
         } else {
@@ -161,7 +161,7 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
                 username,
                 reason);
 
-            await logWarning(client, guildId, userId, channelId, content);
+            await logWarning(client, guildId, userId, channelId, content, reason);
 
             action = "kick-fail"
         }

@@ -27,11 +27,11 @@ async function logActivity(client, guildId, action, activity, color = "#007bff")
 
 const WARNING_COLOR = "#ffc107";
 
-const logWarning = async (client, guildId, userId, channelId, message = "") =>
+const logWarning = async (client, guildId, userId, channelId, message = "", reason = "unknown") =>
     await logActivity(
         client,
         guildId, 
-        `User warned`,
+        `User warned. Reason: ${reason}`,
 `**<@${userId}> sent this message in <#${channelId}>**:
 
 \`${message.replace("`", "")}\``,
@@ -39,11 +39,11 @@ const logWarning = async (client, guildId, userId, channelId, message = "") =>
 
 const KICK_COLOR = "#dc3545";
 
-const logKick = async (client, guildId, userId, channelId, message = "") =>
+const logKick = async (client, guildId, userId, channelId, message = "", reason = "unknown") =>
     await logActivity(
         client,
         guildId, 
-        `User kicked`,
+        `User kicked. Reason: ${reason}`,
 `**<@${userId}> sent this message in <#${channelId}>**:
 
 \`${message.replace("`", "")}\``,
