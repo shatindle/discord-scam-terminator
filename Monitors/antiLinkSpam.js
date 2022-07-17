@@ -33,6 +33,7 @@ async function cleanup(client, messageList, guildId, userId) {
 
             if (message.deletable) {
                 await message.delete();
+                ids.deleted = true;
             }
         } catch (err) {
             try {
@@ -133,9 +134,11 @@ async function monitor(message) {
             if (log.hasKeyIndicators) {
                 // be more strict - treat this as a scam
                 if (log.messages.length === 2) {
-                    // delete and warn
+                    // delete all and warn
                     log.messages[log.messages.length - 1].deleted = true;
+                    var priorMessages = log.messages.filter(m => !m.deleted);
                     await spamUrlDetected(message, guildId, userId, username, reason, "warn");
+                    await cleanup(client, priorMessages, guildId, userId);
                     return true;
                 } else {
                     // delete all and kick
