@@ -53,8 +53,14 @@ async function monitor(message) {
     // ignore posts from bots
     if (message.author.bot) return false;
 
-    // ignore posts from mods
-    if (message.member.permissions.has(DiscordApi.Permissions.FLAGS.MANAGE_MESSAGES)) return false;
+    try {
+        // ignore posts from mods
+        if (message.member.permissions.has(DiscordApi.Permissions.FLAGS.MANAGE_MESSAGES)) return false;
+    } catch (err) {
+        await recordError("", "", "permissions property null: " + err.toString(), reason);
+        // for now, exit since we couldn't keep going
+        return false;
+    }
 
     const client = message.client;
     const guildId = message.guild.id;

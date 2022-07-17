@@ -13,10 +13,16 @@ const reason = "Nitro/Steam phishing";
  */
 async function monitor(message) {
     // ignore posts from bots
-    if (message.author.bot) return;
+    if (message.author.bot) return false;
 
-    // ignore posts from mods
-    if (message.member.permissions.has(DiscordApi.Permissions.FLAGS.MANAGE_MESSAGES)) return;
+    try {
+        // ignore posts from mods
+        if (message.member.permissions.has(DiscordApi.Permissions.FLAGS.MANAGE_MESSAGES)) return false;
+    } catch (err) {
+        await recordError("", "", "permissions property null: " + err.toString(), reason);
+        // for now, exit since we couldn't keep going
+        return false;
+    }
 
     var guildId = message.guild.id;
     var userId = message.member.id;
