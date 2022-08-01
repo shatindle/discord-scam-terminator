@@ -7,7 +7,7 @@ const { getServerIdFromInvite, extractHostname } = require("../DAL/urlTesterApi"
 const reason = "Link spam";
 
 const messageLogs = {};
-const time = 1000 * 7;
+const time = 1000 * 40;
 
 function expire() {
     const expired = [];
@@ -104,11 +104,13 @@ async function monitor(message) {
             }
 
             // get a key for the user + message + guild
+            const userGuildHash = hashMessage(userId, guildId, "");
             const hash = hashMessage(userId, guildId, message.content);
 
-            if (!messageLogs[hash]) {
-                // we haven't seen this message before.  Log it and exit
-                messageLogs[hash] = {
+            if (!messageLogs[userGuildHash] || messageLogs[userGuildHash].hash !== hash) {
+                // this is a unique message, hash it and exit
+                messageLogs[userGuildHash] = {
+                    hash,
                     first: now,
                     last: now,
                     hasKeyIndicators: containsKeyIndicators(message.content, true) > MINIMUM_INDICATORS,
@@ -122,7 +124,7 @@ async function monitor(message) {
                 return false;
             }
 
-            const log = messageLogs[hash];
+            const log = messageLogs[userGuildHash];
 
             log.messages.push({
                 messageId: message.id,
@@ -144,7 +146,7 @@ async function monitor(message) {
                     // delete all and kick
                     log.messages[log.messages.length - 1].deleted = true;
                     var priorMessages = log.messages.filter(m => !m.deleted);
-                    delete messageLogs[hash]; // delete this because we don't need it anymore
+                    delete messageLogs[userGuildHash]; // delete this because we don't need it anymore
                     await spamUrlDetected(message, guildId, userId, username, reason, "kick");
                     await cleanup(client, priorMessages, guildId, userId);
                     return true;
@@ -163,7 +165,7 @@ async function monitor(message) {
                     // delete all and kick
                     log.messages[log.messages.length - 1].deleted = true;
                     var priorMessages = log.messages.filter(m => !m.deleted);
-                    delete messageLogs[hash]; // delete this because we don't need it anymore
+                    delete messageLogs[userGuildHash]; // delete this because we don't need it anymore
                     await spamUrlDetected(message, guildId, userId, username, reason, "kick");
                     await cleanup(client, priorMessages, guildId, userId);
                     return true;
