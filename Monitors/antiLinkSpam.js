@@ -171,6 +171,13 @@ async function monitor(message) {
                     return true;
                 }
             }
+        } else {
+            // the user sent a message that is not suspicious.  They are likely not a botted user
+            // if the user is hashed, clear it
+            const userGuildHash = hashMessage(userId, guildId, "");
+            if (messageLogs[userGuildHash]) {
+                delete messageLogs[userGuildHash];
+            }
         }
 
         return false;
