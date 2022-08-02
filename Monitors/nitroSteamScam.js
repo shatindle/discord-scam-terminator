@@ -32,7 +32,7 @@ async function monitor(message) {
         var messageRemoved = false;
         
         const keyIndicators = containsKeyIndicators(message.content, true) > MINIMUM_INDICATORS;
-        const urlsFound = extractUrlsFromContent(message.content);
+        const urlsFound = extractUrlsFromContent(message.content, true);
         const redlineStealer = await isRedlineStealer(message.content, urlsFound, userId, guildId);
 
         for (var i = 0; i < urlsFound.length; i++) {

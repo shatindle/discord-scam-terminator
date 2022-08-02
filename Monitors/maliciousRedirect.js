@@ -32,7 +32,7 @@ async function monitor(message) {
         var username = message.member.user.username + "#" + message.member.user.discriminator;
         var messageRemoved = false;
         
-        const urlsFound = extractUrlsFromContent(message.content);
+        const urlsFound = extractUrlsFromContent(message.content, true);
 
         for (var i = 0; i < urlsFound.length; i++) {
             // possible scam.  What is in the URLs?

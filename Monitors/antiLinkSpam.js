@@ -71,7 +71,7 @@ async function monitor(message) {
 
     try {
         const username = message.member.user.username + "#" + message.member.user.discriminator;
-        const urlsFound = extractUrlsFromContent(message.content);
+        const urlsFound = extractUrlsFromContent(message.content, true);
         const isTextSus = suspiciousDmRequests(message.content);
 
         // if the message contains a URL, log it.  If the same message is being spammed, remove it
