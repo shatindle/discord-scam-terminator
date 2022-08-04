@@ -5,9 +5,9 @@ The use of the Discord Scam Hunter application ("Application") in a server requi
 - Discord Username (at the time of use)
 - Discord Guild IDs
 - Discord Channel IDs
-- message content sent in chat
+- Message content sent in a server where the bot has read access
 
-User of the Application is considered an agreement to the terms of this Policy.
+Use of the Application is considered an agreement to the terms of this Policy.
 
 ## Access to Data
 
