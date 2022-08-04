@@ -13,6 +13,8 @@ Use of the Application is considered an agreement to the terms of this Policy.
 
 Access to Data is only permitted to the Application's developers, and only in the scope required for the development, testing, and implementation of features for Application. Data is not sold, provided to, or shared with any third party, except where required by law or a Terms of Service agreement. You can view the data upon request from `shane#1353` on Discord.
 
+Warnings and kicks are recorded and summarized for the server owners on the [dashboard website](https://antiphish.info/) ("Website").  The Website will show moderators summaries of warnings and kicks issued on their servers.  Moderators do not have access to warning and kick information issued in servers they do not moderate.  The Application's developers may see the summaries across all servers for the purposes of debugging and tuning the Application.
+
 ## Storage of Data
 
 Configuration and suspected malicious message data is stored in Google Cloud Firestore.  Google Cloud Firestore is [encrypted at rest](https://cloud.google.com/firestore/docs/server-side-encryption). The database is secured to prevent external access, however no guarantee is provided and the Application owners assume no liability for the unintentional or malicious breach of Data. In the event of an unauthorised Data access, users will be notified through the Discord client application.
