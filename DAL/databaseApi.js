@@ -483,39 +483,47 @@ const userTables = [
 ];
 
 async function purgeUsers() {
-    const sevenDaysAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000);
+    try {
+        const sevenDaysAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000);
 
-    for (let table of userTables) {
-        let ref = await db.collection(table)
-            .where("timestamp", "<", Firestore.Timestamp.fromDate(sevenDaysAgo));
-        let docs = await ref.get();
+        for (let table of userTables) {
+            let ref = await db.collection(table)
+                .where("timestamp", "<", Firestore.Timestamp.fromDate(sevenDaysAgo));
+            let docs = await ref.get();
 
-        docs.forEach(doc => {
-            doc.ref.update({
-                userId: Firestore.FieldValue.delete(),
-                username: Firestore.FieldValue.delete()
+            docs.forEach(doc => {
+                doc.ref.update({
+                    userId: Firestore.FieldValue.delete(),
+                    username: Firestore.FieldValue.delete()
+                });
             });
-        });
+        }
+    } catch (err) {
+        console.log(`Error purging historic users: ${err.toString()}`);
     }
 }
 
 async function purgeRecords() {
-    const sixMonthsAgo = new Date(Date.now() - 6 * 31 * 24 * 60 * 60 * 1000);
-
-    for (let table of userTables) {
-        let ref = await db.collection(table)
-            .where("timestamp", "<", Firestore.Timestamp.fromDate(sixMonthsAgo));
-        let docs = await ref.get();
-
-        // save the count of records you're about to delete
-        let saveRef = await db.collection("history").doc(table);
-        await saveRef.update({
-            count: Firestore.FieldValue.increment(docs.size)
-        });
-
-        docs.forEach(doc => {
-            doc.ref.delete();
-        });
+    try {
+        const sixMonthsAgo = new Date(Date.now() - 6 * 31 * 24 * 60 * 60 * 1000);
+    
+        for (let table of userTables) {
+            let ref = await db.collection(table)
+                .where("timestamp", "<", Firestore.Timestamp.fromDate(sixMonthsAgo));
+            let docs = await ref.get();
+    
+            // save the count of records you're about to delete
+            let saveRef = await db.collection("history").doc(table);
+            await saveRef.update({
+                count: Firestore.FieldValue.increment(docs.size)
+            });
+    
+            docs.forEach(doc => {
+                doc.ref.delete();
+            });
+        }
+    } catch (err) {
+        console.log(`Error deleting old records: ${err.toString()}`);
     }
 }
 
