@@ -257,6 +257,7 @@
             <div class="col">
                 <div class="input-group mb-3">
                     <input id="serverfilter" type="text" bind:value={serverFilter} class="full form-control" placeholder="Search servers by name or ID" aria-label="Search">
+                    <small>note: scam counts only reflect the last 6 months of data. Older records are purged. Usernames and user IDs of compromised accounts may be kept up to one week, but are usually purged sooner than that.</small>
                 </div>
             </div>
         </div>
