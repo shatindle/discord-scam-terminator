@@ -9,10 +9,16 @@ const client = new Client({
     intents: [
         Intents.FLAGS.GUILDS,
         Intents.FLAGS.GUILD_MESSAGES,
-        Intents.FLAGS.GUILD_MEMBERS,
+        // The guild members intent was used to catch clonex, 
+        // but it's been decommissioned due to other bots doing it better
+        // Intents.FLAGS.GUILD_MEMBERS,
         Intents.FLAGS.GUILD_BANS
     ], 
-    partials: ['MESSAGE', 'CHANNEL', 'REACTION'] 
+    partials: [
+        'MESSAGE', 
+        'CHANNEL', 
+        'REACTION'
+    ] 
 });
 
 const { token } = require('./settings.json');
@@ -28,7 +34,7 @@ for (const file of commandFiles) {
 client.once('ready', async () => {
     await loadAllLogChannels();
 
-    require("./Monitors/clonex")(client);
+    //require("./Monitors/clonex")(client);
     require("./Monitors/serverCount")(client);
 });
 
