@@ -313,5 +313,6 @@ module.exports = {
     isRedlineStealer,
     urlRegex, 
 
-    suspiciousDmRequests
+    suspiciousDmRequests,
+    discordInvitePattern
 };

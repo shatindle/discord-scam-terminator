@@ -1,5 +1,5 @@
 const DiscordApi = require('discord.js');
-const { extractUrlsFromContent, containsKeyIndicators, MINIMUM_INDICATORS, suspiciousDmRequests } = require("../DAL/bodyparserApi");
+const { extractUrlsFromContent, containsKeyIndicators, MINIMUM_INDICATORS, suspiciousDmRequests, discordInvitePattern } = require("../DAL/bodyparserApi");
 const { recordError, hashMessage } = require("../DAL/databaseApi");
 const { spamUrlDetected } = require("../DAL/maliciousUrlTracking");
 const { getServerIdFromInvite, extractHostname } = require("../DAL/urlTesterApi");
@@ -105,7 +105,8 @@ async function monitor(message) {
 
             // get a key for the user + message + guild
             const userGuildHash = hashMessage(userId, guildId, "");
-            const hash = hashMessage(userId, guildId, message.content);
+            const cleanMessage = message.content ? message.content.replace(discordInvitePattern, '[DISCORDINVITE]') : '';
+            const hash = hashMessage(userId, guildId, cleanMessage);
 
             if (!messageLogs[userGuildHash] || messageLogs[userGuildHash].hash !== hash) {
                 // this is a unique message, hash it and exit
