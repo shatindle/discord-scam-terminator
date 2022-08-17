@@ -14,6 +14,15 @@
             "program": "${workspaceFolder}/index.js"
         },
         {
+            "type": "pwa-node",
+            "request": "launch",
+            "name": "Launch Test",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/actionsTest.js"
+        },
+        {
             "name": "Website Only",
             "type": "node",
             "request": "launch",

@@ -527,6 +527,22 @@ async function purgeRecords() {
     }
 }
 
+async function totalActions() {
+    let total = 0;
+    for (let table of userTables) {
+        let ref = await db.collection(table);
+        let docs = await ref.get();
+
+        total += docs.size;
+    }
+
+    let historyRef = await db.collection("history");
+    let historyDocs = await historyRef.get();
+    historyDocs.forEach(item => total += item.data().count);
+
+    return total;
+}
+
 setInterval(purgeUsers, 1000 * 60 * 60 * 24);
 setInterval(purgeRecords, 1000 * 60 * 60 * 24);
 
@@ -561,5 +577,6 @@ module.exports = {
     hashMessage,
 
     purgeUsers,
-    purgeRecords
+    purgeRecords,
+    totalActions
 };
