@@ -3,7 +3,7 @@ const ogs = require('open-graph-scraper-bypasshtmlcheck');
 const fetch = require("node-fetch");
 const AbortController = globalThis.AbortController;
 const UserAgents = require('user-agents');
-const { containsKeyIndicators, cleanMessage, MINIMUM_INDICATORS } = require('./bodyparserApi');
+const { containsKeyIndicators, cleanMessage, MINIMUM_INDICATORS, discordInvitePattern } = require('./bodyparserApi');
 const {
     addUrlToWhitelist, 
     addUrlToGraylist,
@@ -358,6 +358,8 @@ async function isSafeDeepCheck(url) {
 
 async function getServerIdFromInvite(url) {
     try {
+        if (!discordInvitePattern.test(url)) return null;
+
         let code = discordUrl(url, true);
         if (!code) return null;
         if (code.indexOf("friend-invite/") === 0) code = code.substring("friend-invite/".length);
