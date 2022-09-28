@@ -192,6 +192,16 @@ async function addUrlToWhitelist(url, example) {
     });
 }
 
+async function flagUrl(url) {
+    const id = getId(url);
+    
+    var ref = await db.collection("maliciousinvites").doc(id);
+    await ref.set({
+        url,
+        timestamp: Firestore.Timestamp.now()
+    });
+}
+
 async function moveUrl(url, fromList, toList) {
     if (fromList !== "blacklist" && fromList !== "graylist" && fromList !== "whitelist" && fromList !== "verifieddomains")
         throw "Invalid fromList";
@@ -390,7 +400,8 @@ const callbacks = {
     blacklist: [],
     verifieddomains: [],
     whitelist: [],
-    contentreview: []
+    contentreview: [],
+    maliciousinvites: []
 }
 
 async function monitor(type, callback) {
@@ -418,6 +429,9 @@ async function monitor(type, callback) {
             break;
         case "contentreview": 
             callbacks.contentreview.push(callback);
+            break;
+        case "maliciousinvites": 
+            callbacks.maliciousinvites.push(callback);
             break;
         default:
             throw "Unknown observer";
@@ -452,6 +466,9 @@ function setupObservers() {
 
     if (!observers.contentreview && callbacks.contentreview.length > 0)
         observers.contentreview = configureObserver("contentreview", callbacks.contentreview);
+
+    if (!observers.maliciousinvites && callbacks.maliciousinvites.length > 0)
+        observers.maliciousinvites = configureObserver("maliciousinvites", callbacks.maliciousinvites);
 }
 
 function configureObserver(type, callbackGroup) {
@@ -560,6 +577,7 @@ module.exports = {
     addUrlToGraylist,
     loadUrlGraylist,
     moveUrl,
+    flagUrl,
     addMessageToScamList,
     addUrlToVerifiedDomains,
     loadVerifiedDomains,

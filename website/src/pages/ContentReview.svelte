@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
-	import { clearContentReview } from '../store/scamTerminatorApi';
-    import { startWebsocket, contentreview, blacklist } from '../store/adminContent';
+	import { clearContentReview, flag } from '../store/scamTerminatorApi';
+    import { startWebsocket, contentreview, blacklist, maliciousinvites } from '../store/adminContent';
 
 	onMount(async () => {
         console.log("opening");
@@ -82,6 +82,40 @@
 
         return false;
     }
+
+    function extractUrlWithoutProtocol(url) {
+        url = url.toLowerCase();
+        
+        try {
+            const urlObject = new URL(url);
+
+            url = urlObject.toString();
+
+            if (url.indexOf("https://") === 0)
+                url = url.substring(8);
+            else if (url.indexOf("http://") === 0)
+                url = url.substring(7);
+
+            return url;
+        } catch {
+            if (url.indexOf("https://") === 0)
+                url = url.substring(8);
+            else if (url.indexOf("http://") === 0)
+                url = url.substring(7);
+
+            return url;
+        }
+    }
+
+    const inMaliciousinvites = (url) => Object.values($maliciousinvites).map(b => b.url).indexOf(extractUrlWithoutProtocol(url)) > -1;
+
+    let flagged = 0;
+
+    const flagInvite = async (invite) => {
+        await flag(invite);
+        flagged++;
+    }
+
 </script>
 
 <div>
@@ -110,7 +144,23 @@
                 <div class="col">
                     <h4>URLs</h4>
                     {#each extractUrlsFromContent($contentreview[id].message) as url}
-                    <input readonly value={url} />
+                    <div class="row">
+                        {#if $maliciousinvites && Object.values($maliciousinvites).map(b => b.url).indexOf(extractUrlWithoutProtocol(url)) === -1}
+                        <div class="col-8 col-md-9">
+                            <input readonly value={url} />
+                        </div>
+                        <div class="col-4 col-md-3">
+                            <button type="button" class="btn btn-primary float-end" on:click={async () => await flagInvite(url)} data-url="{url}">Flag Invite</button>
+                        </div>
+                        {:else}
+                        <div class="col-8 col-md-9">
+                            <input readonly value={url} />
+                        </div>
+                        <div class="col-4 col-md-3">
+                            <button type="button" class="btn btn-secondary float-end">Flagged</button>
+                        </div>
+                        {/if}
+                    </div>
                     {/each}
                 </div>
             </div>

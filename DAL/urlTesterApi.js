@@ -45,6 +45,30 @@ function extractHostname(url) {
     }
 }
 
+function extractUrlWithoutProtocol(url) {
+    url = url.toLowerCase();
+    
+    try {
+        const urlObject = new URL(url);
+
+        url = urlObject.toString();
+
+        if (url.indexOf("https://") === 0)
+            url = url.substring(8);
+        else if (url.indexOf("http://") === 0)
+            url = url.substring(7);
+
+        return url;
+    } catch {
+        if (url.indexOf("https://") === 0)
+            url = url.substring(8);
+        else if (url.indexOf("http://") === 0)
+            url = url.substring(7);
+
+        return url;
+    }
+}
+
 function domainsMatch(url, compare) {
     return url.endsWith("." + compare) || url === compare;
 }
@@ -148,6 +172,7 @@ let blacklist = {};
 let whitelist = {};
 let graylist = {};
 let verifieddomains = {};
+let maliciousinvites = {};
 
 function addressChanges(changes, list) {
     try {
@@ -163,6 +188,7 @@ monitor("blacklist", async (changes) => addressChanges(changes, blacklist));
 monitor("whitelist", async (changes) => addressChanges(changes, whitelist));
 monitor("graylist", async (changes) => addressChanges(changes, graylist));
 monitor("verifieddomains", async (changes) => addressChanges(changes, verifieddomains));
+monitor("maliciousinvites", async (changes) => addressChanges(changes, maliciousinvites));
 
 /**
  * @description Checks if a page is protected things that may interfere with validation
@@ -233,8 +259,9 @@ function isYouTube(hostname) {
  */
 function isBlacklisted(url) {
     const hostname = extractHostname(url);
+    const urlWithoutProtocol = extractUrlWithoutProtocol(url);
 
-    return hostname in blacklist;
+    return hostname in blacklist || urlWithoutProtocol in maliciousinvites;
 }
 
 /**

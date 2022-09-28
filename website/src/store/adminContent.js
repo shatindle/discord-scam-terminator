@@ -3,7 +3,8 @@ const { readable } = require("svelte/store");
 let graylist = {}, 
     whitelist = {},
     contentreview = {},
-    blacklist = {};
+    blacklist = {},
+    maliciousinvites = {};
 
 let tracking = {
     attempt: 0,
@@ -17,7 +18,8 @@ const subscriptions = {
     graylist: [], 
     whitelist: [],
     contentreview: [],
-    blacklist: []
+    blacklist: [],
+    maliciousinvites: []
 };
 
 const graylistStore = readable(undefined, set => {
@@ -46,6 +48,13 @@ const blacklistStore = readable(undefined, set => {
     set(blacklist);
 
     return () => subscriptions.blacklist.slice(subscriptions.blacklist.indexOf(set), 1);
+})
+
+const maliciousinvitesStore = readable(undefined, set => {
+    subscriptions.maliciousinvites.push(set);
+    set(maliciousinvites);
+
+    return () => subscriptions.maliciousinvites.slice(subscriptions.maliciousinvites.indexOf(set), 1);
 })
 
 const connect = () => {
@@ -84,6 +93,10 @@ const connect = () => {
 
                 Object.keys(blacklist).forEach(key => blacklist[key] = null);
                 subscriptions.blacklist.forEach(set => set(blacklist));
+
+                Object.keys(maliciousinvites).forEach(key => maliciousinvites[key] = null);
+                subscriptions.maliciousinvites.forEach(set => set(maliciousinvites));
+
                 connect();
             }, 1000);
         }
@@ -117,6 +130,11 @@ const connect = () => {
                 else blacklist[item.data._id] = null;
                 subscriptions.blacklist.forEach(set => set(blacklist));
                 break;
+            case "maliciousinvites": 
+                if (item.action === "add") maliciousinvites[item.data._id] = item.data;
+                else maliciousinvites[item.data._id] = null;
+                subscriptions.maliciousinvites.forEach(set => set(maliciousinvites));
+                break;
         }
     });
 };
@@ -133,5 +151,6 @@ module.exports = {
     graylist: graylistStore,
     whitelist: whitelistStore,
     contentreview: contentreviewStore,
-    blacklist: blacklistStore
+    blacklist: blacklistStore,
+    maliciousinvites: maliciousinvitesStore
 };

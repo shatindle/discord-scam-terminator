@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const { Permissions } = require('discord.js');
-const { moveUrl, deleteById } = require('../../DAL/databaseApi');
+const { moveUrl, deleteById, flagUrl } = require('../../DAL/databaseApi');
 const { getScreenshot, isScraperOnline } = require("../../DAL/realisticWebScraperApi");
 
 function adminAuth(req, res, next) {
@@ -53,6 +53,37 @@ router.post('/move', adminAuth, express.json(), async (req, res) => {
 });
 router.post('/remove', adminAuth, express.json(), async (req, res) => {
     await moveUrl(req.body.url, req.body.from);
+
+    return res.sendStatus(202);
+});
+
+
+function extractUrlWithoutProtocol(url) {
+    url = url.toLowerCase();
+    
+    try {
+        const urlObject = new URL(url);
+
+        url = urlObject.toString();
+
+        if (url.indexOf("https://") === 0)
+            url = url.substring(8);
+        else if (url.indexOf("http://") === 0)
+            url = url.substring(7);
+
+        return url;
+    } catch {
+        if (url.indexOf("https://") === 0)
+            url = url.substring(8);
+        else if (url.indexOf("http://") === 0)
+            url = url.substring(7);
+
+        return url;
+    }
+}
+
+router.post('/flag', adminAuth, express.json(), async (req, res) => {
+    await flagUrl(extractUrlWithoutProtocol(req.body.invite));
 
     return res.sendStatus(202);
 });
