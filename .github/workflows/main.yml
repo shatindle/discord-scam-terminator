@@ -39,6 +39,7 @@ jobs:
           npm audit fix || true
           pm2 stop scam-hunter-site
           pm2 stop scam-terminator
+          rm -rf /home/sha_tindle/repos/discord-scam-terminator/node_modules
           cp -r $GITHUB_WORKSPACE/* /home/sha_tindle/repos/discord-scam-terminator
           pm2 restart scam-terminator
           pm2 restart scam-hunter-site
