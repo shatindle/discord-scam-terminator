@@ -228,22 +228,66 @@ var app = (function () {
             throw new Error('Function called outside component initialization');
         return current_component;
     }
+    /**
+     * Schedules a callback to run immediately before the component is updated after any state change.
+     *
+     * The first time the callback runs will be before the initial `onMount`
+     *
+     * https://svelte.dev/docs#run-time-svelte-beforeupdate
+     */
     function beforeUpdate(fn) {
         get_current_component().$$.before_update.push(fn);
     }
+    /**
+     * The `onMount` function schedules a callback to run as soon as the component has been mounted to the DOM.
+     * It must be called during the component's initialisation (but doesn't need to live *inside* the component;
+     * it can be called from an external module).
+     *
+     * `onMount` does not run inside a [server-side component](/docs#run-time-server-side-component-api).
+     *
+     * https://svelte.dev/docs#run-time-svelte-onmount
+     */
     function onMount(fn) {
         get_current_component().$$.on_mount.push(fn);
     }
+    /**
+     * Schedules a callback to run immediately after the component has been updated.
+     *
+     * The first time the callback runs will be after the initial `onMount`
+     */
     function afterUpdate(fn) {
         get_current_component().$$.after_update.push(fn);
     }
+    /**
+     * Schedules a callback to run immediately before the component is unmounted.
+     *
+     * Out of `onMount`, `beforeUpdate`, `afterUpdate` and `onDestroy`, this is the
+     * only one that runs inside a server-side component.
+     *
+     * https://svelte.dev/docs#run-time-svelte-ondestroy
+     */
     function onDestroy(fn) {
         get_current_component().$$.on_destroy.push(fn);
     }
+    /**
+     * Associates an arbitrary `context` object with the current component and the specified `key`
+     * and returns that object. The context is then available to children of the component
+     * (including slotted content) with `getContext`.
+     *
+     * Like lifecycle functions, this must be called during component initialisation.
+     *
+     * https://svelte.dev/docs#run-time-svelte-setcontext
+     */
     function setContext(key, context) {
         get_current_component().$$.context.set(key, context);
         return context;
     }
+    /**
+     * Retrieves the context that belongs to the closest parent component with the specified `key`.
+     * Must be called during component initialisation.
+     *
+     * https://svelte.dev/docs#run-time-svelte-getcontext
+     */
     function getContext(key) {
         return get_current_component().$$.context.get(key);
     }
@@ -527,14 +571,17 @@ var app = (function () {
         block && block.c();
     }
     function mount_component(component, target, anchor, customElement) {
-        const { fragment, on_mount, on_destroy, after_update } = component.$$;
+        const { fragment, after_update } = component.$$;
         fragment && fragment.m(target, anchor);
         if (!customElement) {
             // onMount happens before the initial afterUpdate
             add_render_callback(() => {
-                const new_on_destroy = on_mount.map(run).filter(is_function);
-                if (on_destroy) {
-                    on_destroy.push(...new_on_destroy);
+                const new_on_destroy = component.$$.on_mount.map(run).filter(is_function);
+                // if the component was destroyed immediately
+                // it will update the `$$.on_destroy` reference to `null`.
+                // the destructured on_destroy may still reference to the old array
+                if (component.$$.on_destroy) {
+                    component.$$.on_destroy.push(...new_on_destroy);
                 }
                 else {
                     // Edge case - component was destroyed immediately,
@@ -570,7 +617,7 @@ var app = (function () {
         set_current_component(component);
         const $$ = component.$$ = {
             fragment: null,
-            ctx: null,
+            ctx: [],
             // state
             props,
             update: noop,
@@ -635,6 +682,9 @@ var app = (function () {
             this.$destroy = noop;
         }
         $on(type, callback) {
+            if (!is_function(callback)) {
+                return noop;
+            }
             const callbacks = (this.$$.callbacks[type] || (this.$$.callbacks[type] = []));
             callbacks.push(callback);
             return () => {
@@ -653,7 +703,7 @@ var app = (function () {
     }
 
     function dispatch_dev(type, detail) {
-        document.dispatchEvent(custom_event(type, Object.assign({ version: '3.50.1' }, detail), { bubbles: true }));
+        document.dispatchEvent(custom_event(type, Object.assign({ version: '3.52.0' }, detail), { bubbles: true }));
     }
     function append_dev(target, node) {
         dispatch_dev('SvelteDOMInsert', { target, node });
@@ -711,6 +761,25 @@ var app = (function () {
         for (const slot_key of Object.keys(slot)) {
             if (!~keys.indexOf(slot_key)) {
                 console.warn(`<${name}> received an unexpected slot "${slot_key}".`);
+            }
+        }
+    }
+    function construct_svelte_component_dev(component, props) {
+        const error_message = 'this={...} of <svelte:component> should specify a Svelte component.';
+        try {
+            const instance = new component(props);
+            if (!instance.$$ || !instance.$set || !instance.$on || !instance.$destroy) {
+                throw new Error(error_message);
+            }
+            return instance;
+        }
+        catch (err) {
+            const { message } = err;
+            if (typeof message === 'string' && message.indexOf('is not a constructor') !== -1) {
+                throw new Error(error_message);
+            }
+            else {
+                throw err;
             }
         }
     }
@@ -2850,7 +2919,7 @@ var app = (function () {
         };
     }
 
-    /* node_modules\@smui\drawer\dist\Drawer.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\drawer\dist\Drawer.svelte generated by Svelte v3.52.0 */
 
     const file$l = "node_modules\\@smui\\drawer\\dist\\Drawer.svelte";
 
@@ -3314,7 +3383,7 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\elements\Div.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\common\dist\elements\Div.svelte generated by Svelte v3.52.0 */
     const file$k = "node_modules\\@smui\\common\\dist\\elements\\Div.svelte";
 
     function create_fragment$s(ctx) {
@@ -3497,7 +3566,7 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\classadder\ClassAdder.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\common\dist\classadder\ClassAdder.svelte generated by Svelte v3.52.0 */
 
     // (1:0) <svelte:component   this={component}   bind:this={element}   use={[forwardEvents, ...use]}   class={classMap({     [className]: true,     [smuiClass]: true,     ...smuiClassMap,   })}   {...props}   {...$$restProps}>
     function create_default_slot$8(ctx) {
@@ -3596,7 +3665,7 @@ var app = (function () {
     	}
 
     	if (switch_value) {
-    		switch_instance = new switch_value(switch_props(ctx));
+    		switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     		/*switch_instance_binding*/ ctx[11](switch_instance);
     	}
 
@@ -3609,10 +3678,7 @@ var app = (function () {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
-    			if (switch_instance) {
-    				mount_component(switch_instance, target, anchor);
-    			}
-
+    			if (switch_instance) mount_component(switch_instance, target, anchor);
     			insert_dev(target, switch_instance_anchor, anchor);
     			current = true;
     		},
@@ -3651,7 +3717,7 @@ var app = (function () {
     				}
 
     				if (switch_value) {
-    					switch_instance = new switch_value(switch_props(ctx));
+    					switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     					/*switch_instance_binding*/ ctx[11](switch_instance);
     					create_component(switch_instance.$$.fragment);
     					transition_in(switch_instance.$$.fragment, 1);
@@ -3875,7 +3941,7 @@ var app = (function () {
         });
     }
 
-    /* node_modules\@smui\common\dist\elements\A.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\common\dist\elements\A.svelte generated by Svelte v3.52.0 */
     const file$j = "node_modules\\@smui\\common\\dist\\elements\\A.svelte";
 
     function create_fragment$q(ctx) {
@@ -4075,7 +4141,7 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\elements\Button.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\common\dist\elements\Button.svelte generated by Svelte v3.52.0 */
     const file$i = "node_modules\\@smui\\common\\dist\\elements\\Button.svelte";
 
     function create_fragment$p(ctx) {
@@ -4259,7 +4325,7 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\elements\H1.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\common\dist\elements\H1.svelte generated by Svelte v3.52.0 */
     const file$h = "node_modules\\@smui\\common\\dist\\elements\\H1.svelte";
 
     function create_fragment$o(ctx) {
@@ -4442,7 +4508,7 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\elements\H2.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\common\dist\elements\H2.svelte generated by Svelte v3.52.0 */
     const file$g = "node_modules\\@smui\\common\\dist\\elements\\H2.svelte";
 
     function create_fragment$n(ctx) {
@@ -4625,7 +4691,7 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\elements\H3.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\common\dist\elements\H3.svelte generated by Svelte v3.52.0 */
     const file$f = "node_modules\\@smui\\common\\dist\\elements\\H3.svelte";
 
     function create_fragment$m(ctx) {
@@ -4808,7 +4874,7 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\elements\Hr.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\common\dist\elements\Hr.svelte generated by Svelte v3.52.0 */
     const file$e = "node_modules\\@smui\\common\\dist\\elements\\Hr.svelte";
 
     function create_fragment$l(ctx) {
@@ -4996,7 +5062,7 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\elements\Li.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\common\dist\elements\Li.svelte generated by Svelte v3.52.0 */
     const file$d = "node_modules\\@smui\\common\\dist\\elements\\Li.svelte";
 
     function create_fragment$k(ctx) {
@@ -5179,7 +5245,7 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\elements\Nav.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\common\dist\elements\Nav.svelte generated by Svelte v3.52.0 */
     const file$c = "node_modules\\@smui\\common\\dist\\elements\\Nav.svelte";
 
     function create_fragment$j(ctx) {
@@ -5362,7 +5428,7 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\elements\Span.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\common\dist\elements\Span.svelte generated by Svelte v3.52.0 */
     const file$b = "node_modules\\@smui\\common\\dist\\elements\\Span.svelte";
 
     function create_fragment$i(ctx) {
@@ -5545,7 +5611,7 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\elements\Ul.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\common\dist\elements\Ul.svelte generated by Svelte v3.52.0 */
     const file$a = "node_modules\\@smui\\common\\dist\\elements\\Ul.svelte";
 
     function create_fragment$h(ctx) {
@@ -5765,7 +5831,7 @@ var app = (function () {
         component: H2,
     });
 
-    /* node_modules\@smui\drawer\dist\Scrim.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\drawer\dist\Scrim.svelte generated by Svelte v3.52.0 */
 
     // (1:0) <svelte:component   this={component}   bind:this={element}   use={[forwardEvents, ...use]}   class={classMap({     [className]: true,     'mdc-drawer-scrim': true,     'smui-drawer-scrim__absolute': !fixed,   })}   on:click={(event) => dispatch(getElement(), 'SMUIDrawerScrim:click', event)}   {...$$restProps} >
     function create_default_slot$7(ctx) {
@@ -5863,7 +5929,7 @@ var app = (function () {
     	}
 
     	if (switch_value) {
-    		switch_instance = new switch_value(switch_props(ctx));
+    		switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     		/*switch_instance_binding*/ ctx[9](switch_instance);
     		switch_instance.$on("click", /*click_handler*/ ctx[10]);
     	}
@@ -5877,10 +5943,7 @@ var app = (function () {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
-    			if (switch_instance) {
-    				mount_component(switch_instance, target, anchor);
-    			}
-
+    			if (switch_instance) mount_component(switch_instance, target, anchor);
     			insert_dev(target, switch_instance_anchor, anchor);
     			current = true;
     		},
@@ -5918,7 +5981,7 @@ var app = (function () {
     				}
 
     				if (switch_value) {
-    					switch_instance = new switch_value(switch_props(ctx));
+    					switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     					/*switch_instance_binding*/ ctx[9](switch_instance);
     					switch_instance.$on("click", /*click_handler*/ ctx[10]);
     					create_component(switch_instance.$$.fragment);
@@ -6099,7 +6162,7 @@ var app = (function () {
 
     const Scrim = Scrim$1;
 
-    /* node_modules\@smui\list\dist\List.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\list\dist\List.svelte generated by Svelte v3.52.0 */
 
     // (1:0) <svelte:component   this={component}   bind:this={element}   use={[forwardEvents, ...use]}   class={classMap({     [className]: true,     'mdc-deprecated-list': true,     'mdc-deprecated-list--non-interactive': nonInteractive,     'mdc-deprecated-list--dense': dense,     'mdc-deprecated-list--textual-list': textualList,     'mdc-deprecated-list--avatar-list': avatarList || selectionDialog,     'mdc-deprecated-list--icon-list': iconList,     'mdc-deprecated-list--image-list': imageList,     'mdc-deprecated-list--thumbnail-list': thumbnailList,     'mdc-deprecated-list--video-list': videoList,     'mdc-deprecated-list--two-line': twoLine,     'smui-list--three-line': threeLine && !twoLine,   })}   {role}   on:keydown={(event) =>     instance &&     instance.handleKeydown(       event,       event.target.classList.contains('mdc-deprecated-list-item'),       getListItemIndex(event.target)     )}   on:focusin={(event) =>     instance && instance.handleFocusIn(getListItemIndex(event.target))}   on:focusout={(event) =>     instance && instance.handleFocusOut(getListItemIndex(event.target))}   on:click={(event) =>     instance &&     instance.handleClick(       getListItemIndex(event.target),       !matches(event.target, 'input[type="checkbox"], input[type="radio"]')     )}   on:SMUIListItem:mount={handleItemMount}   on:SMUIListItem:unmount={handleItemUnmount}   on:SMUI:action={handleAction}   {...$$restProps} >
     function create_default_slot$6(ctx) {
@@ -6207,7 +6270,7 @@ var app = (function () {
     	}
 
     	if (switch_value) {
-    		switch_instance = new switch_value(switch_props(ctx));
+    		switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     		/*switch_instance_binding*/ ctx[38](switch_instance);
     		switch_instance.$on("keydown", /*keydown_handler*/ ctx[39]);
     		switch_instance.$on("focusin", /*focusin_handler*/ ctx[40]);
@@ -6227,10 +6290,7 @@ var app = (function () {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
-    			if (switch_instance) {
-    				mount_component(switch_instance, target, anchor);
-    			}
-
+    			if (switch_instance) mount_component(switch_instance, target, anchor);
     			insert_dev(target, switch_instance_anchor, anchor);
     			current = true;
     		},
@@ -6278,7 +6338,7 @@ var app = (function () {
     				}
 
     				if (switch_value) {
-    					switch_instance = new switch_value(switch_props(ctx));
+    					switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     					/*switch_instance_binding*/ ctx[38](switch_instance);
     					switch_instance.$on("keydown", /*keydown_handler*/ ctx[39]);
     					switch_instance.$on("focusin", /*focusin_handler*/ ctx[40]);
@@ -7876,7 +7936,7 @@ var app = (function () {
         };
     }
 
-    /* node_modules\@smui\list\dist\Item.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\list\dist\Item.svelte generated by Svelte v3.52.0 */
     const file$9 = "node_modules\\@smui\\list\\dist\\Item.svelte";
 
     // (57:3) {#if ripple}
@@ -8080,7 +8140,7 @@ var app = (function () {
     	}
 
     	if (switch_value) {
-    		switch_instance = new switch_value(switch_props(ctx));
+    		switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     		/*switch_instance_binding*/ ctx[33](switch_instance);
     		switch_instance.$on("click", /*action*/ ctx[13]);
     		switch_instance.$on("keydown", /*handleKeydown*/ ctx[25]);
@@ -8097,10 +8157,7 @@ var app = (function () {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
-    			if (switch_instance) {
-    				mount_component(switch_instance, target, anchor);
-    			}
-
+    			if (switch_instance) mount_component(switch_instance, target, anchor);
     			insert_dev(target, switch_instance_anchor, anchor);
     			current = true;
     		},
@@ -8194,7 +8251,7 @@ var app = (function () {
     				}
 
     				if (switch_value) {
-    					switch_instance = new switch_value(switch_props(ctx));
+    					switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     					/*switch_instance_binding*/ ctx[33](switch_instance);
     					switch_instance.$on("click", /*action*/ ctx[13]);
     					switch_instance.$on("keydown", /*handleKeydown*/ ctx[25]);
@@ -8895,7 +8952,7 @@ var app = (function () {
         component: Span,
     });
 
-    /* node_modules\@smui\list\dist\Graphic.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\list\dist\Graphic.svelte generated by Svelte v3.52.0 */
     const file$8 = "node_modules\\@smui\\list\\dist\\Graphic.svelte";
 
     function create_fragment$d(ctx) {
@@ -9132,7 +9189,7 @@ var app = (function () {
         component: H3,
     });
 
-    /* node_modules\@smui\list\dist\Separator.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\list\dist\Separator.svelte generated by Svelte v3.52.0 */
 
     function create_fragment$c(ctx) {
     	let switch_instance;
@@ -9174,7 +9231,7 @@ var app = (function () {
     	}
 
     	if (switch_value) {
-    		switch_instance = new switch_value(switch_props());
+    		switch_instance = construct_svelte_component_dev(switch_value, switch_props());
     		/*switch_instance_binding*/ ctx[12](switch_instance);
     	}
 
@@ -9187,10 +9244,7 @@ var app = (function () {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
-    			if (switch_instance) {
-    				mount_component(switch_instance, target, anchor);
-    			}
-
+    			if (switch_instance) mount_component(switch_instance, target, anchor);
     			insert_dev(target, switch_instance_anchor, anchor);
     			current = true;
     		},
@@ -9229,7 +9283,7 @@ var app = (function () {
     				}
 
     				if (switch_value) {
-    					switch_instance = new switch_value(switch_props());
+    					switch_instance = construct_svelte_component_dev(switch_value, switch_props());
     					/*switch_instance_binding*/ ctx[12](switch_instance);
     					create_component(switch_instance.$$.fragment);
     					transition_in(switch_instance.$$.fragment, 1);
@@ -9910,7 +9964,7 @@ var app = (function () {
   )}/`;
     }
 
-    /* node_modules\svelte-routing\src\Router.svelte generated by Svelte v3.50.1 */
+    /* node_modules\svelte-routing\src\Router.svelte generated by Svelte v3.52.0 */
 
     function create_fragment$b(ctx) {
     	let current;
@@ -10209,7 +10263,7 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\svelte-routing\src\Route.svelte generated by Svelte v3.50.1 */
+    /* node_modules\svelte-routing\src\Route.svelte generated by Svelte v3.52.0 */
 
     const get_default_slot_changes$1 = dirty => ({
     	params: dirty & /*routeParams*/ 4,
@@ -10387,7 +10441,7 @@ var app = (function () {
     	}
 
     	if (switch_value) {
-    		switch_instance = new switch_value(switch_props());
+    		switch_instance = construct_svelte_component_dev(switch_value, switch_props());
     	}
 
     	const block = {
@@ -10396,10 +10450,7 @@ var app = (function () {
     			switch_instance_anchor = empty();
     		},
     		m: function mount(target, anchor) {
-    			if (switch_instance) {
-    				mount_component(switch_instance, target, anchor);
-    			}
-
+    			if (switch_instance) mount_component(switch_instance, target, anchor);
     			insert_dev(target, switch_instance_anchor, anchor);
     			current = true;
     		},
@@ -10425,7 +10476,7 @@ var app = (function () {
     				}
 
     				if (switch_value) {
-    					switch_instance = new switch_value(switch_props());
+    					switch_instance = construct_svelte_component_dev(switch_value, switch_props());
     					create_component(switch_instance.$$.fragment);
     					transition_in(switch_instance.$$.fragment, 1);
     					mount_component(switch_instance, switch_instance_anchor.parentNode, switch_instance_anchor);
@@ -10799,7 +10850,7 @@ var app = (function () {
         return MDCIconButtonToggleFoundation;
     }(MDCFoundation));
 
-    /* node_modules\@smui\icon-button\dist\IconButton.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\icon-button\dist\IconButton.svelte generated by Svelte v3.52.0 */
     const file$7 = "node_modules\\@smui\\icon-button\\dist\\IconButton.svelte";
 
     // (61:10) {#if touch}
@@ -11010,7 +11061,7 @@ var app = (function () {
     	}
 
     	if (switch_value) {
-    		switch_instance = new switch_value(switch_props(ctx));
+    		switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     		/*switch_instance_binding*/ ctx[33](switch_instance);
     		switch_instance.$on("click", /*click_handler*/ ctx[34]);
     		switch_instance.$on("click", /*click_handler_1*/ ctx[35]);
@@ -11025,10 +11076,7 @@ var app = (function () {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
-    			if (switch_instance) {
-    				mount_component(switch_instance, target, anchor);
-    			}
-
+    			if (switch_instance) mount_component(switch_instance, target, anchor);
     			insert_dev(target, switch_instance_anchor, anchor);
     			current = true;
     		},
@@ -11119,7 +11167,7 @@ var app = (function () {
     				}
 
     				if (switch_value) {
-    					switch_instance = new switch_value(switch_props(ctx));
+    					switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     					/*switch_instance_binding*/ ctx[33](switch_instance);
     					switch_instance.$on("click", /*click_handler*/ ctx[34]);
     					switch_instance.$on("click", /*click_handler_1*/ ctx[35]);
@@ -11657,7 +11705,7 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\CommonLabel.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\common\dist\CommonLabel.svelte generated by Svelte v3.52.0 */
 
     // (1:0) <svelte:component   this={component}   bind:this={element}   use={[forwardEvents, ...use]}   class={classMap({     [className]: true,     'mdc-button__label': context === 'button',     'mdc-fab__label': context === 'fab',     'mdc-tab__text-label': context === 'tab',     'mdc-image-list__label': context === 'image-list',     'mdc-snackbar__label': context === 'snackbar',     'mdc-banner__text': context === 'banner',     'mdc-segmented-button__label': context === 'segmented-button',     'mdc-data-table__pagination-rows-per-page-label':       context === 'data-table:pagination',     'mdc-data-table__header-cell-label':       context === 'data-table:sortable-header-cell',   })}   {...context === 'snackbar' ? { 'aria-atomic': 'false' } : {}}   {tabindex}   {...$$restProps}>
     function create_default_slot$3(ctx) {
@@ -11766,7 +11814,7 @@ var app = (function () {
     	}
 
     	if (switch_value) {
-    		switch_instance = new switch_value(switch_props(ctx));
+    		switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     		/*switch_instance_binding*/ ctx[10](switch_instance);
     	}
 
@@ -11779,10 +11827,7 @@ var app = (function () {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
-    			if (switch_instance) {
-    				mount_component(switch_instance, target, anchor);
-    			}
-
+    			if (switch_instance) mount_component(switch_instance, target, anchor);
     			insert_dev(target, switch_instance_anchor, anchor);
     			current = true;
     		},
@@ -11831,7 +11876,7 @@ var app = (function () {
     				}
 
     				if (switch_value) {
-    					switch_instance = new switch_value(switch_props(ctx));
+    					switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     					/*switch_instance_binding*/ ctx[10](switch_instance);
     					create_component(switch_instance.$$.fragment);
     					transition_in(switch_instance.$$.fragment, 1);
@@ -11998,7 +12043,7 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\ContextFragment.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\common\dist\ContextFragment.svelte generated by Svelte v3.52.0 */
 
     function create_fragment$7(ctx) {
     	let current;
@@ -12075,6 +12120,16 @@ var app = (function () {
     		storeValue.set(undefined);
     	});
 
+    	$$self.$$.on_mount.push(function () {
+    		if (key === undefined && !('key' in $$props || $$self.$$.bound[$$self.$$.props['key']])) {
+    			console.warn("<ContextFragment> was created without expected prop 'key'");
+    		}
+
+    		if (value === undefined && !('value' in $$props || $$self.$$.bound[$$self.$$.props['value']])) {
+    			console.warn("<ContextFragment> was created without expected prop 'value'");
+    		}
+    	});
+
     	const writable_props = ['key', 'value'];
 
     	Object.keys($$props).forEach(key => {
@@ -12126,17 +12181,6 @@ var app = (function () {
     			options,
     			id: create_fragment$7.name
     		});
-
-    		const { ctx } = this.$$;
-    		const props = options.props || {};
-
-    		if (/*key*/ ctx[1] === undefined && !('key' in props)) {
-    			console.warn("<ContextFragment> was created without expected prop 'key'");
-    		}
-
-    		if (/*value*/ ctx[2] === undefined && !('value' in props)) {
-    			console.warn("<ContextFragment> was created without expected prop 'value'");
-    		}
     	}
 
     	get key() {
@@ -12643,6 +12687,11 @@ var app = (function () {
             attr(node, key, attributes[key]);
         }
     }
+    function set_custom_element_data_map(node, data_map) {
+        Object.keys(data_map).forEach((key) => {
+            set_custom_element_data(node, key, data_map[key]);
+        });
+    }
     function set_custom_element_data(node, prop, value) {
         if (prop in node) {
             node[prop] = typeof node[prop] === 'boolean' && value === '' ? true : value;
@@ -12907,6 +12956,27 @@ var app = (function () {
     function query_selector_all(selector, parent = document.body) {
         return Array.from(parent.querySelectorAll(selector));
     }
+    function head_selector(nodeId, head) {
+        const result = [];
+        let started = 0;
+        for (const node of head.childNodes) {
+            if (node.nodeType === 8 /* comment node */) {
+                const comment = node.textContent.trim();
+                if (comment === `HEAD_${nodeId}_END`) {
+                    started -= 1;
+                    result.push(node);
+                }
+                else if (comment === `HEAD_${nodeId}_START`) {
+                    started += 1;
+                    result.push(node);
+                }
+            }
+            else if (started > 0) {
+                result.push(node);
+            }
+        }
+        return result;
+    }
     class HtmlTag {
         constructor(is_svg = false) {
             this.is_svg = false;
@@ -12978,6 +13048,9 @@ var app = (function () {
             result[node.slot || 'default'] = true;
         });
         return result;
+    }
+    function construct_svelte_component(component, props) {
+        return new component(props);
     }
 
     // we need to store the information for multiple documents because a Svelte application could also contain iframes
@@ -13122,18 +13195,59 @@ var app = (function () {
             throw new Error('Function called outside component initialization');
         return exports.current_component;
     }
+    /**
+     * Schedules a callback to run immediately before the component is updated after any state change.
+     *
+     * The first time the callback runs will be before the initial `onMount`
+     *
+     * https://svelte.dev/docs#run-time-svelte-beforeupdate
+     */
     function beforeUpdate(fn) {
         get_current_component().$$.before_update.push(fn);
     }
+    /**
+     * The `onMount` function schedules a callback to run as soon as the component has been mounted to the DOM.
+     * It must be called during the component's initialisation (but doesn't need to live *inside* the component;
+     * it can be called from an external module).
+     *
+     * `onMount` does not run inside a [server-side component](/docs#run-time-server-side-component-api).
+     *
+     * https://svelte.dev/docs#run-time-svelte-onmount
+     */
     function onMount(fn) {
         get_current_component().$$.on_mount.push(fn);
     }
+    /**
+     * Schedules a callback to run immediately after the component has been updated.
+     *
+     * The first time the callback runs will be after the initial `onMount`
+     */
     function afterUpdate(fn) {
         get_current_component().$$.after_update.push(fn);
     }
+    /**
+     * Schedules a callback to run immediately before the component is unmounted.
+     *
+     * Out of `onMount`, `beforeUpdate`, `afterUpdate` and `onDestroy`, this is the
+     * only one that runs inside a server-side component.
+     *
+     * https://svelte.dev/docs#run-time-svelte-ondestroy
+     */
     function onDestroy(fn) {
         get_current_component().$$.on_destroy.push(fn);
     }
+    /**
+     * Creates an event dispatcher that can be used to dispatch [component events](/docs#template-syntax-component-directives-on-eventname).
+     * Event dispatchers are functions that can take two arguments: `name` and `detail`.
+     *
+     * Component events created with `createEventDispatcher` create a
+     * [CustomEvent](https://developer.mozilla.org/en-US/docs/Web/API/CustomEvent).
+     * These events do not [bubble](https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Building_blocks/Events#Event_bubbling_and_capture).
+     * The `detail` argument corresponds to the [CustomEvent.detail](https://developer.mozilla.org/en-US/docs/Web/API/CustomEvent/detail)
+     * property and can contain any type of data.
+     *
+     * https://svelte.dev/docs#run-time-svelte-createeventdispatcher
+     */
     function createEventDispatcher() {
         const component = get_current_component();
         return (type, detail, { cancelable = false } = {}) => {
@@ -13150,16 +13264,44 @@ var app = (function () {
             return true;
         };
     }
+    /**
+     * Associates an arbitrary `context` object with the current component and the specified `key`
+     * and returns that object. The context is then available to children of the component
+     * (including slotted content) with `getContext`.
+     *
+     * Like lifecycle functions, this must be called during component initialisation.
+     *
+     * https://svelte.dev/docs#run-time-svelte-setcontext
+     */
     function setContext(key, context) {
         get_current_component().$$.context.set(key, context);
         return context;
     }
+    /**
+     * Retrieves the context that belongs to the closest parent component with the specified `key`.
+     * Must be called during component initialisation.
+     *
+     * https://svelte.dev/docs#run-time-svelte-getcontext
+     */
     function getContext(key) {
         return get_current_component().$$.context.get(key);
     }
+    /**
+     * Retrieves the whole context map that belongs to the closest parent component.
+     * Must be called during component initialisation. Useful, for example, if you
+     * programmatically create a component and want to pass the existing context to it.
+     *
+     * https://svelte.dev/docs#run-time-svelte-getallcontexts
+     */
     function getAllContexts() {
         return get_current_component().$$.context;
     }
+    /**
+     * Checks whether a given `key` has been set in the context of a parent component.
+     * Must be called during component initialisation.
+     *
+     * https://svelte.dev/docs#run-time-svelte-hascontext
+     */
     function hasContext(key) {
         return get_current_component().$$.context.has(key);
     }
@@ -13785,7 +13927,9 @@ var app = (function () {
         'disabled',
         'formnovalidate',
         'hidden',
+        'inert',
         'ismap',
+        'itemscope',
         'loop',
         'multiple',
         'muted',
@@ -13914,7 +14058,7 @@ var app = (function () {
         if (!component || !component.$$render) {
             if (name === 'svelte:component')
                 name += ' this={...}';
-            throw new Error(`<${name}> is not a valid SSR component. You may need to review your build config to ensure that dependencies are compiled, rather than imported as pre-compiled modules`);
+            throw new Error(`<${name}> is not a valid SSR component. You may need to review your build config to ensure that dependencies are compiled, rather than imported as pre-compiled modules. Otherwise you may need to fix a <${name}>.`);
         }
         return component;
     }
@@ -13993,14 +14137,17 @@ var app = (function () {
         block && block.l(parent_nodes);
     }
     function mount_component(component, target, anchor, customElement) {
-        const { fragment, on_mount, on_destroy, after_update } = component.$$;
+        const { fragment, after_update } = component.$$;
         fragment && fragment.m(target, anchor);
         if (!customElement) {
             // onMount happens before the initial afterUpdate
             add_render_callback(() => {
-                const new_on_destroy = on_mount.map(run).filter(is_function);
-                if (on_destroy) {
-                    on_destroy.push(...new_on_destroy);
+                const new_on_destroy = component.$$.on_mount.map(run).filter(is_function);
+                // if the component was destroyed immediately
+                // it will update the `$$.on_destroy` reference to `null`.
+                // the destructured on_destroy may still reference to the old array
+                if (component.$$.on_destroy) {
+                    component.$$.on_destroy.push(...new_on_destroy);
                 }
                 else {
                     // Edge case - component was destroyed immediately,
@@ -14036,7 +14183,7 @@ var app = (function () {
         set_current_component(component);
         const $$ = component.$$ = {
             fragment: null,
-            ctx: null,
+            ctx: [],
             // state
             props,
             update: noop,
@@ -14121,6 +14268,9 @@ var app = (function () {
             }
             $on(type, callback) {
                 // TODO should this delegate to addEventListener?
+                if (!is_function(callback)) {
+                    return noop;
+                }
                 const callbacks = (this.$$.callbacks[type] || (this.$$.callbacks[type] = []));
                 callbacks.push(callback);
                 return () => {
@@ -14147,6 +14297,9 @@ var app = (function () {
             this.$destroy = noop;
         }
         $on(type, callback) {
+            if (!is_function(callback)) {
+                return noop;
+            }
             const callbacks = (this.$$.callbacks[type] || (this.$$.callbacks[type] = []));
             callbacks.push(callback);
             return () => {
@@ -14165,7 +14318,7 @@ var app = (function () {
     }
 
     function dispatch_dev(type, detail) {
-        document.dispatchEvent(custom_event(type, Object.assign({ version: '3.50.1' }, detail), { bubbles: true }));
+        document.dispatchEvent(custom_event(type, Object.assign({ version: '3.52.0' }, detail), { bubbles: true }));
     }
     function append_dev(target, node) {
         dispatch_dev('SvelteDOMInsert', { target, node });
@@ -14261,7 +14414,26 @@ var app = (function () {
     }
     function validate_void_dynamic_element(tag) {
         if (tag && is_void(tag)) {
-            throw new Error(`<svelte:element this="${tag}"> is self-closing and cannot have content.`);
+            console.warn(`<svelte:element this="${tag}"> is self-closing and cannot have content.`);
+        }
+    }
+    function construct_svelte_component_dev(component, props) {
+        const error_message = 'this={...} of <svelte:component> should specify a Svelte component.';
+        try {
+            const instance = new component(props);
+            if (!instance.$$ || !instance.$set || !instance.$on || !instance.$destroy) {
+                throw new Error(error_message);
+            }
+            return instance;
+        }
+        catch (err) {
+            const { message } = err;
+            if (typeof message === 'string' && message.indexOf('is not a constructor') !== -1) {
+                throw new Error(error_message);
+            }
+            else {
+                throw err;
+            }
         }
     }
     /**
@@ -14370,6 +14542,8 @@ var app = (function () {
     exports.component_subscribe = component_subscribe;
     exports.compute_rest_props = compute_rest_props;
     exports.compute_slots = compute_slots;
+    exports.construct_svelte_component = construct_svelte_component;
+    exports.construct_svelte_component_dev = construct_svelte_component_dev;
     exports.createEventDispatcher = createEventDispatcher;
     exports.create_animation = create_animation;
     exports.create_bidirectional_transition = create_bidirectional_transition;
@@ -14420,6 +14594,7 @@ var app = (function () {
     exports.handle_promise = handle_promise;
     exports.hasContext = hasContext;
     exports.has_prop = has_prop;
+    exports.head_selector = head_selector;
     exports.identity = identity;
     exports.init = init;
     exports.insert = insert;
@@ -14465,6 +14640,7 @@ var app = (function () {
     exports.set_attributes = set_attributes;
     exports.set_current_component = set_current_component;
     exports.set_custom_element_data = set_custom_element_data;
+    exports.set_custom_element_data_map = set_custom_element_data_map;
     exports.set_data = set_data;
     exports.set_data_dev = set_data_dev;
     exports.set_input_type = set_input_type;
@@ -14773,7 +14949,7 @@ var app = (function () {
         maliciousinvites: maliciousinvitesStore
     };
 
-    /* website\src\pages\Graylist.svelte generated by Svelte v3.50.1 */
+    /* website\src\pages\Graylist.svelte generated by Svelte v3.52.0 */
 
     const { Object: Object_1$1, console: console_1$2 } = globals;
     const file$6 = "website\\src\\pages\\Graylist.svelte";
@@ -16002,7 +16178,7 @@ var app = (function () {
     	}
     }
 
-    /* website\src\pages\Home.svelte generated by Svelte v3.50.1 */
+    /* website\src\pages\Home.svelte generated by Svelte v3.52.0 */
 
     const file$5 = "website\\src\\pages\\Home.svelte";
 
@@ -16298,7 +16474,7 @@ var app = (function () {
         return MDCSegmentedButtonFoundation;
     }(MDCFoundation));
 
-    /* node_modules\@smui\segmented-button\dist\SegmentedButton.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\segmented-button\dist\SegmentedButton.svelte generated by Svelte v3.52.0 */
     const file$4 = "node_modules\\@smui\\segmented-button\\dist\\SegmentedButton.svelte";
 
     function get_each_context$2(ctx, list, i) {
@@ -17199,7 +17375,7 @@ var app = (function () {
         return MDCSegmentedButtonSegmentFoundation;
     }(MDCFoundation));
 
-    /* node_modules\@smui\segmented-button\dist\Segment.svelte generated by Svelte v3.50.1 */
+    /* node_modules\@smui\segmented-button\dist\Segment.svelte generated by Svelte v3.52.0 */
 
     const { Error: Error_1 } = globals;
     const file$3 = "node_modules\\@smui\\segmented-button\\dist\\Segment.svelte";
@@ -17606,6 +17782,12 @@ var app = (function () {
     		return element;
     	}
 
+    	$$self.$$.on_mount.push(function () {
+    		if (segmentId === undefined && !('segment' in $$props || $$self.$$.bound[$$self.$$.props['segment']])) {
+    			console.warn("<Segment> was created without expected prop 'segment'");
+    		}
+    	});
+
     	function button_binding($$value) {
     		binding_callbacks[$$value ? 'unshift' : 'push'](() => {
     			element = $$value;
@@ -17764,13 +17946,6 @@ var app = (function () {
     			options,
     			id: create_fragment$3.name
     		});
-
-    		const { ctx } = this.$$;
-    		const props = options.props || {};
-
-    		if (/*segmentId*/ ctx[20] === undefined && !('segment' in props)) {
-    			console.warn("<Segment> was created without expected prop 'segment'");
-    		}
     	}
 
     	get use() {
@@ -17840,7 +18015,7 @@ var app = (function () {
 
     const Segment = Segment$1;
 
-    /* website\src\pages\Activity.svelte generated by Svelte v3.50.1 */
+    /* website\src\pages\Activity.svelte generated by Svelte v3.52.0 */
     const file$2 = "website\\src\\pages\\Activity.svelte";
 
     function get_each_context$1(ctx, list, i) {
@@ -18980,7 +19155,7 @@ var app = (function () {
     	}
     }
 
-    /* website\src\pages\ContentReview.svelte generated by Svelte v3.50.1 */
+    /* website\src\pages\ContentReview.svelte generated by Svelte v3.52.0 */
 
     const { Object: Object_1, console: console_1$1 } = globals;
 
@@ -19791,7 +19966,7 @@ var app = (function () {
     	}
     }
 
-    /* website\src\App.svelte generated by Svelte v3.50.1 */
+    /* website\src\App.svelte generated by Svelte v3.52.0 */
 
     const { console: console_1 } = globals;
     const file = "website\\src\\App.svelte";

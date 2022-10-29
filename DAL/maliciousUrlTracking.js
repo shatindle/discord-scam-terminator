@@ -1,9 +1,15 @@
+const { Message } = require("discord.js");
 const { shouldBanUser, recordKick, recordError, recordWarning, recordFail, recordContentReview } = require("./databaseApi");
 const { logWarning, logKick } = require("./logApi");
 const { getDomainCreationDate } = require("./domainLookup");
 const { getAllRedirects } = require("./redirectExtractor");
 const { extractHostname } = require("./urlTesterApi");
 
+/**
+ * 
+ * @param {String} domain 
+ * @returns {Boolean}
+ */
 async function isDomainTooNew(domain) {
     try {
         const domainCreation = await getDomainCreationDate(domain);
@@ -19,6 +25,16 @@ async function isDomainTooNew(domain) {
     return false;
 }
 
+/**
+ * 
+ * @param {Message} message 
+ * @param {String} guildId 
+ * @param {String} userId 
+ * @param {String} username 
+ * @param {String} reason 
+ * @param {String} domain 
+ * @param {String} maliciousUrl 
+ */
 async function maliciousUrlDetected(message, guildId, userId, username, reason, domain, maliciousUrl) {
     const content = message.content;
     const client = message.client;
@@ -108,6 +124,15 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
     }
 }
 
+/**
+ * 
+ * @param {Message} message 
+ * @param {String} guildId 
+ * @param {String} userId 
+ * @param {String} username 
+ * @param {String} reason 
+ * @param {String} perform 
+ */
 async function spamUrlDetected(message, guildId, userId, username, reason, perform) {
     const content = message.content;
     const client = message.client;

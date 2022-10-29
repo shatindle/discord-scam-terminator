@@ -1,4 +1,4 @@
-const DiscordApi = require('discord.js');
+const { Message, PermissionsBitField } = require('discord.js');
 const { extractUrlsFromContent, containsKeyIndicators, MINIMUM_INDICATORS, isRedlineStealer } = require("../DAL/bodyparserApi");
 const { validUrl, isSafeDeepCheck, isUrlInWhitelist, extractHostname } = require("../DAL/urlTesterApi");
 const { recordError } = require("../DAL/databaseApi");
@@ -8,7 +8,7 @@ const reason = "Nitro/Steam phishing";
 
 /**
  * @description Looks for nitro/steam scams and removes them
- * @param {DiscordApi.Message} message The message object
+ * @param {Message} message The message object
  * @returns {Promise<Boolean>} Whether or not the message was acted on in some way
  */
 async function monitor(message) {
@@ -17,7 +17,7 @@ async function monitor(message) {
 
     try {
         // ignore posts from mods
-        if (message.member.permissions.has(DiscordApi.Permissions.FLAGS.MANAGE_MESSAGES)) return false;
+        if (message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) return false;
     } catch (err) {
         await recordError("", "", "permissions property null: " + err.toString(), reason);
         // for now, exit since we couldn't keep going

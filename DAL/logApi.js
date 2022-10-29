@@ -1,6 +1,15 @@
-const { MessageEmbed } = require("discord.js");
+const { EmbedBuilder, Client } = require("discord.js");
 const { getLogChannel } = require("../DAL/databaseApi");
 
+/**
+ * 
+ * @param {Client} client 
+ * @param {String} guildId 
+ * @param {String} action 
+ * @param {String} activity 
+ * @param {String} color 
+ * @returns {Promise}
+ */
 async function logActivity(client, guildId, action, activity, color = "#007bff") {
     try {
         const logChannel = getLogChannel(guildId);
@@ -13,7 +22,7 @@ async function logActivity(client, guildId, action, activity, color = "#007bff")
         if (!channel || !channel.send)
             channel = client.channels.fetch(logChannel);
 
-        const message = new MessageEmbed()
+        const message = new EmbedBuilder()
             .setColor(color)
             .setTitle(action)
             .setDescription(activity)
@@ -27,6 +36,16 @@ async function logActivity(client, guildId, action, activity, color = "#007bff")
 
 const WARNING_COLOR = "#ffc107";
 
+/**
+ * 
+ * @param {Client} client 
+ * @param {String} guildId 
+ * @param {String} userId 
+ * @param {String} channelId 
+ * @param {String} message 
+ * @param {String} reason 
+ * @returns {Promise}
+ */
 const logWarning = async (client, guildId, userId, channelId, message = "", reason = "unknown") =>
     await logActivity(
         client,
@@ -39,6 +58,16 @@ const logWarning = async (client, guildId, userId, channelId, message = "", reas
 
 const KICK_COLOR = "#dc3545";
 
+/**
+ * 
+ * @param {Client} client 
+ * @param {String} guildId 
+ * @param {String} userId 
+ * @param {String} channelId 
+ * @param {String} message 
+ * @param {String} reason 
+ * @returns 
+ */
 const logKick = async (client, guildId, userId, channelId, message = "", reason = "unknown") =>
     await logActivity(
         client,

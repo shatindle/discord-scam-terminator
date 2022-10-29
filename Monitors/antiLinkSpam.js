@@ -1,4 +1,4 @@
-const DiscordApi = require('discord.js');
+const { Message, PermissionsBitField, Client } = require("discord.js");
 const { extractUrlsFromContent, containsKeyIndicators, MINIMUM_INDICATORS, suspiciousDmRequests, discordInvitePattern } = require("../DAL/bodyparserApi");
 const { recordError, hashMessage } = require("../DAL/databaseApi");
 const { spamUrlDetected } = require("../DAL/maliciousUrlTracking");
@@ -24,6 +24,21 @@ function expire() {
 
 let expireTimer = setInterval(expire, time);
 
+class MessageList {
+    constructor(messageId = "", channelId = "", deleted = false) {
+        this.messageId = messageId;
+        this.channelId = channelId;
+        this.deleted = deleted;
+    }
+}
+
+/**
+ * 
+ * @param {Client} client 
+ * @param {Array<MessageList>} messageList 
+ * @param {String} guildId 
+ * @param {String} userId 
+ */
 async function cleanup(client, messageList, guildId, userId) {
     // shallow copy this array since it's possible other messages will be added
     messageList = [...messageList];
@@ -57,7 +72,7 @@ async function cleanup(client, messageList, guildId, userId) {
 
 /**
  * @description Looks for nitro/steam scams and removes them
- * @param {DiscordApi.Message} message The message object
+ * @param {Message} message The message object
  * @returns {Promise<Boolean>} Whether or not the message was acted on in some way
  */
 async function monitor(message) {
@@ -66,7 +81,7 @@ async function monitor(message) {
 
     try {
         // ignore posts from mods
-        if (message.member.permissions.has(DiscordApi.Permissions.FLAGS.MANAGE_MESSAGES)) return false;
+        if (message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) return false;
     } catch (err) {
         await recordError("", "", "permissions property null: " + err.toString(), reason);
         // for now, exit since we couldn't keep going

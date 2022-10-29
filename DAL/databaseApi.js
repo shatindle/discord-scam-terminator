@@ -15,6 +15,7 @@ const db = new Firestore({
  * @param {String} userId The user ID
  * @param {String} username The username and discriminator
  * @param {String} reason Details about the action taken
+ * @param {String} error
  */
 async function writeLog(type, guildId, userId, username, reason, error) {
     if (typeof type === "undefined")
@@ -48,26 +49,69 @@ async function writeLog(type, guildId, userId, username, reason, error) {
     });
 }
 
+/**
+ * 
+ * @param {String} guildId 
+ * @param {String} userId 
+ * @param {String} username 
+ * @param {String} reason 
+ */
 async function recordWarning(guildId, userId, username, reason) {
     await writeLog("warning", guildId, userId, username, reason);
 }
 
+/**
+ * 
+ * @param {String} guildId 
+ * @param {String} userId 
+ * @param {String} username 
+ * @param {String} reason 
+ */
 async function recordBan(guildId, userId, username, reason) {
     await writeLog("ban", guildId, userId, username, reason);
 }
 
+/**
+ * 
+ * @param {String} guildId 
+ * @param {String} userId 
+ * @param {String} username 
+ * @param {String} reason 
+ */
 async function recordKick(guildId, userId, username, reason) {
     await writeLog("kick", guildId, userId, username, reason);
 }
 
+/**
+ * 
+ * @param {String} guildId 
+ * @param {String} userId 
+ * @param {String} username 
+ * @param {String} reason 
+ */
 async function recordFail(guildId, userId, username, reason) {
     await writeLog("ban", guildId, userId, username, reason);
 }
 
+/**
+ * 
+ * @param {String} guildId 
+ * @param {String} userId 
+ * @param {String} username 
+ * @param {String} reason 
+ */
 async function recordError(guildId, userId, error, reason) {
     await writeLog("error", guildId, userId, null, reason, error);
 }
 
+/**
+ * 
+ * @param {String} guildId 
+ * @param {String} userId 
+ * @param {String} username 
+ * @param {String} action 
+ * @param {String} message 
+ */
 async function recordContentReview(guildId, userId, username, action, message) {
     const moment = Date.now().valueOf().toString();
 
@@ -82,6 +126,11 @@ async function recordContentReview(guildId, userId, username, action, message) {
     });
 }
 
+/**
+ * 
+ * @param {String} data 
+ * @returns {String}
+ */
 function getId(data) {
     return uuidv5(data, uuidNamespace);
 }
@@ -162,12 +211,23 @@ function shouldBanUser(userId, message) {
     }
 }
 
+/**
+ * 
+ * @param {String} userId 
+ * @param {String} guildId 
+ * @param {String} message 
+ * @returns {String}
+ */
 function hashMessage(userId, guildId, message) {
     const data = JSON.stringify({i: userId, m: message, g: guildId});
 
     return getId(data);
 }
 
+/**
+ * 
+ * @param {String} url 
+ */
 async function addUrlToBlacklist(url) {
     var moment = Date.now().valueOf().toString();
 
@@ -178,6 +238,11 @@ async function addUrlToBlacklist(url) {
     });
 }
 
+/**
+ * 
+ * @param {String} url 
+ * @param {String} example 
+ */
 async function addUrlToWhitelist(url, example) {
     var moment = Date.now().valueOf().toString();
 
@@ -192,6 +257,10 @@ async function addUrlToWhitelist(url, example) {
     });
 }
 
+/**
+ * 
+ * @param {String} url 
+ */
 async function flagUrl(url) {
     const id = getId(url);
     
@@ -202,6 +271,12 @@ async function flagUrl(url) {
     });
 }
 
+/**
+ * 
+ * @param {String} url 
+ * @param {String} fromList 
+ * @param {String} toList 
+ */
 async function moveUrl(url, fromList, toList) {
     if (fromList !== "blacklist" && fromList !== "graylist" && fromList !== "whitelist" && fromList !== "verifieddomains")
         throw "Invalid fromList";
@@ -246,6 +321,11 @@ async function moveUrl(url, fromList, toList) {
     }
 }
 
+/**
+ * 
+ * @param {String} collection 
+ * @param {String} id 
+ */
 async function deleteById(collection, id) {
     var ref = await db.collection(collection).doc(id);
 
@@ -253,6 +333,12 @@ async function deleteById(collection, id) {
         await ref.delete();
 }
 
+/**
+ * 
+ * @param {String} url 
+ * @param {String} example 
+ * @param {Boolean} removed 
+ */
 async function addUrlToGraylist(url, example, removed) {
     var moment = Date.now().valueOf().toString();
 
@@ -265,6 +351,10 @@ async function addUrlToGraylist(url, example, removed) {
     });
 }
 
+/**
+ * 
+ * @param {String} url 
+ */
 async function addUrlToVerifiedDomains(url) {
     var moment = Date.now().valueOf().toString();
 
@@ -275,6 +365,13 @@ async function addUrlToVerifiedDomains(url) {
     });
 }
 
+/**
+ * 
+ * @param {String} url 
+ * @param {String} message 
+ * @param {String} user 
+ * @param {String} guild 
+ */
 async function addMessageToScamList(url, message, user, guild) {
     var moment = Date.now().valueOf().toString();
 
@@ -288,6 +385,10 @@ async function addMessageToScamList(url, message, user, guild) {
     });
 }
 
+/**
+ * 
+ * @returns {Array<any>}
+ */
 async function loadUrlBlacklist() {
     var ref = await db.collection("blacklist");
     var docs = await ref.get();
@@ -300,6 +401,10 @@ async function loadUrlBlacklist() {
     return list;
 }
 
+/**
+ * 
+ * @returns {Array<any>}
+ */
 async function loadUrlWhitelist() {
     var ref = await db.collection("whitelist");
     var docs = await ref.get();
@@ -312,6 +417,11 @@ async function loadUrlWhitelist() {
     return list;
 }
 
+/**
+ * 
+ * @param {Boolean} everything 
+ * @returns {Array<any>}
+ */
 async function loadUrlGraylist(everything) {
     var ref = await db.collection("graylist");
     var docs = await ref.get();
@@ -329,6 +439,10 @@ async function loadUrlGraylist(everything) {
     return list;
 }
 
+/**
+ * 
+ * @returns {Array<any>}
+ */
 async function loadVerifiedDomains() {
     var ref = await db.collection("verifieddomains");
     var docs = await ref.get();
@@ -372,6 +486,9 @@ const LOGS_COLLECTION = "logchannels";
     };
 }
 
+/**
+ * 
+ */
 async function loadAllLogChannels() {
     var ref = await db.collection(LOGS_COLLECTION);
     var docs = await ref.get();
@@ -385,6 +502,11 @@ async function loadAllLogChannels() {
     }
 }
 
+/**
+ * 
+ * @param {String} guildId 
+ * @returns {String}
+ */
 function getLogChannel(guildId) {
     if (logs[guildId])
         return logs[guildId].channelId;
@@ -404,6 +526,11 @@ const callbacks = {
     maliciousinvites: []
 }
 
+/**
+ * 
+ * @param {String} type 
+ * @param {Function} callback 
+ */
 async function monitor(type, callback) {
     switch (type) {
         case "warning":
@@ -442,6 +569,9 @@ async function monitor(type, callback) {
 
 const observers = {};
 
+/**
+ * 
+ */
 function setupObservers() {
     if (!observers.warning && callbacks.warning.length > 0)
         observers.warning = configureObserver("warning", callbacks.warning);
@@ -471,6 +601,12 @@ function setupObservers() {
         observers.maliciousinvites = configureObserver("maliciousinvites", callbacks.maliciousinvites);
 }
 
+/**
+ * 
+ * @param {String} type 
+ * @param {Array<Function>} callbackGroup 
+ * @returns 
+ */
 function configureObserver(type, callbackGroup) {
     return db.collection(type).onSnapshot(async querySnapshot => {
         let changes = {
@@ -499,6 +635,9 @@ const userTables = [
     "warning"
 ];
 
+/**
+ * 
+ */
 async function purgeUsers() {
     try {
         const sevenDaysAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000);
@@ -520,6 +659,9 @@ async function purgeUsers() {
     }
 }
 
+/**
+ * 
+ */
 async function purgeRecords() {
     try {
         const sixMonthsAgo = new Date(Date.now() - 6 * 31 * 24 * 60 * 60 * 1000);
@@ -544,6 +686,10 @@ async function purgeRecords() {
     }
 }
 
+/**
+ * 
+ * @returns {Number}
+ */
 async function totalActions() {
     let total = 0;
     for (let table of userTables) {

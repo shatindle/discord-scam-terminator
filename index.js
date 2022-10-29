@@ -1,4 +1,4 @@
-const { Client, Collection, Intents } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, Partials } = require('discord.js');
 const fs = require('fs');
 const { loadAllLogChannels } = require("./DAL/databaseApi");
 const nitroSteamScam = require("./Monitors/nitroSteamScam");
@@ -7,17 +7,18 @@ const maliciousRedirect = require("./Monitors/maliciousRedirect");
 
 const client = new Client({ 
     intents: [
-        Intents.FLAGS.GUILDS,
-        Intents.FLAGS.GUILD_MESSAGES,
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
         // The guild members intent was used to catch clonex, 
         // but it's been decommissioned due to other bots doing it better
         // Intents.FLAGS.GUILD_MEMBERS,
-        Intents.FLAGS.GUILD_BANS
+        GatewayIntentBits.GuildBans
     ], 
     partials: [
-        'MESSAGE', 
-        'CHANNEL', 
-        'REACTION'
+        Partials.Message,
+        Partials.Channel,
+        Partials.Reaction
     ] 
 });
 
@@ -34,7 +35,6 @@ for (const file of commandFiles) {
 client.once('ready', async () => {
     await loadAllLogChannels();
 
-    //require("./Monitors/clonex")(client);
     require("./Monitors/serverCount")(client);
 });
 

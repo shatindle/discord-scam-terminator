@@ -1,8 +1,8 @@
-const DiscordApi = require('discord.js');
+const { Client } = require('discord.js');
 
 /**
  * @description Updates the server count
- * @param {DiscordApi.Client} discord The discord client
+ * @param {Client} discord The discord client
  */
  function monitor(discord) {
     setInterval(function() {

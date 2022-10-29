@@ -1,10 +1,11 @@
-const { Client, Intents } = require('discord.js');
+const { Client, GatewayIntentBits } = require('discord.js');
 const { token } = require('./settings.json');
 
 const client = new Client({ 
     intents: [
-        Intents.FLAGS.GUILDS
-    ] });
+        GatewayIntentBits.Guilds
+    ] 
+});
 
 client.once('ready', async () => {
     console.log(client.guilds.cache.size);
