@@ -1,5 +1,5 @@
-const { Permissions } = require("discord.js");
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { PermissionsBitField, ChannelType } = require("discord.js");
+const { SlashCommandBuilder } = require('discord.js');
 const { registerLogs } = require("../DAL/databaseApi");
 const { logActivity } = require("../DAL/logApi");
 
@@ -18,19 +18,19 @@ module.exports = {
                 // logging requested
                 const channel = await interaction.guild.channels.fetch(target.id);
 
-                if (channel.type !== "GUILD_TEXT") {
+                if (channel.type !== ChannelType.GuildText) {
                     await interaction.reply({ content: '<#' + target.id + '> is not a text channel.  Please specify a text channel, then try again', ephemeral: true });
                     return;
                 }
 
                 const currentPermissions = channel.permissionsFor(interaction.member.user.id);
 
-                if (!currentPermissions.has(Permissions.FLAGS.MANAGE_CHANNELS)) {
+                if (!currentPermissions.has(PermissionsBitField.Flags.ManageChannels)) {
                     await interaction.reply({ content: "You need the MANAGE_CHANNELS permission to run this command", ephemeral: true });
                     return;
                 }
     
-                const canSendMessages = await channel.permissionsFor(interaction.client.user.id).has(Permissions.FLAGS.SEND_MESSAGES);
+                const canSendMessages = await channel.permissionsFor(interaction.client.user.id).has(PermissionsBitField.Flags.SendMessages);
     
                 if (!canSendMessages) {
                     await interaction.reply({ content: 'Please grant me SEND_MESSAGES in <#' + target.id + '>, then try again', ephemeral: true });

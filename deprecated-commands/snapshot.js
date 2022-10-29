@@ -1,5 +1,4 @@
-const { Permissions, MessageAttachment } = require("discord.js");
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { SlashCommandBuilder } = require('discord.js');
 const { registerLogs } = require("../DAL/databaseApi");
 const { logActivity } = require("../DAL/logApi");
 const { urlRegex } = require("../DAL/bodyparserApi");

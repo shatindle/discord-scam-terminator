@@ -1,6 +1,10 @@
 const fetch = require("node-fetch");
 const { realisticWebScraperKey, realisticWebScraperEndpoint } = require("../settings.json");
 
+/**
+ * 
+ * @returns {Boolean}
+ */
 async function isScraperOnline() {
     const response = await fetch(`${realisticWebScraperEndpoint}/up`, {
         method: "POST",
@@ -12,6 +16,11 @@ async function isScraperOnline() {
     return response.ok;
 }
 
+/**
+ * 
+ * @param {String} url 
+ * @returns {Buffer|Null}
+ */
 async function getScreenshot(url) {
     const response = await fetch(`${realisticWebScraperEndpoint}/screenshot`, {
         method: "POST",
@@ -25,7 +34,7 @@ async function getScreenshot(url) {
 
     if (response.ok) {
         const image = await response.arrayBuffer();
-        return Buffer.from(image);;
+        return Buffer.from(image);
     }
 
     return null;

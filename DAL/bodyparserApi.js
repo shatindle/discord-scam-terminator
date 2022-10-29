@@ -16,6 +16,12 @@ const discordInvitePattern = /(?:\w+|^)?discord(?:\.com\/invite\/|\.gg\/(?:invit
  */
 const discordChannelPattern = /https:\/\/(?:\w+\.)?discord(?:app)?\.com\/channels\/(\d+)\/(\d+)(\/(\d+))?/ig;
 
+/**
+ * 
+ * @param {String} content 
+ * @param {Boolean} fullyQualify 
+ * @returns {Array<String>}
+ */
 function extractUrlsFromContent(content, fullyQualify) {
     try {
         let urls = [];
@@ -52,10 +58,22 @@ function extractUrlsFromContent(content, fullyQualify) {
     }
 }
 
+/**
+ * 
+ * @param {String} value 
+ * @param {Number} index 
+ * @param {String} self 
+ * @returns {Boolean}
+ */
 function onlyUnique(value, index, self) {
     return self.indexOf(value) === index;
 }
 
+/**
+ * 
+ * @param {String} message 
+ * @returns {String}
+ */
 function cleanMessage(message) {
     message = message.toLowerCase();
     message = remove(message);
@@ -66,10 +84,21 @@ function cleanMessage(message) {
 }
 
 // most scams tend to be short and sweet, and we occassionally get false positives the longer a message is
+/**
+ * 
+ * @param {String} str 
+ * @returns {Number}
+ */
 function countWords(str) {
     return str.trim().split(/\s+/).length;
 }
 
+/**
+ * 
+ * @param {String} message 
+ * @param {Boolean} removeUrl 
+ * @returns {Number}
+ */
 function containsKeyIndicators(message, removeUrl = true) {
     message = cleanMessage(message);
 
@@ -153,6 +182,11 @@ function containsKeyIndicators(message, removeUrl = true) {
     return indicators;
 }
 
+/**
+ * 
+ * @param {String} message 
+ * @returns {Boolean}
+ */
 function suspiciousDmRequests(message) {
     message = cleanMessage(message);
 
@@ -260,6 +294,11 @@ function suspiciousDmRequests(message) {
     return actionRequest && indicators > 1;
 }
 
+/**
+ * 
+ * @param {String} url 
+ * @returns {String}
+ */
 function extractHostname(url) {
     url = url.toLowerCase();
     
@@ -277,6 +316,14 @@ function extractHostname(url) {
     }
 }
 
+/**
+ * 
+ * @param {String} message 
+ * @param {Array<String>} urls 
+ * @param {String} user 
+ * @param {String} server 
+ * @returns {Promise<Boolean>}
+ */
 async function isRedlineStealer(message, urls, user, server) {
     let hasKnownBadPath = false;
     let badUrl = "";

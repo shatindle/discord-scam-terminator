@@ -1,15 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const { Permissions } = require("discord.js");
+const { PermissionsBitField, Client, GatewayIntentBits } = require("discord.js");
 const { monitor } = require("../../DAL/databaseApi");
 const settings = require("../../settings.json");
 
-const { Client, Intents } = require('discord.js');
-
 const client = new Client({ 
     intents: [
-        Intents.FLAGS.GUILDS
-    ] });
+        GatewayIntentBits.Guilds
+    ] 
+});
 client.login(settings.token);
 
 const testUsers = settings.testUsers;
@@ -48,7 +47,7 @@ router.get("/activity/warnings", (req, res) => {
     if (!req.user)
         return res.json([]);
 
-    const guilds = req.user.guilds.filter(guild => new Permissions(guild.permissions_new).has(Permissions.FLAGS.MANAGE_MESSAGES)).map(guild => guild.id);
+    const guilds = req.user.guilds.filter(guild => new PermissionsBitField(guild.permissions_new).has(PermissionsBitField.Flags.ManageMessages)).map(guild => guild.id);
     res.json(warned.filter(t => (!testUsers || testUsers.indexOf(t.userId) === -1) && (adminUsers.indexOf(req.user.id) > -1 || guilds.indexOf(t.guildId) > -1)));
 });
 
@@ -56,7 +55,7 @@ router.get("/activity/kicks", (req, res) => {
     if (!req.user)
         return res.json([]);
 
-    const guilds = req.user.guilds.filter(guild => new Permissions(guild.permissions_new).has(Permissions.FLAGS.MANAGE_MESSAGES)).map(guild => guild.id);
+    const guilds = req.user.guilds.filter(guild => new PermissionsBitField(guild.permissions_new).has(PermissionsBitField.Flags.ManageMessages)).map(guild => guild.id);
     res.json(kicked.filter(t => (testUsers || testUsers.indexOf(t.userId) === -1) && (adminUsers.indexOf(req.user.id) > -1 || guilds.indexOf(t.guildId) > -1)));
 });
 
@@ -81,7 +80,7 @@ router.get("/activity/servers", (req, res) => {
         return res.json(adminGuilds);
     }
     
-    res.json(req.user.guilds.filter(guild => new Permissions(guild.permissions_new).has(Permissions.FLAGS.MANAGE_MESSAGES)).filter(guild => allGuilds.indexOf(guild.id) > -1).map(guild => {
+    res.json(req.user.guilds.filter(guild => new PermissionsBitField(guild.permissions_new).has(PermissionsBitField.Flags.ManageMessages)).filter(guild => allGuilds.indexOf(guild.id) > -1).map(guild => {
         let thisguild = adminGuilds.filter(g => g.id === guild.id);
 
         return {

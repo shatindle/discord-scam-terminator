@@ -10,6 +10,12 @@ const {
     monitor
 } = require('./databaseApi');
 
+/**
+ * 
+ * @param {String} s 
+ * @param {Boolean} protocols 
+ * @returns {Boolean}
+ */
 function stringIsAValidUrl(s, protocols) {
     try {
         let url = new URL(s);
@@ -23,11 +29,20 @@ function stringIsAValidUrl(s, protocols) {
     }
 };
 
+/**
+ * 
+ * @param {String} url 
+ * @returns {Boolean}
+ */
 function validUrl(url) {
     return stringIsAValidUrl(url, ['http', 'https']);
 }
 
-
+/**
+ * 
+ * @param {String} url 
+ * @returns {String}
+ */
 function extractHostname(url) {
     url = url.toLowerCase();
     
@@ -45,6 +60,11 @@ function extractHostname(url) {
     }
 }
 
+/**
+ * 
+ * @param {String} url 
+ * @returns {String}
+ */
 function extractUrlWithoutProtocol(url) {
     url = url.toLowerCase();
     
@@ -69,6 +89,12 @@ function extractUrlWithoutProtocol(url) {
     }
 }
 
+/**
+ * 
+ * @param {String} url 
+ * @param {String} compare 
+ * @returns {Boolean}
+ */
 function domainsMatch(url, compare) {
     return url.endsWith("." + compare) || url === compare;
 }
@@ -83,6 +109,12 @@ const discordUrlList = [
     "discordstatus.com"
 ];
 
+/**
+ * 
+ * @param {String} url 
+ * @param {Boolean} stripDomain 
+ * @returns {Boolean}
+ */
 function discordUrl(url, stripDomain = false) {
     const hostname = extractHostname(url);
 
@@ -103,6 +135,11 @@ function discordUrl(url, stripDomain = false) {
     return false;
 }
 
+/**
+ * 
+ * @param {String} url 
+ * @returns {Boolean}
+ */
 function steamUrl(url) {
     const hostname = extractHostname(url);
     
@@ -145,6 +182,11 @@ function steamUrl(url) {
     return false;
 }
 
+/**
+ * 
+ * @param {String} url 
+ * @returns {Boolean}
+ */
 function whitelistedUrl(url) {
     const hostname = extractHostname(url);
 
@@ -163,6 +205,11 @@ function whitelistedUrl(url) {
     return false;
 }
 
+/**
+ * 
+ * @param {String} url 
+ * @returns {Boolean}
+ */
 function isUrlInWhitelist(url) {
     return discordUrl(url) || steamUrl(url) || whitelistedUrl(url) || isVerifiedDomain(url);
 }
@@ -174,6 +221,11 @@ let graylist = {};
 let verifieddomains = {};
 let maliciousinvites = {};
 
+/**
+ * 
+ * @param {Object} changes 
+ * @param {Object} list 
+ */
 function addressChanges(changes, list) {
     try {
         changes.added.forEach(item => list[item.url] = true);
@@ -241,6 +293,11 @@ function isVerifiedDomain(hostname) {
     return false;
 }
 
+/**
+ * 
+ * @param {String} hostname 
+ * @returns {Boolean}
+ */
 function isYouTube(hostname) {
     if ((hostname.length === "youtube.com".length && hostname.endsWith("youtube.com")) || hostname.endsWith(".youtube.com")) {
         return true;
@@ -267,7 +324,7 @@ function isBlacklisted(url) {
 /**
  * @description Checks to see if the URL is likely a scam by inspecting the head part of the HTML
  * @param {string} url The URL we need to perform a head check on
- * @returns Whether or not the URL is safe
+ * @returns {Boolean|Null} Whether or not the URL is safe
  */
 async function isSafeDeepCheck(url) {
     const hostname = extractHostname(url);
@@ -383,6 +440,11 @@ async function isSafeDeepCheck(url) {
     return null;
 }
 
+/**
+ * 
+ * @param {String} url 
+ * @returns {String|Null}
+ */
 async function getServerIdFromInvite(url) {
     try {
         if (!discordInvitePattern.test(url)) return null;
