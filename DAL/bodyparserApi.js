@@ -10,7 +10,7 @@ const urlRegex = /((?:(?:(?:https?):\/\/(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9
  * discord.gg/invite/XYZ
  * discordapp.com/invite/XYZ
  */
-const discordInvitePattern = /(?:discord(?:(?:app)?.com/invite/|.gg/(?:invite/)?))[A-Za-z0-9\-]{2,}/ig;
+const discordInvitePattern = /(?:discord(?:(?:app)?\.com\/invite\/|\.gg\/(?:invite\/)?))[A-Za-z0-9\-]{2,}/ig;
 
 /*
  * there is no known way for channel links to be malicious
