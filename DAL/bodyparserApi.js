@@ -7,9 +7,10 @@ const urlRegex = /((?:(?:(?:https?):\/\/(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9
  * there are 3 URL patterns that discord will display without https:
  * discord.com/invite/XYZ
  * discord.gg/XYZ
+ * discord.gg/invite/XYZ
  * discordapp.com/invite/XYZ
  */
-const discordInvitePattern = /(?:\w+|^)?discord(?:\.com\/invite\/|\.gg\/(?:invite\/)?|app\.com\/invite\/){1}[a-z0-9\-]+(?:\w+|$)?/ig;
+const discordInvitePattern = /(?:discord(?:(?:app)?\.com\/invite\/|\.gg\/(?:invite\/)?))[A-Za-z0-9\-]{2,}/ig;
 
 /*
  * there is no known way for channel links to be malicious
