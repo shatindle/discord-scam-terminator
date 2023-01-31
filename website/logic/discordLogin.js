@@ -38,10 +38,10 @@ router.use(passport.initialize());
 router.use(passport.session());
 
 router.get('/auth/oauth2', passport.authenticate('discord'), (req, res) => res.send(200));
-router.get('/auth/oauth2/redirect', passport.authenticate('discord'), (req, res) => res.redirect('/'));
+router.get('/auth/oauth2/redirect', passport.authenticate('discord'), (req, res) => res.redirect(`/?_v=${new Date().valueOf()}`));
 router.get('/logout', (req, res) => {
     req.logout();
-    res.redirect('/');
+    res.redirect(`/?_v=${new Date().valueOf()}`);
 });
 
 // check if the user is an admin
