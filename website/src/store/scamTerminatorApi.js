@@ -1,4 +1,4 @@
-export const getUser = async () => await (await fetch('/api/user')).json();
+export const getUser = async () => await (await fetch('/api/user', { method: "POST" })).json();
 export const getBlacklist = async () => await (await fetch('/api/blacklist')).json();
 export const getGraylist = async () => await (await fetch('/api/graylist')).json();
 export const getWhitelist = async () => await (await fetch('/api/whitelist')).json();

@@ -20,7 +20,7 @@ router.get('/pfp', (req, res) => {
     return res.sendFile(path.join(__dirname, '../lib/discord.png'));
 });
 
-router.get('/user', (req, res) => {
+router.post('/user', (req, res) => {
     if (req.user) {
         return res.json({
             id: req.user.id,
