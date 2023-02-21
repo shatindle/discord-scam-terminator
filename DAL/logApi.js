@@ -80,7 +80,7 @@ async function logKick(client, guildId, userId, channelId, message = "", reason 
         recentlyKickedUsers[id] = true;
         setTimeout(() => {
             delete recentlyKickedUsers[id];
-        }, 3000);
+        }, 10000);
     }
 
     await logActivity(
