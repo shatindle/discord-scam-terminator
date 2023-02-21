@@ -57,6 +57,9 @@ const logWarning = async (client, guildId, userId, channelId, message = "", reas
         WARNING_COLOR);
 
 const KICK_COLOR = "#dc3545";
+const KICK_NOACTION_COLOR = "#a64d79";
+
+const recentlyKickedUsers = [];
 
 /**
  * 
@@ -68,15 +71,27 @@ const KICK_COLOR = "#dc3545";
  * @param {String} reason 
  * @returns 
  */
-const logKick = async (client, guildId, userId, channelId, message = "", reason = "unknown") =>
+async function logKick(client, guildId, userId, channelId, message = "", reason = "unknown") {
+    let alreadyKicked = false;
+    let id = `${guildId}-${userId}`
+
+    if (recentlyKickedUsers[id]) alreadyKicked = true;
+    else {
+        recentlyKickedUsers[id] = true;
+        setTimeout(() => {
+            delete recentlyKickedUsers[id];
+        }, 1500);
+    }
+
     await logActivity(
         client,
         guildId, 
-        `User kicked. Reason: ${reason}`,
+        `User${alreadyKicked ? " already " : " " }kicked. Reason: ${reason}`,
 `**<@${userId}> sent this message in <#${channelId}>**:
 
 \`${message.replace("`", "")}\``,
-        KICK_COLOR);
+    alreadyKicked ? KICK_NOACTION_COLOR : KICK_COLOR);
+}
 
 
 module.exports = {

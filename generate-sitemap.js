@@ -24,8 +24,8 @@ const gitDateExtractor = require('git-date-extractor');
 
     let sitemap = 
         sitemapStart +
-        urlTemplate.replace("{{URL}}", "https://discordscamhunter.com/").replace("{{DATE}}", lastmod) + 
-        urlTemplate.replace("{{URL}}", "https://discordscamhunter.com/activity").replace("{{DATE}}", lastmod) +
+        urlTemplate.replace("{{URL}}", "https://antiphish.info/").replace("{{DATE}}", lastmod) + 
+        urlTemplate.replace("{{URL}}", "https://antiphish.info/activity").replace("{{DATE}}", lastmod) +
         sitemapEnd;
 
     writeFileSync(__dirname + "/website/static/sitemap.xml", sitemap);
