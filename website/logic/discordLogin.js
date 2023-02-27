@@ -24,7 +24,7 @@ passport.use(new Strategy({
 }));
 
 const ourSession = session({
-    secret: sessionSecret,
+    secret: settings.sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {
