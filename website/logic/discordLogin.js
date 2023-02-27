@@ -4,7 +4,7 @@ const router = express.Router();
 const passport = require('passport');
 const { Strategy } = require('passport-discord');
 
-const settings = require('../../settings.json').discord;
+const { discord:settings, secureCookie } = require('../../settings.json');
 
 passport.serializeUser(function(user, done) {
     done(null, user);
@@ -24,10 +24,13 @@ passport.use(new Strategy({
 }));
 
 const ourSession = session({
-    secret: settings.sessionSecret,
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {
+        path: '/', 
+        secure: secureCookie, 
+        httpOnly: true,
         maxAge: 1000 * 60 * 60 * 24 * 1
     }
 });
