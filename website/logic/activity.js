@@ -73,7 +73,8 @@ router.get("/activity/servers", (req, res) => {
             name: guild.name,
             avatar: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}` : 'https://cdn.discordapp.com/embed/avatars/0.png',
             members: guild.memberCount,
-            partner: guild.partnered
+            partnered: guild.partnered,
+            verified: guild.verified
         });
     });
         
@@ -89,7 +90,8 @@ router.get("/activity/servers", (req, res) => {
             name: guild.name,
             avatar: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}` : 'https://cdn.discordapp.com/embed/avatars/0.png',
             members: thisguild.length === 1 ? thisguild[0].members : '?',
-            partner: thisguild.partner
+            partnered: thisguild.partnered,
+            verified: thisguild.verified
         }
     }));
 });

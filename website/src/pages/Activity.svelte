@@ -270,7 +270,9 @@
                     </div>
                     <div class="col-9">
                         <div>
-                            {#if server.partner}
+                            {#if server.verified}
+                            <img src="/lib/img/verified-logo.png" alt="Discord Verified" style="width:20px;height:20px;display:inline;" />
+                            {:else if server.partnered}
                             <img src="/lib/img/partner-logo.png" alt="Discord Partner" style="width:20px;height:20px;display:inline;" />
                             {/if}
                             {server.name}
