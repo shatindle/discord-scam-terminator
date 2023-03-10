@@ -82,7 +82,6 @@
                     <p>Example: <a href={item.example} target="_blank">{item.example}</a></p>
                 </div>
                 {/if}
-                <button style="position:absolute;top:0;right:0;" type="button" class="btn btn-info" on:click={async () => await snapshot(item.example)}>View</button>
             </div>
             <div class="row">
                 <div class="col" style="text-align:left;">

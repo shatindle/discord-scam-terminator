@@ -107,3 +107,4 @@ package-lock.json
 firebase.json
 /website/lib/build*
 /website/static/sitemap.xml
+.DS_Store

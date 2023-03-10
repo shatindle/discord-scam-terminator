@@ -269,7 +269,12 @@
                         <img src={server.avatar} alt={server.name + "Server Icon"} class="mdc-elevation--z2"/>
                     </div>
                     <div class="col-9">
-                        <div>{server.name}</div>
+                        <div>
+                            {#if server.partner}
+                            <img src="/lib/img/partner-logo.png" alt="Discord Partner" style="width:20px;height:20px;display:inline;" />
+                            {/if}
+                            {server.name}
+                        </div>
                         <div class="usercount">Users: {server.members}</div>
                         <div class="incidents">Scams: {server.count}</div>
                     </div>

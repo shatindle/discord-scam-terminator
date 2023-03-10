@@ -131,7 +131,9 @@ var app = (function () {
         target.insertBefore(node, anchor || null);
     }
     function detach(node) {
-        node.parentNode.removeChild(node);
+        if (node.parentNode) {
+            node.parentNode.removeChild(node);
+        }
     }
     function destroy_each(iterations, detaching) {
         for (let i = 0; i < iterations.length; i += 1) {
@@ -304,9 +306,9 @@ var app = (function () {
 
     const dirty_components = [];
     const binding_callbacks = [];
-    const render_callbacks = [];
+    let render_callbacks = [];
     const flush_callbacks = [];
-    const resolved_promise = Promise.resolve();
+    const resolved_promise = /* @__PURE__ */ Promise.resolve();
     let update_scheduled = false;
     function schedule_update() {
         if (!update_scheduled) {
@@ -341,15 +343,29 @@ var app = (function () {
     const seen_callbacks = new Set();
     let flushidx = 0; // Do *not* move this inside the flush() function
     function flush() {
+        // Do not reenter flush while dirty components are updated, as this can
+        // result in an infinite loop. Instead, let the inner flush handle it.
+        // Reentrancy is ok afterwards for bindings etc.
+        if (flushidx !== 0) {
+            return;
+        }
         const saved_component = current_component;
         do {
             // first, call beforeUpdate functions
             // and update components
-            while (flushidx < dirty_components.length) {
-                const component = dirty_components[flushidx];
-                flushidx++;
-                set_current_component(component);
-                update(component.$$);
+            try {
+                while (flushidx < dirty_components.length) {
+                    const component = dirty_components[flushidx];
+                    flushidx++;
+                    set_current_component(component);
+                    update(component.$$);
+                }
+            }
+            catch (e) {
+                // reset dirty state to not end up in a deadlocked state and then rethrow
+                dirty_components.length = 0;
+                flushidx = 0;
+                throw e;
             }
             set_current_component(null);
             dirty_components.length = 0;
@@ -385,6 +401,16 @@ var app = (function () {
             $$.fragment && $$.fragment.p($$.ctx, dirty);
             $$.after_update.forEach(add_render_callback);
         }
+    }
+    /**
+     * Useful for example to execute remaining `afterUpdate` callbacks before executing `destroy`.
+     */
+    function flush_render_callbacks(fns) {
+        const filtered = [];
+        const targets = [];
+        render_callbacks.forEach((c) => fns.indexOf(c) === -1 ? filtered.push(c) : targets.push(c));
+        targets.forEach((c) => c());
+        render_callbacks = filtered;
     }
     const outroing = new Set();
     let outros;
@@ -447,6 +473,7 @@ var app = (function () {
         const new_blocks = [];
         const new_lookup = new Map();
         const deltas = new Map();
+        const updates = [];
         i = n;
         while (i--) {
             const child_ctx = get_context(ctx, list, i);
@@ -457,7 +484,8 @@ var app = (function () {
                 block.c();
             }
             else if (dynamic) {
-                block.p(child_ctx, dirty);
+                // defer updates until all the DOM shuffling is done
+                updates.push(() => block.p(child_ctx, dirty));
             }
             new_lookup.set(key, new_blocks[i] = block);
             if (key in old_indexes)
@@ -510,6 +538,7 @@ var app = (function () {
         }
         while (n)
             insert(new_blocks[n - 1]);
+        run_all(updates);
         return new_blocks;
     }
     function validate_each_keys(ctx, list, get_context, get_key) {
@@ -596,6 +625,7 @@ var app = (function () {
     function destroy_component(component, detaching) {
         const $$ = component.$$;
         if ($$.fragment !== null) {
+            flush_render_callbacks($$.after_update);
             run_all($$.on_destroy);
             $$.fragment && $$.fragment.d(detaching);
             // TODO null out other refs, including component.$$ (but need to
@@ -703,7 +733,7 @@ var app = (function () {
     }
 
     function dispatch_dev(type, detail) {
-        document.dispatchEvent(custom_event(type, Object.assign({ version: '3.52.0' }, detail), { bubbles: true }));
+        document.dispatchEvent(custom_event(type, Object.assign({ version: '3.56.0' }, detail), { bubbles: true }));
     }
     function append_dev(target, node) {
         dispatch_dev('SvelteDOMInsert', { target, node });
@@ -717,12 +747,14 @@ var app = (function () {
         dispatch_dev('SvelteDOMRemove', { node });
         detach(node);
     }
-    function listen_dev(node, event, handler, options, has_prevent_default, has_stop_propagation) {
+    function listen_dev(node, event, handler, options, has_prevent_default, has_stop_propagation, has_stop_immediate_propagation) {
         const modifiers = options === true ? ['capture'] : options ? Array.from(Object.keys(options)) : [];
         if (has_prevent_default)
             modifiers.push('preventDefault');
         if (has_stop_propagation)
             modifiers.push('stopPropagation');
+        if (has_stop_immediate_propagation)
+            modifiers.push('stopImmediatePropagation');
         dispatch_dev('SvelteDOMAddEventListener', { node, event, handler, modifiers });
         const dispose = listen(node, event, handler, options);
         return () => {
@@ -803,7 +835,7 @@ var app = (function () {
         $inject_state() { }
     }
 
-    const getUser = async () => await (await fetch('/api/user')).json();
+    const getUser = async () => await (await fetch('/api/user', { method: "POST" })).json();
     const move = async (url, from, to) => await fetch('/api/move', {
         method: "POST",
         body: JSON.stringify({
@@ -1214,7 +1246,7 @@ var app = (function () {
      * THE SOFTWARE.
      */
     var _a, _b;
-    var cssClasses$5 = {
+    var cssClasses$3 = {
         LIST_ITEM_ACTIVATED_CLASS: 'mdc-list-item--activated',
         LIST_ITEM_CLASS: 'mdc-list-item',
         LIST_ITEM_DISABLED_CLASS: 'mdc-list-item--disabled',
@@ -1224,21 +1256,21 @@ var app = (function () {
         ROOT: 'mdc-list',
     };
     (_a = {},
-        _a["" + cssClasses$5.LIST_ITEM_ACTIVATED_CLASS] = 'mdc-list-item--activated',
-        _a["" + cssClasses$5.LIST_ITEM_CLASS] = 'mdc-list-item',
-        _a["" + cssClasses$5.LIST_ITEM_DISABLED_CLASS] = 'mdc-list-item--disabled',
-        _a["" + cssClasses$5.LIST_ITEM_SELECTED_CLASS] = 'mdc-list-item--selected',
-        _a["" + cssClasses$5.LIST_ITEM_PRIMARY_TEXT_CLASS] = 'mdc-list-item__primary-text',
-        _a["" + cssClasses$5.ROOT] = 'mdc-list',
+        _a["" + cssClasses$3.LIST_ITEM_ACTIVATED_CLASS] = 'mdc-list-item--activated',
+        _a["" + cssClasses$3.LIST_ITEM_CLASS] = 'mdc-list-item',
+        _a["" + cssClasses$3.LIST_ITEM_DISABLED_CLASS] = 'mdc-list-item--disabled',
+        _a["" + cssClasses$3.LIST_ITEM_SELECTED_CLASS] = 'mdc-list-item--selected',
+        _a["" + cssClasses$3.LIST_ITEM_PRIMARY_TEXT_CLASS] = 'mdc-list-item__primary-text',
+        _a["" + cssClasses$3.ROOT] = 'mdc-list',
         _a);
     var deprecatedClassNameMap = (_b = {},
-        _b["" + cssClasses$5.LIST_ITEM_ACTIVATED_CLASS] = 'mdc-deprecated-list-item--activated',
-        _b["" + cssClasses$5.LIST_ITEM_CLASS] = 'mdc-deprecated-list-item',
-        _b["" + cssClasses$5.LIST_ITEM_DISABLED_CLASS] = 'mdc-deprecated-list-item--disabled',
-        _b["" + cssClasses$5.LIST_ITEM_SELECTED_CLASS] = 'mdc-deprecated-list-item--selected',
-        _b["" + cssClasses$5.LIST_ITEM_TEXT_CLASS] = 'mdc-deprecated-list-item__text',
-        _b["" + cssClasses$5.LIST_ITEM_PRIMARY_TEXT_CLASS] = 'mdc-deprecated-list-item__primary-text',
-        _b["" + cssClasses$5.ROOT] = 'mdc-deprecated-list',
+        _b["" + cssClasses$3.LIST_ITEM_ACTIVATED_CLASS] = 'mdc-deprecated-list-item--activated',
+        _b["" + cssClasses$3.LIST_ITEM_CLASS] = 'mdc-deprecated-list-item',
+        _b["" + cssClasses$3.LIST_ITEM_DISABLED_CLASS] = 'mdc-deprecated-list-item--disabled',
+        _b["" + cssClasses$3.LIST_ITEM_SELECTED_CLASS] = 'mdc-deprecated-list-item--selected',
+        _b["" + cssClasses$3.LIST_ITEM_TEXT_CLASS] = 'mdc-deprecated-list-item__text',
+        _b["" + cssClasses$3.LIST_ITEM_PRIMARY_TEXT_CLASS] = 'mdc-deprecated-list-item__primary-text',
+        _b["" + cssClasses$3.ROOT] = 'mdc-deprecated-list',
         _b);
     var strings$3 = {
         ACTION_EVENT: 'MDCList:action',
@@ -1255,9 +1287,9 @@ var app = (function () {
         ARIA_MULTI_SELECTABLE_SELECTOR: '[aria-multiselectable="true"]',
         CHECKBOX_RADIO_SELECTOR: 'input[type="checkbox"], input[type="radio"]',
         CHECKBOX_SELECTOR: 'input[type="checkbox"]',
-        CHILD_ELEMENTS_TO_TOGGLE_TABINDEX: "\n    ." + cssClasses$5.LIST_ITEM_CLASS + " button:not(:disabled),\n    ." + cssClasses$5.LIST_ITEM_CLASS + " a,\n    ." + deprecatedClassNameMap[cssClasses$5.LIST_ITEM_CLASS] + " button:not(:disabled),\n    ." + deprecatedClassNameMap[cssClasses$5.LIST_ITEM_CLASS] + " a\n  ",
+        CHILD_ELEMENTS_TO_TOGGLE_TABINDEX: "\n    ." + cssClasses$3.LIST_ITEM_CLASS + " button:not(:disabled),\n    ." + cssClasses$3.LIST_ITEM_CLASS + " a,\n    ." + deprecatedClassNameMap[cssClasses$3.LIST_ITEM_CLASS] + " button:not(:disabled),\n    ." + deprecatedClassNameMap[cssClasses$3.LIST_ITEM_CLASS] + " a\n  ",
         DEPRECATED_SELECTOR: '.mdc-deprecated-list',
-        FOCUSABLE_CHILD_ELEMENTS: "\n    ." + cssClasses$5.LIST_ITEM_CLASS + " button:not(:disabled),\n    ." + cssClasses$5.LIST_ITEM_CLASS + " a,\n    ." + cssClasses$5.LIST_ITEM_CLASS + " input[type=\"radio\"]:not(:disabled),\n    ." + cssClasses$5.LIST_ITEM_CLASS + " input[type=\"checkbox\"]:not(:disabled),\n    ." + deprecatedClassNameMap[cssClasses$5.LIST_ITEM_CLASS] + " button:not(:disabled),\n    ." + deprecatedClassNameMap[cssClasses$5.LIST_ITEM_CLASS] + " a,\n    ." + deprecatedClassNameMap[cssClasses$5.LIST_ITEM_CLASS] + " input[type=\"radio\"]:not(:disabled),\n    ." + deprecatedClassNameMap[cssClasses$5.LIST_ITEM_CLASS] + " input[type=\"checkbox\"]:not(:disabled)\n  ",
+        FOCUSABLE_CHILD_ELEMENTS: "\n    ." + cssClasses$3.LIST_ITEM_CLASS + " button:not(:disabled),\n    ." + cssClasses$3.LIST_ITEM_CLASS + " a,\n    ." + cssClasses$3.LIST_ITEM_CLASS + " input[type=\"radio\"]:not(:disabled),\n    ." + cssClasses$3.LIST_ITEM_CLASS + " input[type=\"checkbox\"]:not(:disabled),\n    ." + deprecatedClassNameMap[cssClasses$3.LIST_ITEM_CLASS] + " button:not(:disabled),\n    ." + deprecatedClassNameMap[cssClasses$3.LIST_ITEM_CLASS] + " a,\n    ." + deprecatedClassNameMap[cssClasses$3.LIST_ITEM_CLASS] + " input[type=\"radio\"]:not(:disabled),\n    ." + deprecatedClassNameMap[cssClasses$3.LIST_ITEM_CLASS] + " input[type=\"checkbox\"]:not(:disabled)\n  ",
         RADIO_SELECTOR: 'input[type="radio"]',
         SELECTED_ITEM_SELECTOR: '[aria-selected="true"], [aria-current="true"]',
     };
@@ -1761,7 +1793,7 @@ var app = (function () {
         });
         Object.defineProperty(MDCListFoundation, "cssClasses", {
             get: function () {
-                return cssClasses$5;
+                return cssClasses$3;
             },
             enumerable: false,
             configurable: true
@@ -1847,7 +1879,7 @@ var app = (function () {
             var selectedItemIndex = this.getSelectedIndexFromDOM();
             if (selectedItemIndex === numbers$1.UNSET_INDEX)
                 return;
-            var hasActivatedClass = this.adapter.listItemAtIndexHasClass(selectedItemIndex, cssClasses$5.LIST_ITEM_ACTIVATED_CLASS);
+            var hasActivatedClass = this.adapter.listItemAtIndexHasClass(selectedItemIndex, cssClasses$3.LIST_ITEM_ACTIVATED_CLASS);
             if (hasActivatedClass) {
                 this.setUseActivatedClass(true);
             }
@@ -1859,8 +1891,8 @@ var app = (function () {
             var selectedIndex = numbers$1.UNSET_INDEX;
             var listItemsCount = this.adapter.getListItemCount();
             for (var i = 0; i < listItemsCount; i++) {
-                var hasSelectedClass = this.adapter.listItemAtIndexHasClass(i, cssClasses$5.LIST_ITEM_SELECTED_CLASS);
-                var hasActivatedClass = this.adapter.listItemAtIndexHasClass(i, cssClasses$5.LIST_ITEM_ACTIVATED_CLASS);
+                var hasSelectedClass = this.adapter.listItemAtIndexHasClass(i, cssClasses$3.LIST_ITEM_SELECTED_CLASS);
+                var hasActivatedClass = this.adapter.listItemAtIndexHasClass(i, cssClasses$3.LIST_ITEM_ACTIVATED_CLASS);
                 if (!(hasSelectedClass || hasActivatedClass)) {
                     continue;
                 }
@@ -1979,7 +2011,7 @@ var app = (function () {
                         isTargetListItem: isRootListItem,
                         sortedIndexByFirstChar: this.sortedIndexByFirstChar,
                         isItemAtIndexDisabled: function (index) {
-                            return _this.adapter.listItemAtIndexHasClass(index, cssClasses$5.LIST_ITEM_DISABLED_CLASS);
+                            return _this.adapter.listItemAtIndexHasClass(index, cssClasses$3.LIST_ITEM_DISABLED_CLASS);
                         },
                     };
                     handleKeydown(handleKeydownOpts, this.typeaheadState);
@@ -2027,7 +2059,7 @@ var app = (function () {
                         return;
                     }
                     preventDefaultEvent(event);
-                    if (this.adapter.listItemAtIndexHasClass(currentIndex, cssClasses$5.LIST_ITEM_DISABLED_CLASS)) {
+                    if (this.adapter.listItemAtIndexHasClass(currentIndex, cssClasses$3.LIST_ITEM_DISABLED_CLASS)) {
                         return;
                     }
                     if (!this.isTypeaheadInProgress()) {
@@ -2047,7 +2079,7 @@ var app = (function () {
                     focusedItemIndex: this.focusedItemIndex,
                     isTargetListItem: isRootListItem,
                     sortedIndexByFirstChar: this.sortedIndexByFirstChar,
-                    isItemAtIndexDisabled: function (index) { return _this.adapter.listItemAtIndexHasClass(index, cssClasses$5.LIST_ITEM_DISABLED_CLASS); },
+                    isItemAtIndexDisabled: function (index) { return _this.adapter.listItemAtIndexHasClass(index, cssClasses$3.LIST_ITEM_DISABLED_CLASS); },
                 };
                 handleKeydown(handleKeydownOpts, this.typeaheadState);
             }
@@ -2059,7 +2091,7 @@ var app = (function () {
             if (index === numbers$1.UNSET_INDEX) {
                 return;
             }
-            if (this.adapter.listItemAtIndexHasClass(index, cssClasses$5.LIST_ITEM_DISABLED_CLASS)) {
+            if (this.adapter.listItemAtIndexHasClass(index, cssClasses$3.LIST_ITEM_DISABLED_CLASS)) {
                 return;
             }
             if (this.isSelectableList()) {
@@ -2125,11 +2157,11 @@ var app = (function () {
                 return;
             }
             if (isEnabled) {
-                this.adapter.removeClassForElementIndex(itemIndex, cssClasses$5.LIST_ITEM_DISABLED_CLASS);
+                this.adapter.removeClassForElementIndex(itemIndex, cssClasses$3.LIST_ITEM_DISABLED_CLASS);
                 this.adapter.setAttributeForElementIndex(itemIndex, strings$3.ARIA_DISABLED, 'false');
             }
             else {
-                this.adapter.addClassForElementIndex(itemIndex, cssClasses$5.LIST_ITEM_DISABLED_CLASS);
+                this.adapter.addClassForElementIndex(itemIndex, cssClasses$3.LIST_ITEM_DISABLED_CLASS);
                 this.adapter.setAttributeForElementIndex(itemIndex, strings$3.ARIA_DISABLED, 'true');
             }
         };
@@ -2138,9 +2170,9 @@ var app = (function () {
             if (this.selectedIndex === index && !forceUpdate) {
                 return;
             }
-            var selectedClassName = cssClasses$5.LIST_ITEM_SELECTED_CLASS;
+            var selectedClassName = cssClasses$3.LIST_ITEM_SELECTED_CLASS;
             if (this.useActivatedClass) {
-                selectedClassName = cssClasses$5.LIST_ITEM_ACTIVATED_CLASS;
+                selectedClassName = cssClasses$3.LIST_ITEM_ACTIVATED_CLASS;
             }
             if (this.selectedIndex !== numbers$1.UNSET_INDEX) {
                 this.adapter.removeClassForElementIndex(this.selectedIndex, selectedClassName);
@@ -2330,7 +2362,7 @@ var app = (function () {
                 // Otherwise select all enabled options.
                 var allIndexes = [];
                 for (var i = 0; i < count; i++) {
-                    if (!this.adapter.listItemAtIndexHasClass(i, cssClasses$5.LIST_ITEM_DISABLED_CLASS) ||
+                    if (!this.adapter.listItemAtIndexHasClass(i, cssClasses$3.LIST_ITEM_DISABLED_CLASS) ||
                         currentlySelectedIndexes.indexOf(i) > -1) {
                         allIndexes.push(i);
                     }
@@ -2362,7 +2394,7 @@ var app = (function () {
                 nextChar: nextChar,
                 sortedIndexByFirstChar: this.sortedIndexByFirstChar,
                 skipFocus: skipFocus,
-                isItemAtIndexDisabled: function (index) { return _this.adapter.listItemAtIndexHasClass(index, cssClasses$5.LIST_ITEM_DISABLED_CLASS); }
+                isItemAtIndexDisabled: function (index) { return _this.adapter.listItemAtIndexHasClass(index, cssClasses$3.LIST_ITEM_DISABLED_CLASS); }
             };
             return matchItem(opts, this.typeaheadState);
         };
@@ -2406,7 +2438,7 @@ var app = (function () {
      * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
      * THE SOFTWARE.
      */
-    var cssClasses$4 = {
+    var cssClasses$2 = {
         ANIMATE: 'mdc-drawer--animate',
         CLOSING: 'mdc-drawer--closing',
         DISMISSIBLE: 'mdc-drawer--dismissible',
@@ -2463,7 +2495,7 @@ var app = (function () {
         });
         Object.defineProperty(MDCDismissibleDrawerFoundation, "cssClasses", {
             get: function () {
-                return cssClasses$4;
+                return cssClasses$2;
             },
             enumerable: false,
             configurable: true
@@ -2505,11 +2537,11 @@ var app = (function () {
             if (this.isOpen() || this.isOpening() || this.isClosing()) {
                 return;
             }
-            this.adapter.addClass(cssClasses$4.OPEN);
-            this.adapter.addClass(cssClasses$4.ANIMATE);
+            this.adapter.addClass(cssClasses$2.OPEN);
+            this.adapter.addClass(cssClasses$2.ANIMATE);
             // Wait a frame once display is no longer "none", to establish basis for animation
             this.runNextAnimationFrame(function () {
-                _this.adapter.addClass(cssClasses$4.OPENING);
+                _this.adapter.addClass(cssClasses$2.OPENING);
             });
             this.adapter.saveFocus();
         };
@@ -2520,29 +2552,29 @@ var app = (function () {
             if (!this.isOpen() || this.isOpening() || this.isClosing()) {
                 return;
             }
-            this.adapter.addClass(cssClasses$4.CLOSING);
+            this.adapter.addClass(cssClasses$2.CLOSING);
         };
         /**
          * Returns true if the drawer is in the open position.
          * @return true if drawer is in open state.
          */
         MDCDismissibleDrawerFoundation.prototype.isOpen = function () {
-            return this.adapter.hasClass(cssClasses$4.OPEN);
+            return this.adapter.hasClass(cssClasses$2.OPEN);
         };
         /**
          * Returns true if the drawer is animating open.
          * @return true if drawer is animating open.
          */
         MDCDismissibleDrawerFoundation.prototype.isOpening = function () {
-            return this.adapter.hasClass(cssClasses$4.OPENING) ||
-                this.adapter.hasClass(cssClasses$4.ANIMATE);
+            return this.adapter.hasClass(cssClasses$2.OPENING) ||
+                this.adapter.hasClass(cssClasses$2.ANIMATE);
         };
         /**
          * Returns true if the drawer is animating closed.
          * @return true if drawer is animating closed.
          */
         MDCDismissibleDrawerFoundation.prototype.isClosing = function () {
-            return this.adapter.hasClass(cssClasses$4.CLOSING);
+            return this.adapter.hasClass(cssClasses$2.CLOSING);
         };
         /**
          * Keydown handler to close drawer when key is escape.
@@ -2558,7 +2590,7 @@ var app = (function () {
          * Handles the `transitionend` event when the drawer finishes opening/closing.
          */
         MDCDismissibleDrawerFoundation.prototype.handleTransitionEnd = function (evt) {
-            var OPENING = cssClasses$4.OPENING, CLOSING = cssClasses$4.CLOSING, OPEN = cssClasses$4.OPEN, ANIMATE = cssClasses$4.ANIMATE, ROOT = cssClasses$4.ROOT;
+            var OPENING = cssClasses$2.OPENING, CLOSING = cssClasses$2.CLOSING, OPEN = cssClasses$2.OPEN, ANIMATE = cssClasses$2.ANIMATE, ROOT = cssClasses$2.ROOT;
             // In Edge, transitionend on ripple pseudo-elements yields a target without classList, so check for Element first.
             var isRootElement = this.isElement(evt.target) &&
                 this.adapter.elementHasClass(evt.target, ROOT);
@@ -2919,9 +2951,9 @@ var app = (function () {
         };
     }
 
-    /* node_modules\@smui\drawer\dist\Drawer.svelte generated by Svelte v3.52.0 */
+    /* node_modules/@smui/drawer/dist/Drawer.svelte generated by Svelte v3.56.0 */
 
-    const file$l = "node_modules\\@smui\\drawer\\dist\\Drawer.svelte";
+    const file$l = "node_modules/@smui/drawer/dist/Drawer.svelte";
 
     function create_fragment$t(ctx) {
     	let aside;
@@ -2977,8 +3009,8 @@ var app = (function () {
     				dispose = [
     					action_destroyer(useActions_action = useActions.call(null, aside, /*use*/ ctx[0])),
     					action_destroyer(/*forwardEvents*/ ctx[7].call(null, aside)),
-    					listen_dev(aside, "keydown", /*keydown_handler*/ ctx[17], false, false, false),
-    					listen_dev(aside, "transitionend", /*transitionend_handler*/ ctx[18], false, false, false)
+    					listen_dev(aside, "keydown", /*keydown_handler*/ ctx[17], false, false, false, false),
+    					listen_dev(aside, "transitionend", /*transitionend_handler*/ ctx[18], false, false, false, false)
     				];
 
     				mounted = true;
@@ -3383,8 +3415,8 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\elements\Div.svelte generated by Svelte v3.52.0 */
-    const file$k = "node_modules\\@smui\\common\\dist\\elements\\Div.svelte";
+    /* node_modules/@smui/common/dist/elements/Div.svelte generated by Svelte v3.56.0 */
+    const file$k = "node_modules/@smui/common/dist/elements/Div.svelte";
 
     function create_fragment$s(ctx) {
     	let div;
@@ -3566,7 +3598,7 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\classadder\ClassAdder.svelte generated by Svelte v3.52.0 */
+    /* node_modules/@smui/common/dist/classadder/ClassAdder.svelte generated by Svelte v3.56.0 */
 
     // (1:0) <svelte:component   this={component}   bind:this={element}   use={[forwardEvents, ...use]}   class={classMap({     [className]: true,     [smuiClass]: true,     ...smuiClassMap,   })}   {...props}   {...$$restProps}>
     function create_default_slot$8(ctx) {
@@ -3704,7 +3736,7 @@ var app = (function () {
     				switch_instance_changes.$$scope = { dirty, ctx };
     			}
 
-    			if (switch_value !== (switch_value = /*component*/ ctx[2])) {
+    			if (dirty & /*component*/ 4 && switch_value !== (switch_value = /*component*/ ctx[2])) {
     				if (switch_instance) {
     					group_outros();
     					const old_component = switch_instance;
@@ -3941,8 +3973,8 @@ var app = (function () {
         });
     }
 
-    /* node_modules\@smui\common\dist\elements\A.svelte generated by Svelte v3.52.0 */
-    const file$j = "node_modules\\@smui\\common\\dist\\elements\\A.svelte";
+    /* node_modules/@smui/common/dist/elements/A.svelte generated by Svelte v3.56.0 */
+    const file$j = "node_modules/@smui/common/dist/elements/A.svelte";
 
     function create_fragment$q(ctx) {
     	let a;
@@ -4141,8 +4173,8 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\elements\Button.svelte generated by Svelte v3.52.0 */
-    const file$i = "node_modules\\@smui\\common\\dist\\elements\\Button.svelte";
+    /* node_modules/@smui/common/dist/elements/Button.svelte generated by Svelte v3.56.0 */
+    const file$i = "node_modules/@smui/common/dist/elements/Button.svelte";
 
     function create_fragment$p(ctx) {
     	let button;
@@ -4325,8 +4357,8 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\elements\H1.svelte generated by Svelte v3.52.0 */
-    const file$h = "node_modules\\@smui\\common\\dist\\elements\\H1.svelte";
+    /* node_modules/@smui/common/dist/elements/H1.svelte generated by Svelte v3.56.0 */
+    const file$h = "node_modules/@smui/common/dist/elements/H1.svelte";
 
     function create_fragment$o(ctx) {
     	let h1;
@@ -4508,8 +4540,8 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\elements\H2.svelte generated by Svelte v3.52.0 */
-    const file$g = "node_modules\\@smui\\common\\dist\\elements\\H2.svelte";
+    /* node_modules/@smui/common/dist/elements/H2.svelte generated by Svelte v3.56.0 */
+    const file$g = "node_modules/@smui/common/dist/elements/H2.svelte";
 
     function create_fragment$n(ctx) {
     	let h2;
@@ -4691,8 +4723,8 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\elements\H3.svelte generated by Svelte v3.52.0 */
-    const file$f = "node_modules\\@smui\\common\\dist\\elements\\H3.svelte";
+    /* node_modules/@smui/common/dist/elements/H3.svelte generated by Svelte v3.56.0 */
+    const file$f = "node_modules/@smui/common/dist/elements/H3.svelte";
 
     function create_fragment$m(ctx) {
     	let h3;
@@ -4874,8 +4906,8 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\elements\Hr.svelte generated by Svelte v3.52.0 */
-    const file$e = "node_modules\\@smui\\common\\dist\\elements\\Hr.svelte";
+    /* node_modules/@smui/common/dist/elements/Hr.svelte generated by Svelte v3.56.0 */
+    const file$e = "node_modules/@smui/common/dist/elements/Hr.svelte";
 
     function create_fragment$l(ctx) {
     	let hr;
@@ -5062,8 +5094,8 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\elements\Li.svelte generated by Svelte v3.52.0 */
-    const file$d = "node_modules\\@smui\\common\\dist\\elements\\Li.svelte";
+    /* node_modules/@smui/common/dist/elements/Li.svelte generated by Svelte v3.56.0 */
+    const file$d = "node_modules/@smui/common/dist/elements/Li.svelte";
 
     function create_fragment$k(ctx) {
     	let li;
@@ -5245,8 +5277,8 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\elements\Nav.svelte generated by Svelte v3.52.0 */
-    const file$c = "node_modules\\@smui\\common\\dist\\elements\\Nav.svelte";
+    /* node_modules/@smui/common/dist/elements/Nav.svelte generated by Svelte v3.56.0 */
+    const file$c = "node_modules/@smui/common/dist/elements/Nav.svelte";
 
     function create_fragment$j(ctx) {
     	let nav;
@@ -5428,8 +5460,8 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\elements\Span.svelte generated by Svelte v3.52.0 */
-    const file$b = "node_modules\\@smui\\common\\dist\\elements\\Span.svelte";
+    /* node_modules/@smui/common/dist/elements/Span.svelte generated by Svelte v3.56.0 */
+    const file$b = "node_modules/@smui/common/dist/elements/Span.svelte";
 
     function create_fragment$i(ctx) {
     	let span;
@@ -5611,8 +5643,8 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\elements\Ul.svelte generated by Svelte v3.52.0 */
-    const file$a = "node_modules\\@smui\\common\\dist\\elements\\Ul.svelte";
+    /* node_modules/@smui/common/dist/elements/Ul.svelte generated by Svelte v3.56.0 */
+    const file$a = "node_modules/@smui/common/dist/elements/Ul.svelte";
 
     function create_fragment$h(ctx) {
     	let ul;
@@ -5831,7 +5863,7 @@ var app = (function () {
         component: H2,
     });
 
-    /* node_modules\@smui\drawer\dist\Scrim.svelte generated by Svelte v3.52.0 */
+    /* node_modules/@smui/drawer/dist/Scrim.svelte generated by Svelte v3.56.0 */
 
     // (1:0) <svelte:component   this={component}   bind:this={element}   use={[forwardEvents, ...use]}   class={classMap({     [className]: true,     'mdc-drawer-scrim': true,     'smui-drawer-scrim__absolute': !fixed,   })}   on:click={(event) => dispatch(getElement(), 'SMUIDrawerScrim:click', event)}   {...$$restProps} >
     function create_default_slot$7(ctx) {
@@ -5968,7 +6000,7 @@ var app = (function () {
     				switch_instance_changes.$$scope = { dirty, ctx };
     			}
 
-    			if (switch_value !== (switch_value = /*component*/ ctx[3])) {
+    			if (dirty & /*component*/ 8 && switch_value !== (switch_value = /*component*/ ctx[3])) {
     				if (switch_instance) {
     					group_outros();
     					const old_component = switch_instance;
@@ -6162,7 +6194,7 @@ var app = (function () {
 
     const Scrim = Scrim$1;
 
-    /* node_modules\@smui\list\dist\List.svelte generated by Svelte v3.52.0 */
+    /* node_modules/@smui/list/dist/List.svelte generated by Svelte v3.56.0 */
 
     // (1:0) <svelte:component   this={component}   bind:this={element}   use={[forwardEvents, ...use]}   class={classMap({     [className]: true,     'mdc-deprecated-list': true,     'mdc-deprecated-list--non-interactive': nonInteractive,     'mdc-deprecated-list--dense': dense,     'mdc-deprecated-list--textual-list': textualList,     'mdc-deprecated-list--avatar-list': avatarList || selectionDialog,     'mdc-deprecated-list--icon-list': iconList,     'mdc-deprecated-list--image-list': imageList,     'mdc-deprecated-list--thumbnail-list': thumbnailList,     'mdc-deprecated-list--video-list': videoList,     'mdc-deprecated-list--two-line': twoLine,     'smui-list--three-line': threeLine && !twoLine,   })}   {role}   on:keydown={(event) =>     instance &&     instance.handleKeydown(       event,       event.target.classList.contains('mdc-deprecated-list-item'),       getListItemIndex(event.target)     )}   on:focusin={(event) =>     instance && instance.handleFocusIn(getListItemIndex(event.target))}   on:focusout={(event) =>     instance && instance.handleFocusOut(getListItemIndex(event.target))}   on:click={(event) =>     instance &&     instance.handleClick(       getListItemIndex(event.target),       !matches(event.target, 'input[type="checkbox"], input[type="radio"]')     )}   on:SMUIListItem:mount={handleItemMount}   on:SMUIListItem:unmount={handleItemUnmount}   on:SMUI:action={handleAction}   {...$$restProps} >
     function create_default_slot$6(ctx) {
@@ -6325,7 +6357,7 @@ var app = (function () {
     				switch_instance_changes.$$scope = { dirty, ctx };
     			}
 
-    			if (switch_value !== (switch_value = /*component*/ ctx[12])) {
+    			if (dirty[0] & /*component*/ 4096 && switch_value !== (switch_value = /*component*/ ctx[12])) {
     				if (switch_instance) {
     					group_outros();
     					const old_component = switch_instance;
@@ -6868,7 +6900,7 @@ var app = (function () {
     			}
     		}
 
-    		if ($$self.$$.dirty[0] & /*instance, singleSelection, selectedIndex*/ 151003136) {
+    		if ($$self.$$.dirty[0] & /*instance, singleSelection, selectedIndex*/ 151003136 | $$self.$$.dirty[1] & /*getSelectedIndex*/ 8) {
     			if (instance && singleSelection && getSelectedIndex() !== selectedIndex) {
     				instance.setSelectedIndex(selectedIndex);
     			}
@@ -7255,7 +7287,7 @@ var app = (function () {
      * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
      * THE SOFTWARE.
      */
-    var cssClasses$3 = {
+    var cssClasses$1 = {
         // Ripple is a special case where the "root" component is really a "mixin" of sorts,
         // given that it's an 'upgrade' to an existing component. That being said it is the root
         // CSS class that all other CSS classes derive from.
@@ -7350,7 +7382,7 @@ var app = (function () {
         }
         Object.defineProperty(MDCRippleFoundation, "cssClasses", {
             get: function () {
-                return cssClasses$3;
+                return cssClasses$1;
             },
             enumerable: false,
             configurable: true
@@ -7936,8 +7968,8 @@ var app = (function () {
         };
     }
 
-    /* node_modules\@smui\list\dist\Item.svelte generated by Svelte v3.52.0 */
-    const file$9 = "node_modules\\@smui\\list\\dist\\Item.svelte";
+    /* node_modules/@smui/list/dist/Item.svelte generated by Svelte v3.56.0 */
+    const file$9 = "node_modules/@smui/list/dist/Item.svelte";
 
     // (57:3) {#if ripple}
     function create_if_block$7(ctx) {
@@ -8238,7 +8270,7 @@ var app = (function () {
     				switch_instance_changes.$$scope = { dirty, ctx };
     			}
 
-    			if (switch_value !== (switch_value = /*component*/ ctx[12])) {
+    			if (dirty[0] & /*component*/ 4096 && switch_value !== (switch_value = /*component*/ ctx[12])) {
     				if (switch_instance) {
     					group_outros();
     					const old_component = switch_instance;
@@ -8952,8 +8984,8 @@ var app = (function () {
         component: Span,
     });
 
-    /* node_modules\@smui\list\dist\Graphic.svelte generated by Svelte v3.52.0 */
-    const file$8 = "node_modules\\@smui\\list\\dist\\Graphic.svelte";
+    /* node_modules/@smui/list/dist/Graphic.svelte generated by Svelte v3.56.0 */
+    const file$8 = "node_modules/@smui/list/dist/Graphic.svelte";
 
     function create_fragment$d(ctx) {
     	let span;
@@ -9189,7 +9221,7 @@ var app = (function () {
         component: H3,
     });
 
-    /* node_modules\@smui\list\dist\Separator.svelte generated by Svelte v3.52.0 */
+    /* node_modules/@smui/list/dist/Separator.svelte generated by Svelte v3.56.0 */
 
     function create_fragment$c(ctx) {
     	let switch_instance;
@@ -9270,7 +9302,7 @@ var app = (function () {
     				])
     			: {};
 
-    			if (switch_value !== (switch_value = /*component*/ ctx[7])) {
+    			if (dirty & /*component*/ 128 && switch_value !== (switch_value = /*component*/ ctx[7])) {
     				if (switch_instance) {
     					group_outros();
     					const old_component = switch_instance;
@@ -9574,7 +9606,7 @@ var app = (function () {
             run(value);
             return () => {
                 subscribers.delete(subscriber);
-                if (subscribers.size === 0) {
+                if (subscribers.size === 0 && stop) {
                     stop();
                     stop = null;
                 }
@@ -9964,7 +9996,7 @@ var app = (function () {
   )}/`;
     }
 
-    /* node_modules\svelte-routing\src\Router.svelte generated by Svelte v3.52.0 */
+    /* node_modules/svelte-routing/src/Router.svelte generated by Svelte v3.56.0 */
 
     function create_fragment$b(ctx) {
     	let current;
@@ -10263,7 +10295,7 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\svelte-routing\src\Route.svelte generated by Svelte v3.52.0 */
+    /* node_modules/svelte-routing/src/Route.svelte generated by Svelte v3.56.0 */
 
     const get_default_slot_changes$1 = dirty => ({
     	params: dirty & /*routeParams*/ 4,
@@ -10281,7 +10313,7 @@ var app = (function () {
     	let if_block;
     	let if_block_anchor;
     	let current;
-    	const if_block_creators = [create_if_block_1$4, create_else_block$3];
+    	const if_block_creators = [create_if_block_1$5, create_else_block$3];
     	const if_blocks = [];
 
     	function select_block_type(ctx, dirty) {
@@ -10414,7 +10446,7 @@ var app = (function () {
     }
 
     // (41:2) {#if component !== null}
-    function create_if_block_1$4(ctx) {
+    function create_if_block_1$5(ctx) {
     	let switch_instance;
     	let switch_instance_anchor;
     	let current;
@@ -10463,7 +10495,7 @@ var app = (function () {
     				])
     			: {};
 
-    			if (switch_value !== (switch_value = /*component*/ ctx[0])) {
+    			if (dirty & /*component*/ 1 && switch_value !== (switch_value = /*component*/ ctx[0])) {
     				if (switch_instance) {
     					group_outros();
     					const old_component = switch_instance;
@@ -10504,7 +10536,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_if_block_1$4.name,
+    		id: create_if_block_1$5.name,
     		type: "if",
     		source: "(41:2) {#if component !== null}",
     		ctx
@@ -10733,7 +10765,7 @@ var app = (function () {
      * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
      * THE SOFTWARE.
      */
-    var cssClasses$2 = {
+    var cssClasses = {
         ICON_BUTTON_ON: 'mdc-icon-button--on',
         ROOT: 'mdc-icon-button',
     };
@@ -10780,7 +10812,7 @@ var app = (function () {
         }
         Object.defineProperty(MDCIconButtonToggleFoundation, "cssClasses", {
             get: function () {
-                return cssClasses$2;
+                return cssClasses;
             },
             enumerable: false,
             configurable: true
@@ -10825,16 +10857,16 @@ var app = (function () {
             this.adapter.notifyChange({ isOn: this.isOn() });
         };
         MDCIconButtonToggleFoundation.prototype.isOn = function () {
-            return this.adapter.hasClass(cssClasses$2.ICON_BUTTON_ON);
+            return this.adapter.hasClass(cssClasses.ICON_BUTTON_ON);
         };
         MDCIconButtonToggleFoundation.prototype.toggle = function (isOn) {
             if (isOn === void 0) { isOn = !this.isOn(); }
             // Toggle UI based on state.
             if (isOn) {
-                this.adapter.addClass(cssClasses$2.ICON_BUTTON_ON);
+                this.adapter.addClass(cssClasses.ICON_BUTTON_ON);
             }
             else {
-                this.adapter.removeClass(cssClasses$2.ICON_BUTTON_ON);
+                this.adapter.removeClass(cssClasses.ICON_BUTTON_ON);
             }
             // Toggle aria attributes based on state.
             if (this.hasToggledAriaLabel) {
@@ -10850,8 +10882,8 @@ var app = (function () {
         return MDCIconButtonToggleFoundation;
     }(MDCFoundation));
 
-    /* node_modules\@smui\icon-button\dist\IconButton.svelte generated by Svelte v3.52.0 */
-    const file$7 = "node_modules\\@smui\\icon-button\\dist\\IconButton.svelte";
+    /* node_modules/@smui/icon-button/dist/IconButton.svelte generated by Svelte v3.56.0 */
+    const file$7 = "node_modules/@smui/icon-button/dist/IconButton.svelte";
 
     // (61:10) {#if touch}
     function create_if_block$5(ctx) {
@@ -11154,7 +11186,7 @@ var app = (function () {
     				switch_instance_changes.$$scope = { dirty, ctx };
     			}
 
-    			if (switch_value !== (switch_value = /*component*/ ctx[13])) {
+    			if (dirty[0] & /*component*/ 8192 && switch_value !== (switch_value = /*component*/ ctx[13])) {
     				if (switch_instance) {
     					group_outros();
     					const old_component = switch_instance;
@@ -11461,7 +11493,7 @@ var app = (function () {
     			$$invalidate(30, previousDisabled = $$restProps.disabled);
     		}
 
-    		if ($$self.$$.dirty[0] & /*element, toggle, instance*/ 536969216 | $$self.$$.dirty[1] & /*oldToggle*/ 1) {
+    		if ($$self.$$.dirty[0] & /*element, getElement, toggle, instance*/ 536985600 | $$self.$$.dirty[1] & /*oldToggle*/ 1) {
     			if (element && getElement() && toggle !== oldToggle) {
     				if (toggle && !instance) {
     					$$invalidate(16, instance = new MDCIconButtonToggleFoundation({
@@ -11705,7 +11737,7 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\CommonLabel.svelte generated by Svelte v3.52.0 */
+    /* node_modules/@smui/common/dist/CommonLabel.svelte generated by Svelte v3.56.0 */
 
     // (1:0) <svelte:component   this={component}   bind:this={element}   use={[forwardEvents, ...use]}   class={classMap({     [className]: true,     'mdc-button__label': context === 'button',     'mdc-fab__label': context === 'fab',     'mdc-tab__text-label': context === 'tab',     'mdc-image-list__label': context === 'image-list',     'mdc-snackbar__label': context === 'snackbar',     'mdc-banner__text': context === 'banner',     'mdc-segmented-button__label': context === 'segmented-button',     'mdc-data-table__pagination-rows-per-page-label':       context === 'data-table:pagination',     'mdc-data-table__header-cell-label':       context === 'data-table:sortable-header-cell',   })}   {...context === 'snackbar' ? { 'aria-atomic': 'false' } : {}}   {tabindex}   {...$$restProps}>
     function create_default_slot$3(ctx) {
@@ -11863,7 +11895,7 @@ var app = (function () {
     				switch_instance_changes.$$scope = { dirty, ctx };
     			}
 
-    			if (switch_value !== (switch_value = /*component*/ ctx[2])) {
+    			if (dirty & /*component*/ 4 && switch_value !== (switch_value = /*component*/ ctx[2])) {
     				if (switch_instance) {
     					group_outros();
     					const old_component = switch_instance;
@@ -12043,7 +12075,7 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\@smui\common\dist\ContextFragment.svelte generated by Svelte v3.52.0 */
+    /* node_modules/@smui/common/dist/ContextFragment.svelte generated by Svelte v3.56.0 */
 
     function create_fragment$7(ctx) {
     	let current;
@@ -12220,8 +12252,10 @@ var app = (function () {
             tar[k] = src[k];
         return tar;
     }
+    // Adapted from https://github.com/then/is-promise/blob/master/index.js
+    // Distributed under MIT License https://github.com/then/is-promise/blob/master/LICENSE
     function is_promise(value) {
-        return value && typeof value === 'object' && typeof value.then === 'function';
+        return !!value && (typeof value === 'object' || typeof value === 'function') && typeof value.then === 'function';
     }
     function add_location(element, file, line, column, char) {
         element.__svelte_meta = {
@@ -12461,7 +12495,7 @@ var app = (function () {
         * Reorder claimed children optimally.
         * We can reorder claimed children optimally by finding the longest subsequence of
         * nodes that are already claimed in order and only moving the rest. The longest
-        * subsequence subsequence of nodes that are claimed in order can be found by
+        * subsequence of nodes that are claimed in order can be found by
         * computing the longest increasing subsequence of .claim_order values.
         *
         * This algorithm is optimal in generating the least amount of reorder operations
@@ -12585,7 +12619,9 @@ var app = (function () {
         }
     }
     function detach(node) {
-        node.parentNode.removeChild(node);
+        if (node.parentNode) {
+            node.parentNode.removeChild(node);
+        }
     }
     function destroy_each(iterations, detaching) {
         for (let i = 0; i < iterations.length; i += 1) {
@@ -12637,6 +12673,13 @@ var app = (function () {
     function stop_propagation(fn) {
         return function (event) {
             event.stopPropagation();
+            // @ts-ignore
+            return fn.call(this, event);
+        };
+    }
+    function stop_immediate_propagation(fn) {
+        return function (event) {
+            event.stopImmediatePropagation();
             // @ts-ignore
             return fn.call(this, event);
         };
@@ -12700,6 +12743,9 @@ var app = (function () {
             attr(node, prop, value);
         }
     }
+    function set_dynamic_element_data(tag) {
+        return (/-/.test(tag)) ? set_custom_element_data_map : set_attributes;
+    }
     function xlink_attr(node, attribute, value) {
         node.setAttributeNS('http://www.w3.org/1999/xlink', attribute, value);
     }
@@ -12713,6 +12759,50 @@ var app = (function () {
             value.delete(__value);
         }
         return Array.from(value);
+    }
+    function init_binding_group(group) {
+        let _inputs;
+        return {
+            /* push */ p(...inputs) {
+                _inputs = inputs;
+                _inputs.forEach(input => group.push(input));
+            },
+            /* remove */ r() {
+                _inputs.forEach(input => group.splice(group.indexOf(input), 1));
+            }
+        };
+    }
+    function init_binding_group_dynamic(group, indexes) {
+        let _group = get_binding_group(group);
+        let _inputs;
+        function get_binding_group(group) {
+            for (let i = 0; i < indexes.length; i++) {
+                group = group[indexes[i]] = group[indexes[i]] || [];
+            }
+            return group;
+        }
+        function push() {
+            _inputs.forEach(input => _group.push(input));
+        }
+        function remove() {
+            _inputs.forEach(input => _group.splice(_group.indexOf(input), 1));
+        }
+        return {
+            /* update */ u(new_indexes) {
+                indexes = new_indexes;
+                const new_group = get_binding_group(group);
+                if (new_group !== _group) {
+                    remove();
+                    _group = new_group;
+                    push();
+                }
+            },
+            /* push */ p(...inputs) {
+                _inputs = inputs;
+                push();
+            },
+            /* remove */ r: remove
+        };
     }
     function to_number(value) {
         return value === '' ? null : +value;
@@ -12885,8 +12975,15 @@ var app = (function () {
             option.selected = ~value.indexOf(option.__value);
         }
     }
+    function first_enabled_option(select) {
+        for (const option of select.options) {
+            if (!option.disabled) {
+                return option;
+            }
+        }
+    }
     function select_value(select) {
-        const selected_option = select.querySelector(':checked') || select.options[0];
+        const selected_option = select.querySelector(':checked') || first_enabled_option(select);
         return selected_option && selected_option.__value;
     }
     function select_multiple_value(select) {
@@ -12932,6 +13029,9 @@ var app = (function () {
             iframe.src = 'about:blank';
             iframe.onload = () => {
                 unsubscribe = listen(iframe.contentWindow, 'resize', fn);
+                // make sure an initial resize event is fired _after_ the iframe is loaded (which is asynchronous)
+                // see https://github.com/sveltejs/svelte/issues/4233
+                fn();
             };
         }
         append(node, iframe);
@@ -12990,16 +13090,17 @@ var app = (function () {
             if (!this.e) {
                 if (this.is_svg)
                     this.e = svg_element(target.nodeName);
+                /** #7364  target for <template> may be provided as #document-fragment(11) */
                 else
-                    this.e = element(target.nodeName);
-                this.t = target;
+                    this.e = element((target.nodeType === 11 ? 'TEMPLATE' : target.nodeName));
+                this.t = target.tagName !== 'TEMPLATE' ? target : target.content;
                 this.c(html);
             }
             this.i(anchor);
         }
         h(html) {
             this.e.innerHTML = html;
-            this.n = Array.from(this.e.childNodes);
+            this.n = Array.from(this.e.nodeName === 'TEMPLATE' ? this.e.content.childNodes : this.e.childNodes);
         }
         i(anchor) {
             for (let i = 0; i < this.n.length; i += 1) {
@@ -13319,9 +13420,9 @@ var app = (function () {
     const dirty_components = [];
     const intros = { enabled: false };
     const binding_callbacks = [];
-    const render_callbacks = [];
+    let render_callbacks = [];
     const flush_callbacks = [];
-    const resolved_promise = Promise.resolve();
+    const resolved_promise = /* @__PURE__ */ Promise.resolve();
     let update_scheduled = false;
     function schedule_update() {
         if (!update_scheduled) {
@@ -13360,15 +13461,29 @@ var app = (function () {
     const seen_callbacks = new Set();
     let flushidx = 0; // Do *not* move this inside the flush() function
     function flush() {
+        // Do not reenter flush while dirty components are updated, as this can
+        // result in an infinite loop. Instead, let the inner flush handle it.
+        // Reentrancy is ok afterwards for bindings etc.
+        if (flushidx !== 0) {
+            return;
+        }
         const saved_component = exports.current_component;
         do {
             // first, call beforeUpdate functions
             // and update components
-            while (flushidx < dirty_components.length) {
-                const component = dirty_components[flushidx];
-                flushidx++;
-                set_current_component(component);
-                update(component.$$);
+            try {
+                while (flushidx < dirty_components.length) {
+                    const component = dirty_components[flushidx];
+                    flushidx++;
+                    set_current_component(component);
+                    update(component.$$);
+                }
+            }
+            catch (e) {
+                // reset dirty state to not end up in a deadlocked state and then rethrow
+                dirty_components.length = 0;
+                flushidx = 0;
+                throw e;
             }
             set_current_component(null);
             dirty_components.length = 0;
@@ -13404,6 +13519,16 @@ var app = (function () {
             $$.fragment && $$.fragment.p($$.ctx, dirty);
             $$.after_update.forEach(add_render_callback);
         }
+    }
+    /**
+     * Useful for example to execute remaining `afterUpdate` callbacks before executing `destroy`.
+     */
+    function flush_render_callbacks(fns) {
+        const filtered = [];
+        const targets = [];
+        render_callbacks.forEach((c) => fns.indexOf(c) === -1 ? filtered.push(c) : targets.push(c));
+        targets.forEach((c) => c());
+        render_callbacks = filtered;
     }
 
     let promise;
@@ -13461,7 +13586,8 @@ var app = (function () {
     }
     const null_transition = { duration: 0 };
     function create_in_transition(node, fn, params) {
-        let config = fn(node, params);
+        const options = { direction: 'in' };
+        let config = fn(node, params, options);
         let running = false;
         let animation_name;
         let task;
@@ -13505,7 +13631,7 @@ var app = (function () {
                 started = true;
                 delete_rule(node);
                 if (is_function(config)) {
-                    config = config();
+                    config = config(options);
                     wait().then(go);
                 }
                 else {
@@ -13524,7 +13650,8 @@ var app = (function () {
         };
     }
     function create_out_transition(node, fn, params) {
-        let config = fn(node, params);
+        const options = { direction: 'out' };
+        let config = fn(node, params, options);
         let running = true;
         let animation_name;
         const group = outros;
@@ -13559,7 +13686,7 @@ var app = (function () {
         if (is_function(config)) {
             wait().then(() => {
                 // @ts-ignore
-                config = config();
+                config = config(options);
                 go();
             });
         }
@@ -13580,7 +13707,8 @@ var app = (function () {
         };
     }
     function create_bidirectional_transition(node, fn, params, intro) {
-        let config = fn(node, params);
+        const options = { direction: 'both' };
+        let config = fn(node, params, options);
         let t = intro ? 0 : 1;
         let running_program = null;
         let pending_program = null;
@@ -13670,7 +13798,7 @@ var app = (function () {
                 if (is_function(config)) {
                     wait().then(() => {
                         // @ts-ignore
-                        config = config();
+                        config = config(options);
                         go(b);
                     });
                 }
@@ -13800,6 +13928,7 @@ var app = (function () {
         const new_blocks = [];
         const new_lookup = new Map();
         const deltas = new Map();
+        const updates = [];
         i = n;
         while (i--) {
             const child_ctx = get_context(ctx, list, i);
@@ -13810,7 +13939,8 @@ var app = (function () {
                 block.c();
             }
             else if (dynamic) {
-                block.p(child_ctx, dirty);
+                // defer updates until all the DOM shuffling is done
+                updates.push(() => block.p(child_ctx, dirty));
             }
             new_lookup.set(key, new_blocks[i] = block);
             if (key in old_indexes)
@@ -13863,6 +13993,7 @@ var app = (function () {
         }
         while (n)
             insert(new_blocks[n - 1]);
+        run_all(updates);
         return new_blocks;
     }
     function validate_each_keys(ctx, list, get_context, get_key) {
@@ -13913,8 +14044,7 @@ var app = (function () {
         return typeof spread_props === 'object' && spread_props !== null ? spread_props : {};
     }
 
-    // source: https://html.spec.whatwg.org/multipage/indices.html
-    const boolean_attributes = new Set([
+    const _boolean_attributes = [
         'allowfullscreen',
         'allowpaymentrequest',
         'async',
@@ -13941,7 +14071,12 @@ var app = (function () {
         'required',
         'reversed',
         'selected'
-    ]);
+    ];
+    /**
+     * List of HTML boolean attributes (e.g. `<input disabled>`).
+     * Source: https://html.spec.whatwg.org/multipage/indices.html
+     */
+    const boolean_attributes = new Set([..._boolean_attributes]);
 
     /** regex of all html void element names */
     const void_element_names = /^(?:area|base|br|col|command|embed|hr|img|input|keygen|link|meta|param|source|track|wbr)$/;
@@ -14115,7 +14250,7 @@ var app = (function () {
     function style_object_to_string(style_object) {
         return Object.keys(style_object)
             .filter(key => style_object[key])
-            .map(key => `${key}: ${style_object[key]};`)
+            .map(key => `${key}: ${escape_attribute_value(style_object[key])};`)
             .join(' ');
     }
     function add_styles(style_object) {
@@ -14162,6 +14297,7 @@ var app = (function () {
     function destroy_component(component, detaching) {
         const $$ = component.$$;
         if ($$.fragment !== null) {
+            flush_render_callbacks($$.after_update);
             run_all($$.on_destroy);
             $$.fragment && $$.fragment.d(detaching);
             // TODO null out other refs, including component.$$ (but need to
@@ -14318,7 +14454,7 @@ var app = (function () {
     }
 
     function dispatch_dev(type, detail) {
-        document.dispatchEvent(custom_event(type, Object.assign({ version: '3.52.0' }, detail), { bubbles: true }));
+        document.dispatchEvent(custom_event(type, Object.assign({ version: '3.56.0' }, detail), { bubbles: true }));
     }
     function append_dev(target, node) {
         dispatch_dev('SvelteDOMInsert', { target, node });
@@ -14355,12 +14491,14 @@ var app = (function () {
             detach_dev(before.nextSibling);
         }
     }
-    function listen_dev(node, event, handler, options, has_prevent_default, has_stop_propagation) {
+    function listen_dev(node, event, handler, options, has_prevent_default, has_stop_propagation, has_stop_immediate_propagation) {
         const modifiers = options === true ? ['capture'] : options ? Array.from(Object.keys(options)) : [];
         if (has_prevent_default)
             modifiers.push('preventDefault');
         if (has_stop_propagation)
             modifiers.push('stopPropagation');
+        if (has_stop_immediate_propagation)
+            modifiers.push('stopImmediatePropagation');
         dispatch_dev('SvelteDOMAddEventListener', { node, event, handler, modifiers });
         const dispose = listen(node, event, handler, options);
         return () => {
@@ -14578,6 +14716,7 @@ var app = (function () {
     exports.fix_and_outro_and_destroy_block = fix_and_outro_and_destroy_block;
     exports.fix_position = fix_position;
     exports.flush = flush;
+    exports.flush_render_callbacks = flush_render_callbacks;
     exports.getAllContexts = getAllContexts;
     exports.getContext = getContext;
     exports.get_all_dirty_from_scope = get_all_dirty_from_scope;
@@ -14597,6 +14736,8 @@ var app = (function () {
     exports.head_selector = head_selector;
     exports.identity = identity;
     exports.init = init;
+    exports.init_binding_group = init_binding_group;
+    exports.init_binding_group_dynamic = init_binding_group_dynamic;
     exports.insert = insert;
     exports.insert_dev = insert_dev;
     exports.insert_hydration = insert_hydration;
@@ -14643,6 +14784,7 @@ var app = (function () {
     exports.set_custom_element_data_map = set_custom_element_data_map;
     exports.set_data = set_data;
     exports.set_data_dev = set_data_dev;
+    exports.set_dynamic_element_data = set_dynamic_element_data;
     exports.set_input_type = set_input_type;
     exports.set_input_value = set_input_value;
     exports.set_now = set_now;
@@ -14654,6 +14796,7 @@ var app = (function () {
     exports.spread = spread;
     exports.src_url_equal = src_url_equal;
     exports.start_hydrating = start_hydrating;
+    exports.stop_immediate_propagation = stop_immediate_propagation;
     exports.stop_propagation = stop_propagation;
     exports.subscribe = subscribe;
     exports.svg_element = svg_element;
@@ -14734,7 +14877,7 @@ var app = (function () {
             run(value);
             return () => {
                 subscribers.delete(subscriber);
-                if (subscribers.size === 0) {
+                if (subscribers.size === 0 && stop) {
                     stop();
                     stop = null;
                 }
@@ -14783,6 +14926,16 @@ var app = (function () {
             };
         });
     }
+    /**
+     * Takes a store and returns a new one derived from the old one that is readable.
+     *
+     * @param store - store to make readonly
+     */
+    function readonly(store) {
+        return {
+            subscribe: store.subscribe.bind(store)
+        };
+    }
 
     Object.defineProperty(exports, 'get', {
     	enumerable: true,
@@ -14792,6 +14945,7 @@ var app = (function () {
     });
     exports.derived = derived;
     exports.readable = readable;
+    exports.readonly = readonly;
     exports.writable = writable;
     }(store));
 
@@ -14949,20 +15103,20 @@ var app = (function () {
         maliciousinvites: maliciousinvitesStore
     };
 
-    /* website\src\pages\Graylist.svelte generated by Svelte v3.52.0 */
+    /* website/src/pages/Graylist.svelte generated by Svelte v3.56.0 */
 
     const { Object: Object_1$1, console: console_1$2 } = globals;
-    const file$6 = "website\\src\\pages\\Graylist.svelte";
+    const file$6 = "website/src/pages/Graylist.svelte";
 
     function get_each_context$3(ctx, list, i) {
     	const child_ctx = ctx.slice();
-    	child_ctx[13] = list[i];
+    	child_ctx[12] = list[i];
     	return child_ctx;
     }
 
     function get_each_context_1$1(ctx, list, i) {
     	const child_ctx = ctx.slice();
-    	child_ctx[13] = list[i];
+    	child_ctx[12] = list[i];
     	return child_ctx;
     }
 
@@ -15028,7 +15182,7 @@ var app = (function () {
     		c: function create() {
     			div = element("div");
     			div.textContent = "There are no items in the gray list";
-    			add_location(div, file$6, 63, 4, 2567);
+    			add_location(div, file$6, 63, 4, 2504);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -15070,13 +15224,15 @@ var app = (function () {
     			}
 
     			attr_dev(ul, "class", "svelte-1fr6isi");
-    			add_location(ul, file$6, 30, 4, 875);
+    			add_location(ul, file$6, 30, 4, 845);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, ul, anchor);
 
     			for (let i = 0; i < each_blocks.length; i += 1) {
-    				each_blocks[i].m(ul, null);
+    				if (each_blocks[i]) {
+    					each_blocks[i].m(ul, null);
+    				}
     			}
     		},
     		p: function update(ctx, dirty) {
@@ -15125,16 +15281,16 @@ var app = (function () {
     function create_if_block_7(ctx) {
     	let li;
     	let div1;
-    	let t0_value = /*item*/ ctx[13].url + "";
+    	let t0_value = /*item*/ ctx[12].url + "";
     	let t0;
-    	let t1_value = (/*item*/ ctx[13].removed ? " : MALICIOUS" : "") + "";
+    	let t1_value = (/*item*/ ctx[12].removed ? " : MALICIOUS" : "") + "";
     	let t1;
     	let t2;
     	let div0;
     	let p;
     	let t3;
     	let a;
-    	let t4_value = /*item*/ ctx[13].example + "";
+    	let t4_value = /*item*/ ctx[12].example + "";
     	let t4;
     	let a_href_value;
     	let t5;
@@ -15160,19 +15316,19 @@ var app = (function () {
     	let dispose;
 
     	function click_handler() {
-    		return /*click_handler*/ ctx[4](/*item*/ ctx[13]);
+    		return /*click_handler*/ ctx[4](/*item*/ ctx[12]);
     	}
 
     	function click_handler_1() {
-    		return /*click_handler_1*/ ctx[5](/*item*/ ctx[13]);
+    		return /*click_handler_1*/ ctx[5](/*item*/ ctx[12]);
     	}
 
     	function click_handler_2() {
-    		return /*click_handler_2*/ ctx[6](/*item*/ ctx[13]);
+    		return /*click_handler_2*/ ctx[6](/*item*/ ctx[12]);
     	}
 
     	function click_handler_3() {
-    		return /*click_handler_3*/ ctx[7](/*item*/ ctx[13]);
+    		return /*click_handler_3*/ ctx[7](/*item*/ ctx[12]);
     	}
 
     	const block = {
@@ -15207,52 +15363,52 @@ var app = (function () {
     			i2 = element("i");
     			t12 = text(" Malicious");
     			t13 = space();
-    			attr_dev(a, "href", a_href_value = /*item*/ ctx[13].example);
+    			attr_dev(a, "href", a_href_value = /*item*/ ctx[12].example);
     			attr_dev(a, "target", "_blank");
-    			add_location(a, file$6, 37, 32, 1213);
-    			add_location(p, file$6, 37, 20, 1201);
+    			add_location(a, file$6, 37, 32, 1176);
+    			add_location(p, file$6, 37, 20, 1164);
     			set_style(div0, "position", "relative");
-    			add_location(div0, file$6, 36, 16, 1147);
+    			add_location(div0, file$6, 36, 16, 1111);
     			set_style(button0, "position", "absolute");
     			set_style(button0, "top", "0");
     			set_style(button0, "right", "0");
     			attr_dev(button0, "type", "button");
     			attr_dev(button0, "class", "btn btn-info");
-    			add_location(button0, file$6, 39, 16, 1316);
+    			add_location(button0, file$6, 39, 16, 1277);
     			set_style(div1, "position", "relative");
     			set_style(div1, "display", "block");
     			set_style(div1, "width", "100%");
     			attr_dev(div1, "class", "svelte-1fr6isi");
-    			toggle_class(div1, "badlink", /*item*/ ctx[13].removed);
-    			add_location(div1, file$6, 34, 12, 977);
+    			toggle_class(div1, "badlink", /*item*/ ctx[12].removed);
+    			add_location(div1, file$6, 34, 12, 943);
     			attr_dev(i0, "class", "bi bi-check-all");
-    			add_location(i0, file$6, 44, 24, 1745);
+    			add_location(i0, file$6, 44, 24, 1701);
     			attr_dev(button1, "type", "button");
     			attr_dev(button1, "class", "btn btn-primary");
-    			add_location(button1, file$6, 43, 20, 1598);
+    			add_location(button1, file$6, 43, 20, 1555);
     			attr_dev(div2, "class", "col");
     			set_style(div2, "text-align", "left");
-    			add_location(div2, file$6, 42, 16, 1534);
+    			add_location(div2, file$6, 42, 16, 1492);
     			attr_dev(i1, "class", "bi bi-x");
-    			add_location(i1, file$6, 49, 24, 2058);
+    			add_location(i1, file$6, 49, 24, 2009);
     			attr_dev(button2, "type", "button");
     			attr_dev(button2, "class", "btn btn-warning");
-    			add_location(button2, file$6, 48, 20, 1924);
+    			add_location(button2, file$6, 48, 20, 1876);
     			attr_dev(div3, "class", "col");
     			set_style(div3, "text-align", "center");
-    			add_location(div3, file$6, 47, 16, 1858);
+    			add_location(div3, file$6, 47, 16, 1811);
     			attr_dev(i2, "class", "bi bi-emoji-dizzy-fill");
-    			add_location(i2, file$6, 54, 24, 2367);
+    			add_location(i2, file$6, 54, 24, 2313);
     			attr_dev(button3, "type", "button");
     			attr_dev(button3, "class", "btn btn-danger");
-    			add_location(button3, file$6, 53, 20, 2227);
+    			add_location(button3, file$6, 53, 20, 2174);
     			attr_dev(div4, "class", "col");
     			set_style(div4, "text-align", "right");
-    			add_location(div4, file$6, 52, 16, 2162);
+    			add_location(div4, file$6, 52, 16, 2110);
     			attr_dev(div5, "class", "row");
-    			add_location(div5, file$6, 41, 12, 1499);
+    			add_location(div5, file$6, 41, 12, 1458);
     			attr_dev(li, "class", "svelte-1fr6isi");
-    			add_location(li, file$6, 33, 8, 959);
+    			add_location(li, file$6, 33, 8, 926);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, li, anchor);
@@ -15287,10 +15443,10 @@ var app = (function () {
 
     			if (!mounted) {
     				dispose = [
-    					listen_dev(button0, "click", click_handler, false, false, false),
-    					listen_dev(button1, "click", click_handler_1, false, false, false),
-    					listen_dev(button2, "click", click_handler_2, false, false, false),
-    					listen_dev(button3, "click", click_handler_3, false, false, false)
+    					listen_dev(button0, "click", click_handler, false, false, false, false),
+    					listen_dev(button1, "click", click_handler_1, false, false, false, false),
+    					listen_dev(button2, "click", click_handler_2, false, false, false, false),
+    					listen_dev(button3, "click", click_handler_3, false, false, false, false)
     				];
 
     				mounted = true;
@@ -15298,16 +15454,16 @@ var app = (function () {
     		},
     		p: function update(new_ctx, dirty) {
     			ctx = new_ctx;
-    			if (dirty & /*$graylist*/ 2 && t0_value !== (t0_value = /*item*/ ctx[13].url + "")) set_data_dev(t0, t0_value);
-    			if (dirty & /*$graylist*/ 2 && t1_value !== (t1_value = (/*item*/ ctx[13].removed ? " : MALICIOUS" : "") + "")) set_data_dev(t1, t1_value);
-    			if (dirty & /*$graylist*/ 2 && t4_value !== (t4_value = /*item*/ ctx[13].example + "")) set_data_dev(t4, t4_value);
+    			if (dirty & /*$graylist*/ 2 && t0_value !== (t0_value = /*item*/ ctx[12].url + "")) set_data_dev(t0, t0_value);
+    			if (dirty & /*$graylist*/ 2 && t1_value !== (t1_value = (/*item*/ ctx[12].removed ? " : MALICIOUS" : "") + "")) set_data_dev(t1, t1_value);
+    			if (dirty & /*$graylist*/ 2 && t4_value !== (t4_value = /*item*/ ctx[12].example + "")) set_data_dev(t4, t4_value);
 
-    			if (dirty & /*$graylist*/ 2 && a_href_value !== (a_href_value = /*item*/ ctx[13].example)) {
+    			if (dirty & /*$graylist*/ 2 && a_href_value !== (a_href_value = /*item*/ ctx[12].example)) {
     				attr_dev(a, "href", a_href_value);
     			}
 
     			if (dirty & /*Object, $graylist*/ 2) {
-    				toggle_class(div1, "badlink", /*item*/ ctx[13].removed);
+    				toggle_class(div1, "badlink", /*item*/ ctx[12].removed);
     			}
     		},
     		d: function destroy(detaching) {
@@ -15331,7 +15487,7 @@ var app = (function () {
     // (32:8) {#each Object.values($graylist) as item}
     function create_each_block_1$1(ctx) {
     	let if_block_anchor;
-    	let if_block = /*item*/ ctx[13] && create_if_block_7(ctx);
+    	let if_block = /*item*/ ctx[12] && create_if_block_7(ctx);
 
     	const block = {
     		c: function create() {
@@ -15343,7 +15499,7 @@ var app = (function () {
     			insert_dev(target, if_block_anchor, anchor);
     		},
     		p: function update(ctx, dirty) {
-    			if (/*item*/ ctx[13]) {
+    			if (/*item*/ ctx[12]) {
     				if (if_block) {
     					if_block.p(ctx, dirty);
     				} else {
@@ -15374,7 +15530,7 @@ var app = (function () {
     }
 
     // (72:4) {#if $whitelist}
-    function create_if_block_1$3(ctx) {
+    function create_if_block_1$4(ctx) {
     	let show_if;
     	let if_block_anchor;
 
@@ -15418,7 +15574,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_if_block_1$3.name,
+    		id: create_if_block_1$4.name,
     		type: "if",
     		source: "(72:4) {#if $whitelist}",
     		ctx
@@ -15427,7 +15583,7 @@ var app = (function () {
     	return block;
     }
 
-    // (108:4) {:else}
+    // (107:4) {:else}
     function create_else_block_1(ctx) {
     	let div;
 
@@ -15435,7 +15591,7 @@ var app = (function () {
     		c: function create() {
     			div = element("div");
     			div.textContent = "There are no items in the gray list";
-    			add_location(div, file$6, 108, 4, 4454);
+    			add_location(div, file$6, 107, 4, 4180);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -15450,7 +15606,7 @@ var app = (function () {
     		block,
     		id: create_else_block_1.name,
     		type: "else",
-    		source: "(108:4) {:else}",
+    		source: "(107:4) {:else}",
     		ctx
     	});
 
@@ -15477,17 +15633,19 @@ var app = (function () {
     			}
 
     			attr_dev(ul, "class", "svelte-1fr6isi");
-    			add_location(ul, file$6, 73, 4, 2777);
+    			add_location(ul, file$6, 73, 4, 2704);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, ul, anchor);
 
     			for (let i = 0; i < each_blocks.length; i += 1) {
-    				each_blocks[i].m(ul, null);
+    				if (each_blocks[i]) {
+    					each_blocks[i].m(ul, null);
+    				}
     			}
     		},
     		p: function update(ctx, dirty) {
-    			if (dirty & /*move, Object, $whitelist, snapshot*/ 12) {
+    			if (dirty & /*move, Object, $whitelist*/ 4) {
     				each_value = Object.values(/*$whitelist*/ ctx[2]);
     				validate_each_argument(each_value);
     				let i;
@@ -15532,46 +15690,40 @@ var app = (function () {
     function create_if_block_3(ctx) {
     	let li;
     	let div0;
-    	let t0_value = /*item*/ ctx[13].url + "";
+    	let t0_value = /*item*/ ctx[12].url + "";
     	let t0;
     	let t1;
     	let t2;
-    	let button0;
-    	let t4;
     	let div4;
     	let div1;
-    	let button1;
+    	let button0;
     	let i0;
+    	let t3;
+    	let t4;
+    	let div2;
+    	let button1;
+    	let i1;
     	let t5;
     	let t6;
-    	let div2;
+    	let div3;
     	let button2;
-    	let i1;
+    	let i2;
     	let t7;
     	let t8;
-    	let div3;
-    	let button3;
-    	let i2;
-    	let t9;
-    	let t10;
     	let mounted;
     	let dispose;
-    	let if_block = /*item*/ ctx[13].example && create_if_block_4(ctx);
+    	let if_block = /*item*/ ctx[12].example && create_if_block_4(ctx);
 
     	function click_handler_4() {
-    		return /*click_handler_4*/ ctx[8](/*item*/ ctx[13]);
+    		return /*click_handler_4*/ ctx[8](/*item*/ ctx[12]);
     	}
 
     	function click_handler_5() {
-    		return /*click_handler_5*/ ctx[9](/*item*/ ctx[13]);
+    		return /*click_handler_5*/ ctx[9](/*item*/ ctx[12]);
     	}
 
     	function click_handler_6() {
-    		return /*click_handler_6*/ ctx[10](/*item*/ ctx[13]);
-    	}
-
-    	function click_handler_7() {
-    		return /*click_handler_7*/ ctx[11](/*item*/ ctx[13]);
+    		return /*click_handler_6*/ ctx[10](/*item*/ ctx[12]);
     	}
 
     	const block = {
@@ -15582,62 +15734,53 @@ var app = (function () {
     			t1 = space();
     			if (if_block) if_block.c();
     			t2 = space();
-    			button0 = element("button");
-    			button0.textContent = "View";
-    			t4 = space();
     			div4 = element("div");
     			div1 = element("div");
-    			button1 = element("button");
+    			button0 = element("button");
     			i0 = element("i");
-    			t5 = text(" Verified");
-    			t6 = space();
+    			t3 = text(" Verified");
+    			t4 = space();
     			div2 = element("div");
-    			button2 = element("button");
+    			button1 = element("button");
     			i1 = element("i");
-    			t7 = text(" Remove");
-    			t8 = space();
+    			t5 = text(" Remove");
+    			t6 = space();
     			div3 = element("div");
-    			button3 = element("button");
+    			button2 = element("button");
     			i2 = element("i");
-    			t9 = text(" Malicious");
-    			t10 = space();
-    			set_style(button0, "position", "absolute");
-    			set_style(button0, "top", "0");
-    			set_style(button0, "right", "0");
-    			attr_dev(button0, "type", "button");
-    			attr_dev(button0, "class", "btn btn-info");
-    			add_location(button0, file$6, 84, 16, 3200);
+    			t7 = text(" Malicious");
+    			t8 = space();
     			set_style(div0, "position", "relative");
     			set_style(div0, "display", "block");
-    			add_location(div0, file$6, 77, 12, 2880);
+    			add_location(div0, file$6, 77, 12, 2803);
     			attr_dev(i0, "class", "bi bi-check-all");
-    			add_location(i0, file$6, 89, 24, 3630);
-    			attr_dev(button1, "type", "button");
-    			attr_dev(button1, "class", "btn btn-primary");
-    			add_location(button1, file$6, 88, 20, 3482);
+    			add_location(i0, file$6, 88, 24, 3375);
+    			attr_dev(button0, "type", "button");
+    			attr_dev(button0, "class", "btn btn-primary");
+    			add_location(button0, file$6, 87, 20, 3228);
     			attr_dev(div1, "class", "col");
     			set_style(div1, "text-align", "left");
-    			add_location(div1, file$6, 87, 16, 3418);
+    			add_location(div1, file$6, 86, 16, 3165);
     			attr_dev(i1, "class", "bi bi-x");
-    			add_location(i1, file$6, 94, 24, 3944);
-    			attr_dev(button2, "type", "button");
-    			attr_dev(button2, "class", "btn btn-warning");
-    			add_location(button2, file$6, 93, 20, 3809);
+    			add_location(i1, file$6, 93, 24, 3684);
+    			attr_dev(button1, "type", "button");
+    			attr_dev(button1, "class", "btn btn-warning");
+    			add_location(button1, file$6, 92, 20, 3550);
     			attr_dev(div2, "class", "col");
     			set_style(div2, "text-align", "center");
-    			add_location(div2, file$6, 92, 16, 3743);
+    			add_location(div2, file$6, 91, 16, 3485);
     			attr_dev(i2, "class", "bi bi-emoji-dizzy-fill");
-    			add_location(i2, file$6, 99, 24, 4254);
-    			attr_dev(button3, "type", "button");
-    			attr_dev(button3, "class", "btn btn-danger");
-    			add_location(button3, file$6, 98, 20, 4113);
+    			add_location(i2, file$6, 98, 24, 3989);
+    			attr_dev(button2, "type", "button");
+    			attr_dev(button2, "class", "btn btn-danger");
+    			add_location(button2, file$6, 97, 20, 3849);
     			attr_dev(div3, "class", "col");
     			set_style(div3, "text-align", "right");
-    			add_location(div3, file$6, 97, 16, 4048);
+    			add_location(div3, file$6, 96, 16, 3785);
     			attr_dev(div4, "class", "row");
-    			add_location(div4, file$6, 86, 12, 3383);
+    			add_location(div4, file$6, 85, 12, 3131);
     			attr_dev(li, "class", "svelte-1fr6isi");
-    			add_location(li, file$6, 76, 8, 2862);
+    			add_location(li, file$6, 76, 8, 2786);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, li, anchor);
@@ -15645,32 +15788,29 @@ var app = (function () {
     			append_dev(div0, t0);
     			append_dev(div0, t1);
     			if (if_block) if_block.m(div0, null);
-    			append_dev(div0, t2);
-    			append_dev(div0, button0);
-    			append_dev(li, t4);
+    			append_dev(li, t2);
     			append_dev(li, div4);
     			append_dev(div4, div1);
-    			append_dev(div1, button1);
-    			append_dev(button1, i0);
+    			append_dev(div1, button0);
+    			append_dev(button0, i0);
+    			append_dev(button0, t3);
+    			append_dev(div4, t4);
+    			append_dev(div4, div2);
+    			append_dev(div2, button1);
+    			append_dev(button1, i1);
     			append_dev(button1, t5);
     			append_dev(div4, t6);
-    			append_dev(div4, div2);
-    			append_dev(div2, button2);
-    			append_dev(button2, i1);
-    			append_dev(button2, t7);
-    			append_dev(div4, t8);
     			append_dev(div4, div3);
-    			append_dev(div3, button3);
-    			append_dev(button3, i2);
-    			append_dev(button3, t9);
-    			append_dev(li, t10);
+    			append_dev(div3, button2);
+    			append_dev(button2, i2);
+    			append_dev(button2, t7);
+    			append_dev(li, t8);
 
     			if (!mounted) {
     				dispose = [
-    					listen_dev(button0, "click", click_handler_4, false, false, false),
-    					listen_dev(button1, "click", click_handler_5, false, false, false),
-    					listen_dev(button2, "click", click_handler_6, false, false, false),
-    					listen_dev(button3, "click", click_handler_7, false, false, false)
+    					listen_dev(button0, "click", click_handler_4, false, false, false, false),
+    					listen_dev(button1, "click", click_handler_5, false, false, false, false),
+    					listen_dev(button2, "click", click_handler_6, false, false, false, false)
     				];
 
     				mounted = true;
@@ -15678,15 +15818,15 @@ var app = (function () {
     		},
     		p: function update(new_ctx, dirty) {
     			ctx = new_ctx;
-    			if (dirty & /*$whitelist*/ 4 && t0_value !== (t0_value = /*item*/ ctx[13].url + "")) set_data_dev(t0, t0_value);
+    			if (dirty & /*$whitelist*/ 4 && t0_value !== (t0_value = /*item*/ ctx[12].url + "")) set_data_dev(t0, t0_value);
 
-    			if (/*item*/ ctx[13].example) {
+    			if (/*item*/ ctx[12].example) {
     				if (if_block) {
     					if_block.p(ctx, dirty);
     				} else {
     					if_block = create_if_block_4(ctx);
     					if_block.c();
-    					if_block.m(div0, t2);
+    					if_block.m(div0, null);
     				}
     			} else if (if_block) {
     				if_block.d(1);
@@ -15718,7 +15858,7 @@ var app = (function () {
     	let p;
     	let t0;
     	let a;
-    	let t1_value = /*item*/ ctx[13].example + "";
+    	let t1_value = /*item*/ ctx[12].example + "";
     	let t1;
     	let a_href_value;
 
@@ -15729,12 +15869,12 @@ var app = (function () {
     			t0 = text("Example: ");
     			a = element("a");
     			t1 = text(t1_value);
-    			attr_dev(a, "href", a_href_value = /*item*/ ctx[13].example);
+    			attr_dev(a, "href", a_href_value = /*item*/ ctx[12].example);
     			attr_dev(a, "target", "_blank");
-    			add_location(a, file$6, 81, 32, 3074);
-    			add_location(p, file$6, 81, 20, 3062);
+    			add_location(a, file$6, 81, 32, 2993);
+    			add_location(p, file$6, 81, 20, 2981);
     			set_style(div, "position", "relative");
-    			add_location(div, file$6, 80, 16, 3008);
+    			add_location(div, file$6, 80, 16, 2928);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -15744,9 +15884,9 @@ var app = (function () {
     			append_dev(a, t1);
     		},
     		p: function update(ctx, dirty) {
-    			if (dirty & /*$whitelist*/ 4 && t1_value !== (t1_value = /*item*/ ctx[13].example + "")) set_data_dev(t1, t1_value);
+    			if (dirty & /*$whitelist*/ 4 && t1_value !== (t1_value = /*item*/ ctx[12].example + "")) set_data_dev(t1, t1_value);
 
-    			if (dirty & /*$whitelist*/ 4 && a_href_value !== (a_href_value = /*item*/ ctx[13].example)) {
+    			if (dirty & /*$whitelist*/ 4 && a_href_value !== (a_href_value = /*item*/ ctx[12].example)) {
     				attr_dev(a, "href", a_href_value);
     			}
     		},
@@ -15769,7 +15909,7 @@ var app = (function () {
     // (75:8) {#each Object.values($whitelist) as item}
     function create_each_block$3(ctx) {
     	let if_block_anchor;
-    	let if_block = /*item*/ ctx[13] && create_if_block_3(ctx);
+    	let if_block = /*item*/ ctx[12] && create_if_block_3(ctx);
 
     	const block = {
     		c: function create() {
@@ -15781,7 +15921,7 @@ var app = (function () {
     			insert_dev(target, if_block_anchor, anchor);
     		},
     		p: function update(ctx, dirty) {
-    			if (/*item*/ ctx[13]) {
+    			if (/*item*/ ctx[12]) {
     				if (if_block) {
     					if_block.p(ctx, dirty);
     				} else {
@@ -15811,7 +15951,7 @@ var app = (function () {
     	return block;
     }
 
-    // (126:16) {:else}
+    // (125:16) {:else}
     function create_else_block$2(ctx) {
     	let div1;
     	let div0;
@@ -15823,12 +15963,12 @@ var app = (function () {
     			div0 = element("div");
     			span = element("span");
     			attr_dev(span, "class", "sr-only");
-    			add_location(span, file$6, 128, 24, 5335);
+    			add_location(span, file$6, 127, 24, 5041);
     			attr_dev(div0, "class", "spinner-border");
     			attr_dev(div0, "role", "status");
-    			add_location(div0, file$6, 127, 20, 5267);
+    			add_location(div0, file$6, 126, 20, 4974);
     			attr_dev(div1, "class", "d-flex justify-content-center");
-    			add_location(div1, file$6, 126, 16, 5202);
+    			add_location(div1, file$6, 125, 16, 4910);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div1, anchor);
@@ -15845,14 +15985,14 @@ var app = (function () {
     		block,
     		id: create_else_block$2.name,
     		type: "else",
-    		source: "(126:16) {:else}",
+    		source: "(125:16) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (124:16) {#if selectedUrl}
+    // (123:16) {#if selectedUrl}
     function create_if_block$4(ctx) {
     	let img;
     	let img_src_value;
@@ -15863,7 +16003,7 @@ var app = (function () {
     			if (!src_url_equal(img.src, img_src_value = /*selectedUrl*/ ctx[0])) attr_dev(img, "src", img_src_value);
     			set_style(img, "width", "100%");
     			attr_dev(img, "alt", "snapshot");
-    			add_location(img, file$6, 124, 16, 5100);
+    			add_location(img, file$6, 123, 16, 4810);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, img, anchor);
@@ -15882,7 +16022,7 @@ var app = (function () {
     		block,
     		id: create_if_block$4.name,
     		type: "if",
-    		source: "(124:16) {#if selectedUrl}",
+    		source: "(123:16) {#if selectedUrl}",
     		ctx
     	});
 
@@ -15912,7 +16052,7 @@ var app = (function () {
     	let mounted;
     	let dispose;
     	let if_block0 = /*$graylist*/ ctx[1] && create_if_block_5(ctx);
-    	let if_block1 = /*$whitelist*/ ctx[2] && create_if_block_1$3(ctx);
+    	let if_block1 = /*$whitelist*/ ctx[2] && create_if_block_1$4(ctx);
 
     	function select_block_type_2(ctx, dirty) {
     		if (/*selectedUrl*/ ctx[0]) return create_if_block$4;
@@ -15950,29 +16090,29 @@ var app = (function () {
     			div3 = element("div");
     			button = element("button");
     			button.textContent = "Close";
-    			add_location(h30, file$6, 27, 4, 786);
+    			add_location(h30, file$6, 27, 4, 759);
     			attr_dev(hr, "class", "rounded");
-    			add_location(hr, file$6, 69, 4, 2659);
-    			add_location(h31, file$6, 70, 4, 2685);
-    			add_location(div0, file$6, 26, 0, 775);
+    			add_location(hr, file$6, 69, 4, 2590);
+    			add_location(h31, file$6, 70, 4, 2615);
+    			add_location(div0, file$6, 26, 0, 749);
     			attr_dev(h5, "class", "modal-title");
     			attr_dev(h5, "id", "staticBackdropLabel");
-    			add_location(h5, file$6, 120, 16, 4888);
+    			add_location(h5, file$6, 119, 16, 4602);
     			attr_dev(div1, "class", "modal-header");
-    			add_location(div1, file$6, 119, 12, 4844);
+    			add_location(div1, file$6, 118, 12, 4559);
     			attr_dev(div2, "class", "modal-body");
     			set_style(div2, "position", "relative");
-    			add_location(div2, file$6, 122, 12, 4997);
+    			add_location(div2, file$6, 121, 12, 4709);
     			attr_dev(button, "type", "button");
     			attr_dev(button, "class", "btn btn-secondary");
     			attr_dev(button, "data-bs-dismiss", "modal");
-    			add_location(button, file$6, 134, 12, 5513);
+    			add_location(button, file$6, 133, 12, 5213);
     			attr_dev(div3, "class", "modal-footer");
-    			add_location(div3, file$6, 133, 12, 5473);
+    			add_location(div3, file$6, 132, 12, 5174);
     			attr_dev(div4, "class", "modal-content");
-    			add_location(div4, file$6, 118, 8, 4803);
+    			add_location(div4, file$6, 117, 8, 4519);
     			attr_dev(div5, "class", "modal-dialog modal-lg");
-    			add_location(div5, file$6, 117, 4, 4758);
+    			add_location(div5, file$6, 116, 4, 4475);
     			set_style(div6, "color", "black");
     			attr_dev(div6, "id", "snapshotmodal");
     			attr_dev(div6, "class", "modal fade");
@@ -15981,7 +16121,7 @@ var app = (function () {
     			attr_dev(div6, "tabindex", "-1");
     			attr_dev(div6, "aria-labelledby", "staticBackdropLabel");
     			attr_dev(div6, "aria-hidden", "true");
-    			add_location(div6, file$6, 116, 0, 4566);
+    			add_location(div6, file$6, 115, 0, 4284);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -16011,7 +16151,7 @@ var app = (function () {
     			append_dev(div3, button);
 
     			if (!mounted) {
-    				dispose = listen_dev(button, "click", /*click_handler_8*/ ctx[12], false, false, false);
+    				dispose = listen_dev(button, "click", /*click_handler_7*/ ctx[11], false, false, false, false);
     				mounted = true;
     			}
     		},
@@ -16033,7 +16173,7 @@ var app = (function () {
     				if (if_block1) {
     					if_block1.p(ctx, dirty);
     				} else {
-    					if_block1 = create_if_block_1$3(ctx);
+    					if_block1 = create_if_block_1$4(ctx);
     					if_block1.c();
     					if_block1.m(div0, null);
     				}
@@ -16120,11 +16260,10 @@ var app = (function () {
     	const click_handler_1 = async item => await move(item.url, "graylist", "verifieddomains");
     	const click_handler_2 = async item => await move(item.url, "graylist", null);
     	const click_handler_3 = async item => await move(item.url, "graylist", "blacklist");
-    	const click_handler_4 = async item => await snapshot(item.example);
-    	const click_handler_5 = async item => await move(item.url, "whitelist", "verifieddomains");
-    	const click_handler_6 = async item => await move(item.url, "whitelist", null);
-    	const click_handler_7 = async item => await move(item.url, "whitelist", "blacklist");
-    	const click_handler_8 = () => $$invalidate(0, selectedUrl = "");
+    	const click_handler_4 = async item => await move(item.url, "whitelist", "verifieddomains");
+    	const click_handler_5 = async item => await move(item.url, "whitelist", null);
+    	const click_handler_6 = async item => await move(item.url, "whitelist", "blacklist");
+    	const click_handler_7 = () => $$invalidate(0, selectedUrl = "");
 
     	$$self.$capture_state = () => ({
     		onMount,
@@ -16159,8 +16298,7 @@ var app = (function () {
     		click_handler_4,
     		click_handler_5,
     		click_handler_6,
-    		click_handler_7,
-    		click_handler_8
+    		click_handler_7
     	];
     }
 
@@ -16178,9 +16316,9 @@ var app = (function () {
     	}
     }
 
-    /* website\src\pages\Home.svelte generated by Svelte v3.52.0 */
+    /* website/src/pages/Home.svelte generated by Svelte v3.56.0 */
 
-    const file$5 = "website\\src\\pages\\Home.svelte";
+    const file$5 = "website/src/pages/Home.svelte";
 
     function create_fragment$5(ctx) {
     	let div;
@@ -16212,7 +16350,7 @@ var app = (function () {
     			h2.textContent = "The Scam Hunter Dashboard";
     			t1 = space();
     			p0 = element("p");
-    			t2 = text("Users of the Scam Hunter bot can see a dashboard summarizing scams caught in Discord servers you moderate.\r\n        If you don't currently use the bot, you can ");
+    			t2 = text("Users of the Scam Hunter bot can see a dashboard summarizing scams caught in Discord servers you moderate.\n        If you don't currently use the bot, you can ");
     			a0 = element("a");
     			a0.textContent = "add it to your server";
     			t4 = text(".");
@@ -16234,22 +16372,22 @@ var app = (function () {
     			t15 = space();
     			p3 = element("p");
     			p3.textContent = "The bot is specifically designed to look for key attributes common in phishing attempts. It uses a combination of tools to de-obfuscate scam message attempts that contain text and a link. If the message is identified as a scam and the user is not a Moderator, it creates a UUID for the message and the user, stores it in memory, makes a record of the event in Firestore, then deletes the message. If the same message is encountered recently and identically from the same user, the user is also kicked from the server.";
-    			add_location(h2, file$5, 5, 4, 40);
+    			add_location(h2, file$5, 5, 4, 35);
     			attr_dev(a0, "href", "https://discord.com/api/oauth2/authorize?client_id=924388372854767646&permissions=1099511704578&scope=bot%20applications.commands");
     			attr_dev(a0, "target", "_blank");
-    			add_location(a0, file$5, 8, 52, 253);
-    			add_location(p0, file$5, 6, 4, 80);
+    			add_location(a0, file$5, 8, 52, 245);
+    			add_location(p0, file$5, 6, 4, 74);
     			attr_dev(a1, "href", "https://github.com/shatindle/discord-scam-terminator");
     			attr_dev(a1, "target", "_blank");
-    			add_location(a1, file$5, 12, 50, 508);
-    			add_location(p1, file$5, 11, 4, 453);
+    			add_location(a1, file$5, 12, 50, 496);
+    			add_location(p1, file$5, 11, 4, 442);
     			attr_dev(a2, "href", "https://discord.gg/8ykjyQ8wJw");
     			attr_dev(a2, "target", "_blank");
-    			add_location(a2, file$5, 15, 33, 661);
-    			add_location(p2, file$5, 14, 4, 623);
-    			add_location(h3, file$5, 18, 4, 763);
-    			add_location(p3, file$5, 19, 4, 795);
-    			add_location(div, file$5, 4, 0, 29);
+    			add_location(a2, file$5, 15, 33, 646);
+    			add_location(p2, file$5, 14, 4, 609);
+    			add_location(h3, file$5, 18, 4, 745);
+    			add_location(p3, file$5, 19, 4, 776);
+    			add_location(div, file$5, 4, 0, 25);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -16322,9 +16460,118 @@ var app = (function () {
     	}
     }
 
+    var mdc_segmentedButton = {exports: {}};
+
     /**
      * @license
-     * Copyright 2020 Google Inc.
+     * Copyright Google LLC All Rights Reserved.
+     *
+     * Use of this source code is governed by an MIT-style license that can be
+     * found in the LICENSE file at https://github.com/material-components/material-components-web/blob/master/LICENSE
+     */
+
+    (function (module, exports) {
+    (function webpackUniversalModuleDefinition(root, factory) {
+    	module.exports = factory();
+    })(commonjsGlobal, function() {
+    return /******/ (function(modules) { // webpackBootstrap
+    /******/ 	// The module cache
+    /******/ 	var installedModules = {};
+    /******/
+    /******/ 	// The require function
+    /******/ 	function __webpack_require__(moduleId) {
+    /******/
+    /******/ 		// Check if module is in cache
+    /******/ 		if(installedModules[moduleId]) {
+    /******/ 			return installedModules[moduleId].exports;
+    /******/ 		}
+    /******/ 		// Create a new module (and put it into the cache)
+    /******/ 		var module = installedModules[moduleId] = {
+    /******/ 			i: moduleId,
+    /******/ 			l: false,
+    /******/ 			exports: {}
+    /******/ 		};
+    /******/
+    /******/ 		// Execute the module function
+    /******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+    /******/
+    /******/ 		// Flag the module as loaded
+    /******/ 		module.l = true;
+    /******/
+    /******/ 		// Return the exports of the module
+    /******/ 		return module.exports;
+    /******/ 	}
+    /******/
+    /******/
+    /******/ 	// expose the modules object (__webpack_modules__)
+    /******/ 	__webpack_require__.m = modules;
+    /******/
+    /******/ 	// expose the module cache
+    /******/ 	__webpack_require__.c = installedModules;
+    /******/
+    /******/ 	// define getter function for harmony exports
+    /******/ 	__webpack_require__.d = function(exports, name, getter) {
+    /******/ 		if(!__webpack_require__.o(exports, name)) {
+    /******/ 			Object.defineProperty(exports, name, { enumerable: true, get: getter });
+    /******/ 		}
+    /******/ 	};
+    /******/
+    /******/ 	// define __esModule on exports
+    /******/ 	__webpack_require__.r = function(exports) {
+    /******/ 		if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+    /******/ 			Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+    /******/ 		}
+    /******/ 		Object.defineProperty(exports, '__esModule', { value: true });
+    /******/ 	};
+    /******/
+    /******/ 	// create a fake namespace object
+    /******/ 	// mode & 1: value is a module id, require it
+    /******/ 	// mode & 2: merge all properties of value into the ns
+    /******/ 	// mode & 4: return value when already ns object
+    /******/ 	// mode & 8|1: behave like require
+    /******/ 	__webpack_require__.t = function(value, mode) {
+    /******/ 		if(mode & 1) value = __webpack_require__(value);
+    /******/ 		if(mode & 8) return value;
+    /******/ 		if((mode & 4) && typeof value === 'object' && value && value.__esModule) return value;
+    /******/ 		var ns = Object.create(null);
+    /******/ 		__webpack_require__.r(ns);
+    /******/ 		Object.defineProperty(ns, 'default', { enumerable: true, value: value });
+    /******/ 		if(mode & 2 && typeof value != 'string') for(var key in value) __webpack_require__.d(ns, key, function(key) { return value[key]; }.bind(null, key));
+    /******/ 		return ns;
+    /******/ 	};
+    /******/
+    /******/ 	// getDefaultExport function for compatibility with non-harmony modules
+    /******/ 	__webpack_require__.n = function(module) {
+    /******/ 		var getter = module && module.__esModule ?
+    /******/ 			function getDefault() { return module['default']; } :
+    /******/ 			function getModuleExports() { return module; };
+    /******/ 		__webpack_require__.d(getter, 'a', getter);
+    /******/ 		return getter;
+    /******/ 	};
+    /******/
+    /******/ 	// Object.prototype.hasOwnProperty.call
+    /******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
+    /******/
+    /******/ 	// __webpack_public_path__
+    /******/ 	__webpack_require__.p = "";
+    /******/
+    /******/
+    /******/ 	// Load entry module and return exports
+    /******/ 	return __webpack_require__(__webpack_require__.s = "./packages/mdc-segmented-button/index.ts");
+    /******/ })
+    /************************************************************************/
+    /******/ ({
+
+    /***/ "./packages/mdc-base/component.ts":
+    /*!****************************************!*\
+      !*** ./packages/mdc-base/component.ts ***!
+      \****************************************/
+    /*! no static exports found */
+    /***/ (function(module, exports, __webpack_require__) {
+
+    /**
+     * @license
+     * Copyright 2016 Google Inc.
      *
      * Permission is hereby granted, free of charge, to any person obtaining a copy
      * of this software and associated documentation files (the "Software"), to deal
@@ -16344,12 +16591,1307 @@ var app = (function () {
      * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
      * THE SOFTWARE.
      */
-    /**
-     * Style classes for segmented-button
-     */
-    var cssClasses$1 = {
-        SINGLE_SELECT: 'mdc-segmented-button--single-select'
+
+    var __read = this && this.__read || function (o, n) {
+        var m = typeof Symbol === "function" && o[Symbol.iterator];
+        if (!m) return o;
+        var i = m.call(o),
+            r,
+            ar = [],
+            e;
+        try {
+            while ((n === void 0 || n-- > 0) && !(r = i.next()).done) {
+                ar.push(r.value);
+            }
+        } catch (error) {
+            e = { error: error };
+        } finally {
+            try {
+                if (r && !r.done && (m = i["return"])) m.call(i);
+            } finally {
+                if (e) throw e.error;
+            }
+        }
+        return ar;
     };
+    var __spreadArray = this && this.__spreadArray || function (to, from) {
+        for (var i = 0, il = from.length, j = to.length; i < il; i++, j++) {
+            to[j] = from[i];
+        }return to;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.MDCComponent = void 0;
+    var foundation_1 = __webpack_require__(/*! ./foundation */ "./packages/mdc-base/foundation.ts");
+    var MDCComponent = /** @class */function () {
+        function MDCComponent(root, foundation) {
+            var args = [];
+            for (var _i = 2; _i < arguments.length; _i++) {
+                args[_i - 2] = arguments[_i];
+            }
+            this.root = root;
+            this.initialize.apply(this, __spreadArray([], __read(args)));
+            // Note that we initialize foundation here and not within the constructor's
+            // default param so that this.root is defined and can be used within the
+            // foundation class.
+            this.foundation = foundation === undefined ? this.getDefaultFoundation() : foundation;
+            this.foundation.init();
+            this.initialSyncWithDOM();
+        }
+        MDCComponent.attachTo = function (root) {
+            // Subclasses which extend MDCBase should provide an attachTo() method that takes a root element and
+            // returns an instantiated component with its root set to that element. Also note that in the cases of
+            // subclasses, an explicit foundation class will not have to be passed in; it will simply be initialized
+            // from getDefaultFoundation().
+            return new MDCComponent(root, new foundation_1.MDCFoundation({}));
+        };
+        /* istanbul ignore next: method param only exists for typing purposes; it does not need to be unit tested */
+        MDCComponent.prototype.initialize = function () {
+            // Subclasses can override this to do any additional setup work that would be considered part of a
+            // "constructor". Essentially, it is a hook into the parent constructor before the foundation is
+            // initialized. Any additional arguments besides root and foundation will be passed in here.
+        };
+        MDCComponent.prototype.getDefaultFoundation = function () {
+            // Subclasses must override this method to return a properly configured foundation class for the
+            // component.
+            throw new Error('Subclasses must override getDefaultFoundation to return a properly configured ' + 'foundation class');
+        };
+        MDCComponent.prototype.initialSyncWithDOM = function () {
+            // Subclasses should override this method if they need to perform work to synchronize with a host DOM
+            // object. An example of this would be a form control wrapper that needs to synchronize its internal state
+            // to some property or attribute of the host DOM. Please note: this is *not* the place to perform DOM
+            // reads/writes that would cause layout / paint, as this is called synchronously from within the constructor.
+        };
+        MDCComponent.prototype.destroy = function () {
+            // Subclasses may implement this method to release any resources / deregister any listeners they have
+            // attached. An example of this might be deregistering a resize event from the window object.
+            this.foundation.destroy();
+        };
+        MDCComponent.prototype.listen = function (evtType, handler, options) {
+            this.root.addEventListener(evtType, handler, options);
+        };
+        MDCComponent.prototype.unlisten = function (evtType, handler, options) {
+            this.root.removeEventListener(evtType, handler, options);
+        };
+        /**
+         * Fires a cross-browser-compatible custom event from the component root of the given type, with the given data.
+         */
+        MDCComponent.prototype.emit = function (evtType, evtData, shouldBubble) {
+            if (shouldBubble === void 0) {
+                shouldBubble = false;
+            }
+            var evt;
+            if (typeof CustomEvent === 'function') {
+                evt = new CustomEvent(evtType, {
+                    bubbles: shouldBubble,
+                    detail: evtData
+                });
+            } else {
+                evt = document.createEvent('CustomEvent');
+                evt.initCustomEvent(evtType, shouldBubble, false, evtData);
+            }
+            this.root.dispatchEvent(evt);
+        };
+        return MDCComponent;
+    }();
+    exports.MDCComponent = MDCComponent;
+    // tslint:disable-next-line:no-default-export Needed for backward compatibility with MDC Web v0.44.0 and earlier.
+    exports.default = MDCComponent;
+
+    /***/ }),
+
+    /***/ "./packages/mdc-base/foundation.ts":
+    /*!*****************************************!*\
+      !*** ./packages/mdc-base/foundation.ts ***!
+      \*****************************************/
+    /*! no static exports found */
+    /***/ (function(module, exports, __webpack_require__) {
+
+    /**
+     * @license
+     * Copyright 2016 Google Inc.
+     *
+     * Permission is hereby granted, free of charge, to any person obtaining a copy
+     * of this software and associated documentation files (the "Software"), to deal
+     * in the Software without restriction, including without limitation the rights
+     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     * copies of the Software, and to permit persons to whom the Software is
+     * furnished to do so, subject to the following conditions:
+     *
+     * The above copyright notice and this permission notice shall be included in
+     * all copies or substantial portions of the Software.
+     *
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+     * THE SOFTWARE.
+     */
+
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.MDCFoundation = void 0;
+    var MDCFoundation = /** @class */function () {
+        function MDCFoundation(adapter) {
+            if (adapter === void 0) {
+                adapter = {};
+            }
+            this.adapter = adapter;
+        }
+        Object.defineProperty(MDCFoundation, "cssClasses", {
+            get: function get() {
+                // Classes extending MDCFoundation should implement this method to return an object which exports every
+                // CSS class the foundation class needs as a property. e.g. {ACTIVE: 'mdc-component--active'}
+                return {};
+            },
+            enumerable: false,
+            configurable: true
+        });
+        Object.defineProperty(MDCFoundation, "strings", {
+            get: function get() {
+                // Classes extending MDCFoundation should implement this method to return an object which exports all
+                // semantic strings as constants. e.g. {ARIA_ROLE: 'tablist'}
+                return {};
+            },
+            enumerable: false,
+            configurable: true
+        });
+        Object.defineProperty(MDCFoundation, "numbers", {
+            get: function get() {
+                // Classes extending MDCFoundation should implement this method to return an object which exports all
+                // of its semantic numbers as constants. e.g. {ANIMATION_DELAY_MS: 350}
+                return {};
+            },
+            enumerable: false,
+            configurable: true
+        });
+        Object.defineProperty(MDCFoundation, "defaultAdapter", {
+            get: function get() {
+                // Classes extending MDCFoundation may choose to implement this getter in order to provide a convenient
+                // way of viewing the necessary methods of an adapter. In the future, this could also be used for adapter
+                // validation.
+                return {};
+            },
+            enumerable: false,
+            configurable: true
+        });
+        MDCFoundation.prototype.init = function () {
+            // Subclasses should override this method to perform initialization routines (registering events, etc.)
+        };
+        MDCFoundation.prototype.destroy = function () {
+            // Subclasses should override this method to perform de-initialization routines (de-registering events, etc.)
+        };
+        return MDCFoundation;
+    }();
+    exports.MDCFoundation = MDCFoundation;
+    // tslint:disable-next-line:no-default-export Needed for backward compatibility with MDC Web v0.44.0 and earlier.
+    exports.default = MDCFoundation;
+
+    /***/ }),
+
+    /***/ "./packages/mdc-dom/events.ts":
+    /*!************************************!*\
+      !*** ./packages/mdc-dom/events.ts ***!
+      \************************************/
+    /*! no static exports found */
+    /***/ (function(module, exports, __webpack_require__) {
+
+    /**
+     * @license
+     * Copyright 2019 Google Inc.
+     *
+     * Permission is hereby granted, free of charge, to any person obtaining a copy
+     * of this software and associated documentation files (the "Software"), to deal
+     * in the Software without restriction, including without limitation the rights
+     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     * copies of the Software, and to permit persons to whom the Software is
+     * furnished to do so, subject to the following conditions:
+     *
+     * The above copyright notice and this permission notice shall be included in
+     * all copies or substantial portions of the Software.
+     *
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+     * THE SOFTWARE.
+     */
+
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.applyPassive = void 0;
+    /**
+     * Determine whether the current browser supports passive event listeners, and
+     * if so, use them.
+     */
+    function applyPassive(globalObj) {
+        if (globalObj === void 0) {
+            globalObj = window;
+        }
+        return supportsPassiveOption(globalObj) ? { passive: true } : false;
+    }
+    exports.applyPassive = applyPassive;
+    function supportsPassiveOption(globalObj) {
+        if (globalObj === void 0) {
+            globalObj = window;
+        }
+        // See
+        // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+        var passiveSupported = false;
+        try {
+            var options = {
+                // This function will be called when the browser
+                // attempts to access the passive property.
+                get passive() {
+                    passiveSupported = true;
+                    return false;
+                }
+            };
+            var handler = function handler() {};
+            globalObj.document.addEventListener('test', handler, options);
+            globalObj.document.removeEventListener('test', handler, options);
+        } catch (err) {
+            passiveSupported = false;
+        }
+        return passiveSupported;
+    }
+
+    /***/ }),
+
+    /***/ "./packages/mdc-dom/ponyfill.ts":
+    /*!**************************************!*\
+      !*** ./packages/mdc-dom/ponyfill.ts ***!
+      \**************************************/
+    /*! no static exports found */
+    /***/ (function(module, exports, __webpack_require__) {
+
+    /**
+     * @license
+     * Copyright 2018 Google Inc.
+     *
+     * Permission is hereby granted, free of charge, to any person obtaining a copy
+     * of this software and associated documentation files (the "Software"), to deal
+     * in the Software without restriction, including without limitation the rights
+     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     * copies of the Software, and to permit persons to whom the Software is
+     * furnished to do so, subject to the following conditions:
+     *
+     * The above copyright notice and this permission notice shall be included in
+     * all copies or substantial portions of the Software.
+     *
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+     * THE SOFTWARE.
+     */
+
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.estimateScrollWidth = exports.matches = exports.closest = void 0;
+    /**
+     * @fileoverview A "ponyfill" is a polyfill that doesn't modify the global prototype chain.
+     * This makes ponyfills safer than traditional polyfills, especially for libraries like MDC.
+     */
+    function closest(element, selector) {
+        if (element.closest) {
+            return element.closest(selector);
+        }
+        var el = element;
+        while (el) {
+            if (matches(el, selector)) {
+                return el;
+            }
+            el = el.parentElement;
+        }
+        return null;
+    }
+    exports.closest = closest;
+    function matches(element, selector) {
+        var nativeMatches = element.matches || element.webkitMatchesSelector || element.msMatchesSelector;
+        return nativeMatches.call(element, selector);
+    }
+    exports.matches = matches;
+    /**
+     * Used to compute the estimated scroll width of elements. When an element is
+     * hidden due to display: none; being applied to a parent element, the width is
+     * returned as 0. However, the element will have a true width once no longer
+     * inside a display: none context. This method computes an estimated width when
+     * the element is hidden or returns the true width when the element is visble.
+     * @param {Element} element the element whose width to estimate
+     */
+    function estimateScrollWidth(element) {
+        // Check the offsetParent. If the element inherits display: none from any
+        // parent, the offsetParent property will be null (see
+        // https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/offsetParent).
+        // This check ensures we only clone the node when necessary.
+        var htmlEl = element;
+        if (htmlEl.offsetParent !== null) {
+            return htmlEl.scrollWidth;
+        }
+        var clone = htmlEl.cloneNode(true);
+        clone.style.setProperty('position', 'absolute');
+        clone.style.setProperty('transform', 'translate(-9999px, -9999px)');
+        document.documentElement.appendChild(clone);
+        var scrollWidth = clone.scrollWidth;
+        document.documentElement.removeChild(clone);
+        return scrollWidth;
+    }
+    exports.estimateScrollWidth = estimateScrollWidth;
+
+    /***/ }),
+
+    /***/ "./packages/mdc-ripple/component.ts":
+    /*!******************************************!*\
+      !*** ./packages/mdc-ripple/component.ts ***!
+      \******************************************/
+    /*! no static exports found */
+    /***/ (function(module, exports, __webpack_require__) {
+
+    /**
+     * @license
+     * Copyright 2016 Google Inc.
+     *
+     * Permission is hereby granted, free of charge, to any person obtaining a copy
+     * of this software and associated documentation files (the "Software"), to deal
+     * in the Software without restriction, including without limitation the rights
+     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     * copies of the Software, and to permit persons to whom the Software is
+     * furnished to do so, subject to the following conditions:
+     *
+     * The above copyright notice and this permission notice shall be included in
+     * all copies or substantial portions of the Software.
+     *
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+     * THE SOFTWARE.
+     */
+
+    var __extends = this && this.__extends || function () {
+        var _extendStatics = function extendStatics(d, b) {
+            _extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function (d, b) {
+                d.__proto__ = b;
+            } || function (d, b) {
+                for (var p in b) {
+                    if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+                }
+            };
+            return _extendStatics(d, b);
+        };
+        return function (d, b) {
+            if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+            _extendStatics(d, b);
+            function __() {
+                this.constructor = d;
+            }
+            d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+        };
+    }();
+    var __createBinding = this && this.__createBinding || (Object.create ? function (o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        Object.defineProperty(o, k2, { enumerable: true, get: function get() {
+                return m[k];
+            } });
+    } : function (o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        o[k2] = m[k];
+    });
+    var __setModuleDefault = this && this.__setModuleDefault || (Object.create ? function (o, v) {
+        Object.defineProperty(o, "default", { enumerable: true, value: v });
+    } : function (o, v) {
+        o["default"] = v;
+    });
+    var __importStar = this && this.__importStar || function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k in mod) {
+            if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+        }__setModuleDefault(result, mod);
+        return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.MDCRipple = void 0;
+    var component_1 = __webpack_require__(/*! @material/base/component */ "./packages/mdc-base/component.ts");
+    var events_1 = __webpack_require__(/*! @material/dom/events */ "./packages/mdc-dom/events.ts");
+    var ponyfill_1 = __webpack_require__(/*! @material/dom/ponyfill */ "./packages/mdc-dom/ponyfill.ts");
+    var foundation_1 = __webpack_require__(/*! ./foundation */ "./packages/mdc-ripple/foundation.ts");
+    var util = __importStar(__webpack_require__(/*! ./util */ "./packages/mdc-ripple/util.ts"));
+    var MDCRipple = /** @class */function (_super) {
+        __extends(MDCRipple, _super);
+        function MDCRipple() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.disabled = false;
+            return _this;
+        }
+        MDCRipple.attachTo = function (root, opts) {
+            if (opts === void 0) {
+                opts = {
+                    isUnbounded: undefined
+                };
+            }
+            var ripple = new MDCRipple(root);
+            // Only override unbounded behavior if option is explicitly specified
+            if (opts.isUnbounded !== undefined) {
+                ripple.unbounded = opts.isUnbounded;
+            }
+            return ripple;
+        };
+        MDCRipple.createAdapter = function (instance) {
+            return {
+                addClass: function addClass(className) {
+                    return instance.root.classList.add(className);
+                },
+                browserSupportsCssVars: function browserSupportsCssVars() {
+                    return util.supportsCssVariables(window);
+                },
+                computeBoundingRect: function computeBoundingRect() {
+                    return instance.root.getBoundingClientRect();
+                },
+                containsEventTarget: function containsEventTarget(target) {
+                    return instance.root.contains(target);
+                },
+                deregisterDocumentInteractionHandler: function deregisterDocumentInteractionHandler(evtType, handler) {
+                    return document.documentElement.removeEventListener(evtType, handler, events_1.applyPassive());
+                },
+                deregisterInteractionHandler: function deregisterInteractionHandler(evtType, handler) {
+                    return instance.root.removeEventListener(evtType, handler, events_1.applyPassive());
+                },
+                deregisterResizeHandler: function deregisterResizeHandler(handler) {
+                    return window.removeEventListener('resize', handler);
+                },
+                getWindowPageOffset: function getWindowPageOffset() {
+                    return { x: window.pageXOffset, y: window.pageYOffset };
+                },
+                isSurfaceActive: function isSurfaceActive() {
+                    return ponyfill_1.matches(instance.root, ':active');
+                },
+                isSurfaceDisabled: function isSurfaceDisabled() {
+                    return Boolean(instance.disabled);
+                },
+                isUnbounded: function isUnbounded() {
+                    return Boolean(instance.unbounded);
+                },
+                registerDocumentInteractionHandler: function registerDocumentInteractionHandler(evtType, handler) {
+                    return document.documentElement.addEventListener(evtType, handler, events_1.applyPassive());
+                },
+                registerInteractionHandler: function registerInteractionHandler(evtType, handler) {
+                    return instance.root.addEventListener(evtType, handler, events_1.applyPassive());
+                },
+                registerResizeHandler: function registerResizeHandler(handler) {
+                    return window.addEventListener('resize', handler);
+                },
+                removeClass: function removeClass(className) {
+                    return instance.root.classList.remove(className);
+                },
+                updateCssVariable: function updateCssVariable(varName, value) {
+                    return instance.root.style.setProperty(varName, value);
+                }
+            };
+        };
+        Object.defineProperty(MDCRipple.prototype, "unbounded", {
+            get: function get() {
+                return Boolean(this.isUnbounded);
+            },
+            set: function set(unbounded) {
+                this.isUnbounded = Boolean(unbounded);
+                this.setUnbounded();
+            },
+            enumerable: false,
+            configurable: true
+        });
+        MDCRipple.prototype.activate = function () {
+            this.foundation.activate();
+        };
+        MDCRipple.prototype.deactivate = function () {
+            this.foundation.deactivate();
+        };
+        MDCRipple.prototype.layout = function () {
+            this.foundation.layout();
+        };
+        MDCRipple.prototype.getDefaultFoundation = function () {
+            return new foundation_1.MDCRippleFoundation(MDCRipple.createAdapter(this));
+        };
+        MDCRipple.prototype.initialSyncWithDOM = function () {
+            var root = this.root;
+            this.isUnbounded = 'mdcRippleIsUnbounded' in root.dataset;
+        };
+        /**
+         * Closure Compiler throws an access control error when directly accessing a
+         * protected or private property inside a getter/setter, like unbounded above.
+         * By accessing the protected property inside a method, we solve that problem.
+         * That's why this function exists.
+         */
+        MDCRipple.prototype.setUnbounded = function () {
+            this.foundation.setUnbounded(Boolean(this.isUnbounded));
+        };
+        return MDCRipple;
+    }(component_1.MDCComponent);
+    exports.MDCRipple = MDCRipple;
+
+    /***/ }),
+
+    /***/ "./packages/mdc-ripple/constants.ts":
+    /*!******************************************!*\
+      !*** ./packages/mdc-ripple/constants.ts ***!
+      \******************************************/
+    /*! no static exports found */
+    /***/ (function(module, exports, __webpack_require__) {
+
+    /**
+     * @license
+     * Copyright 2016 Google Inc.
+     *
+     * Permission is hereby granted, free of charge, to any person obtaining a copy
+     * of this software and associated documentation files (the "Software"), to deal
+     * in the Software without restriction, including without limitation the rights
+     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     * copies of the Software, and to permit persons to whom the Software is
+     * furnished to do so, subject to the following conditions:
+     *
+     * The above copyright notice and this permission notice shall be included in
+     * all copies or substantial portions of the Software.
+     *
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+     * THE SOFTWARE.
+     */
+
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.numbers = exports.strings = exports.cssClasses = void 0;
+    exports.cssClasses = {
+        // Ripple is a special case where the "root" component is really a "mixin" of sorts,
+        // given that it's an 'upgrade' to an existing component. That being said it is the root
+        // CSS class that all other CSS classes derive from.
+        BG_FOCUSED: 'mdc-ripple-upgraded--background-focused',
+        FG_ACTIVATION: 'mdc-ripple-upgraded--foreground-activation',
+        FG_DEACTIVATION: 'mdc-ripple-upgraded--foreground-deactivation',
+        ROOT: 'mdc-ripple-upgraded',
+        UNBOUNDED: 'mdc-ripple-upgraded--unbounded'
+    };
+    exports.strings = {
+        VAR_FG_SCALE: '--mdc-ripple-fg-scale',
+        VAR_FG_SIZE: '--mdc-ripple-fg-size',
+        VAR_FG_TRANSLATE_END: '--mdc-ripple-fg-translate-end',
+        VAR_FG_TRANSLATE_START: '--mdc-ripple-fg-translate-start',
+        VAR_LEFT: '--mdc-ripple-left',
+        VAR_TOP: '--mdc-ripple-top'
+    };
+    exports.numbers = {
+        DEACTIVATION_TIMEOUT_MS: 225,
+        FG_DEACTIVATION_MS: 150,
+        INITIAL_ORIGIN_SCALE: 0.6,
+        PADDING: 10,
+        TAP_DELAY_MS: 300 };
+
+    /***/ }),
+
+    /***/ "./packages/mdc-ripple/foundation.ts":
+    /*!*******************************************!*\
+      !*** ./packages/mdc-ripple/foundation.ts ***!
+      \*******************************************/
+    /*! no static exports found */
+    /***/ (function(module, exports, __webpack_require__) {
+
+    /**
+     * @license
+     * Copyright 2016 Google Inc.
+     *
+     * Permission is hereby granted, free of charge, to any person obtaining a copy
+     * of this software and associated documentation files (the "Software"), to deal
+     * in the Software without restriction, including without limitation the rights
+     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     * copies of the Software, and to permit persons to whom the Software is
+     * furnished to do so, subject to the following conditions:
+     *
+     * The above copyright notice and this permission notice shall be included in
+     * all copies or substantial portions of the Software.
+     *
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+     * THE SOFTWARE.
+     */
+
+    var __extends = this && this.__extends || function () {
+        var _extendStatics = function extendStatics(d, b) {
+            _extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function (d, b) {
+                d.__proto__ = b;
+            } || function (d, b) {
+                for (var p in b) {
+                    if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+                }
+            };
+            return _extendStatics(d, b);
+        };
+        return function (d, b) {
+            if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+            _extendStatics(d, b);
+            function __() {
+                this.constructor = d;
+            }
+            d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+        };
+    }();
+    var __assign = this && this.__assign || function () {
+        __assign = Object.assign || function (t) {
+            for (var s, i = 1, n = arguments.length; i < n; i++) {
+                s = arguments[i];
+                for (var p in s) {
+                    if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+                }
+            }
+            return t;
+        };
+        return __assign.apply(this, arguments);
+    };
+    var __values = this && this.__values || function (o) {
+        var s = typeof Symbol === "function" && Symbol.iterator,
+            m = s && o[s],
+            i = 0;
+        if (m) return m.call(o);
+        if (o && typeof o.length === "number") return {
+            next: function next() {
+                if (o && i >= o.length) o = void 0;
+                return { value: o && o[i++], done: !o };
+            }
+        };
+        throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.MDCRippleFoundation = void 0;
+    var foundation_1 = __webpack_require__(/*! @material/base/foundation */ "./packages/mdc-base/foundation.ts");
+    var constants_1 = __webpack_require__(/*! ./constants */ "./packages/mdc-ripple/constants.ts");
+    var util_1 = __webpack_require__(/*! ./util */ "./packages/mdc-ripple/util.ts");
+    // Activation events registered on the root element of each instance for activation
+    var ACTIVATION_EVENT_TYPES = ['touchstart', 'pointerdown', 'mousedown', 'keydown'];
+    // Deactivation events registered on documentElement when a pointer-related down event occurs
+    var POINTER_DEACTIVATION_EVENT_TYPES = ['touchend', 'pointerup', 'mouseup', 'contextmenu'];
+    // simultaneous nested activations
+    var activatedTargets = [];
+    var MDCRippleFoundation = /** @class */function (_super) {
+        __extends(MDCRippleFoundation, _super);
+        function MDCRippleFoundation(adapter) {
+            var _this = _super.call(this, __assign(__assign({}, MDCRippleFoundation.defaultAdapter), adapter)) || this;
+            _this.activationAnimationHasEnded = false;
+            _this.activationTimer = 0;
+            _this.fgDeactivationRemovalTimer = 0;
+            _this.fgScale = '0';
+            _this.frame = { width: 0, height: 0 };
+            _this.initialSize = 0;
+            _this.layoutFrame = 0;
+            _this.maxRadius = 0;
+            _this.unboundedCoords = { left: 0, top: 0 };
+            _this.activationState = _this.defaultActivationState();
+            _this.activationTimerCallback = function () {
+                _this.activationAnimationHasEnded = true;
+                _this.runDeactivationUXLogicIfReady();
+            };
+            _this.activateHandler = function (e) {
+                _this.activateImpl(e);
+            };
+            _this.deactivateHandler = function () {
+                _this.deactivateImpl();
+            };
+            _this.focusHandler = function () {
+                _this.handleFocus();
+            };
+            _this.blurHandler = function () {
+                _this.handleBlur();
+            };
+            _this.resizeHandler = function () {
+                _this.layout();
+            };
+            return _this;
+        }
+        Object.defineProperty(MDCRippleFoundation, "cssClasses", {
+            get: function get() {
+                return constants_1.cssClasses;
+            },
+            enumerable: false,
+            configurable: true
+        });
+        Object.defineProperty(MDCRippleFoundation, "strings", {
+            get: function get() {
+                return constants_1.strings;
+            },
+            enumerable: false,
+            configurable: true
+        });
+        Object.defineProperty(MDCRippleFoundation, "numbers", {
+            get: function get() {
+                return constants_1.numbers;
+            },
+            enumerable: false,
+            configurable: true
+        });
+        Object.defineProperty(MDCRippleFoundation, "defaultAdapter", {
+            get: function get() {
+                return {
+                    addClass: function addClass() {
+                        return undefined;
+                    },
+                    browserSupportsCssVars: function browserSupportsCssVars() {
+                        return true;
+                    },
+                    computeBoundingRect: function computeBoundingRect() {
+                        return { top: 0, right: 0, bottom: 0, left: 0, width: 0, height: 0 };
+                    },
+                    containsEventTarget: function containsEventTarget() {
+                        return true;
+                    },
+                    deregisterDocumentInteractionHandler: function deregisterDocumentInteractionHandler() {
+                        return undefined;
+                    },
+                    deregisterInteractionHandler: function deregisterInteractionHandler() {
+                        return undefined;
+                    },
+                    deregisterResizeHandler: function deregisterResizeHandler() {
+                        return undefined;
+                    },
+                    getWindowPageOffset: function getWindowPageOffset() {
+                        return { x: 0, y: 0 };
+                    },
+                    isSurfaceActive: function isSurfaceActive() {
+                        return true;
+                    },
+                    isSurfaceDisabled: function isSurfaceDisabled() {
+                        return true;
+                    },
+                    isUnbounded: function isUnbounded() {
+                        return true;
+                    },
+                    registerDocumentInteractionHandler: function registerDocumentInteractionHandler() {
+                        return undefined;
+                    },
+                    registerInteractionHandler: function registerInteractionHandler() {
+                        return undefined;
+                    },
+                    registerResizeHandler: function registerResizeHandler() {
+                        return undefined;
+                    },
+                    removeClass: function removeClass() {
+                        return undefined;
+                    },
+                    updateCssVariable: function updateCssVariable() {
+                        return undefined;
+                    }
+                };
+            },
+            enumerable: false,
+            configurable: true
+        });
+        MDCRippleFoundation.prototype.init = function () {
+            var _this = this;
+            var supportsPressRipple = this.supportsPressRipple();
+            this.registerRootHandlers(supportsPressRipple);
+            if (supportsPressRipple) {
+                var _a = MDCRippleFoundation.cssClasses,
+                    ROOT_1 = _a.ROOT,
+                    UNBOUNDED_1 = _a.UNBOUNDED;
+                requestAnimationFrame(function () {
+                    _this.adapter.addClass(ROOT_1);
+                    if (_this.adapter.isUnbounded()) {
+                        _this.adapter.addClass(UNBOUNDED_1);
+                        // Unbounded ripples need layout logic applied immediately to set coordinates for both shade and ripple
+                        _this.layoutInternal();
+                    }
+                });
+            }
+        };
+        MDCRippleFoundation.prototype.destroy = function () {
+            var _this = this;
+            if (this.supportsPressRipple()) {
+                if (this.activationTimer) {
+                    clearTimeout(this.activationTimer);
+                    this.activationTimer = 0;
+                    this.adapter.removeClass(MDCRippleFoundation.cssClasses.FG_ACTIVATION);
+                }
+                if (this.fgDeactivationRemovalTimer) {
+                    clearTimeout(this.fgDeactivationRemovalTimer);
+                    this.fgDeactivationRemovalTimer = 0;
+                    this.adapter.removeClass(MDCRippleFoundation.cssClasses.FG_DEACTIVATION);
+                }
+                var _a = MDCRippleFoundation.cssClasses,
+                    ROOT_2 = _a.ROOT,
+                    UNBOUNDED_2 = _a.UNBOUNDED;
+                requestAnimationFrame(function () {
+                    _this.adapter.removeClass(ROOT_2);
+                    _this.adapter.removeClass(UNBOUNDED_2);
+                    _this.removeCssVars();
+                });
+            }
+            this.deregisterRootHandlers();
+            this.deregisterDeactivationHandlers();
+        };
+        /**
+         * @param evt Optional event containing position information.
+         */
+        MDCRippleFoundation.prototype.activate = function (evt) {
+            this.activateImpl(evt);
+        };
+        MDCRippleFoundation.prototype.deactivate = function () {
+            this.deactivateImpl();
+        };
+        MDCRippleFoundation.prototype.layout = function () {
+            var _this = this;
+            if (this.layoutFrame) {
+                cancelAnimationFrame(this.layoutFrame);
+            }
+            this.layoutFrame = requestAnimationFrame(function () {
+                _this.layoutInternal();
+                _this.layoutFrame = 0;
+            });
+        };
+        MDCRippleFoundation.prototype.setUnbounded = function (unbounded) {
+            var UNBOUNDED = MDCRippleFoundation.cssClasses.UNBOUNDED;
+            if (unbounded) {
+                this.adapter.addClass(UNBOUNDED);
+            } else {
+                this.adapter.removeClass(UNBOUNDED);
+            }
+        };
+        MDCRippleFoundation.prototype.handleFocus = function () {
+            var _this = this;
+            requestAnimationFrame(function () {
+                return _this.adapter.addClass(MDCRippleFoundation.cssClasses.BG_FOCUSED);
+            });
+        };
+        MDCRippleFoundation.prototype.handleBlur = function () {
+            var _this = this;
+            requestAnimationFrame(function () {
+                return _this.adapter.removeClass(MDCRippleFoundation.cssClasses.BG_FOCUSED);
+            });
+        };
+        /**
+         * We compute this property so that we are not querying information about the client
+         * until the point in time where the foundation requests it. This prevents scenarios where
+         * client-side feature-detection may happen too early, such as when components are rendered on the server
+         * and then initialized at mount time on the client.
+         */
+        MDCRippleFoundation.prototype.supportsPressRipple = function () {
+            return this.adapter.browserSupportsCssVars();
+        };
+        MDCRippleFoundation.prototype.defaultActivationState = function () {
+            return {
+                activationEvent: undefined,
+                hasDeactivationUXRun: false,
+                isActivated: false,
+                isProgrammatic: false,
+                wasActivatedByPointer: false,
+                wasElementMadeActive: false
+            };
+        };
+        /**
+         * supportsPressRipple Passed from init to save a redundant function call
+         */
+        MDCRippleFoundation.prototype.registerRootHandlers = function (supportsPressRipple) {
+            var e_1, _a;
+            if (supportsPressRipple) {
+                try {
+                    for (var ACTIVATION_EVENT_TYPES_1 = __values(ACTIVATION_EVENT_TYPES), ACTIVATION_EVENT_TYPES_1_1 = ACTIVATION_EVENT_TYPES_1.next(); !ACTIVATION_EVENT_TYPES_1_1.done; ACTIVATION_EVENT_TYPES_1_1 = ACTIVATION_EVENT_TYPES_1.next()) {
+                        var evtType = ACTIVATION_EVENT_TYPES_1_1.value;
+                        this.adapter.registerInteractionHandler(evtType, this.activateHandler);
+                    }
+                } catch (e_1_1) {
+                    e_1 = { error: e_1_1 };
+                } finally {
+                    try {
+                        if (ACTIVATION_EVENT_TYPES_1_1 && !ACTIVATION_EVENT_TYPES_1_1.done && (_a = ACTIVATION_EVENT_TYPES_1.return)) _a.call(ACTIVATION_EVENT_TYPES_1);
+                    } finally {
+                        if (e_1) throw e_1.error;
+                    }
+                }
+                if (this.adapter.isUnbounded()) {
+                    this.adapter.registerResizeHandler(this.resizeHandler);
+                }
+            }
+            this.adapter.registerInteractionHandler('focus', this.focusHandler);
+            this.adapter.registerInteractionHandler('blur', this.blurHandler);
+        };
+        MDCRippleFoundation.prototype.registerDeactivationHandlers = function (evt) {
+            var e_2, _a;
+            if (evt.type === 'keydown') {
+                this.adapter.registerInteractionHandler('keyup', this.deactivateHandler);
+            } else {
+                try {
+                    for (var POINTER_DEACTIVATION_EVENT_TYPES_1 = __values(POINTER_DEACTIVATION_EVENT_TYPES), POINTER_DEACTIVATION_EVENT_TYPES_1_1 = POINTER_DEACTIVATION_EVENT_TYPES_1.next(); !POINTER_DEACTIVATION_EVENT_TYPES_1_1.done; POINTER_DEACTIVATION_EVENT_TYPES_1_1 = POINTER_DEACTIVATION_EVENT_TYPES_1.next()) {
+                        var evtType = POINTER_DEACTIVATION_EVENT_TYPES_1_1.value;
+                        this.adapter.registerDocumentInteractionHandler(evtType, this.deactivateHandler);
+                    }
+                } catch (e_2_1) {
+                    e_2 = { error: e_2_1 };
+                } finally {
+                    try {
+                        if (POINTER_DEACTIVATION_EVENT_TYPES_1_1 && !POINTER_DEACTIVATION_EVENT_TYPES_1_1.done && (_a = POINTER_DEACTIVATION_EVENT_TYPES_1.return)) _a.call(POINTER_DEACTIVATION_EVENT_TYPES_1);
+                    } finally {
+                        if (e_2) throw e_2.error;
+                    }
+                }
+            }
+        };
+        MDCRippleFoundation.prototype.deregisterRootHandlers = function () {
+            var e_3, _a;
+            try {
+                for (var ACTIVATION_EVENT_TYPES_2 = __values(ACTIVATION_EVENT_TYPES), ACTIVATION_EVENT_TYPES_2_1 = ACTIVATION_EVENT_TYPES_2.next(); !ACTIVATION_EVENT_TYPES_2_1.done; ACTIVATION_EVENT_TYPES_2_1 = ACTIVATION_EVENT_TYPES_2.next()) {
+                    var evtType = ACTIVATION_EVENT_TYPES_2_1.value;
+                    this.adapter.deregisterInteractionHandler(evtType, this.activateHandler);
+                }
+            } catch (e_3_1) {
+                e_3 = { error: e_3_1 };
+            } finally {
+                try {
+                    if (ACTIVATION_EVENT_TYPES_2_1 && !ACTIVATION_EVENT_TYPES_2_1.done && (_a = ACTIVATION_EVENT_TYPES_2.return)) _a.call(ACTIVATION_EVENT_TYPES_2);
+                } finally {
+                    if (e_3) throw e_3.error;
+                }
+            }
+            this.adapter.deregisterInteractionHandler('focus', this.focusHandler);
+            this.adapter.deregisterInteractionHandler('blur', this.blurHandler);
+            if (this.adapter.isUnbounded()) {
+                this.adapter.deregisterResizeHandler(this.resizeHandler);
+            }
+        };
+        MDCRippleFoundation.prototype.deregisterDeactivationHandlers = function () {
+            var e_4, _a;
+            this.adapter.deregisterInteractionHandler('keyup', this.deactivateHandler);
+            try {
+                for (var POINTER_DEACTIVATION_EVENT_TYPES_2 = __values(POINTER_DEACTIVATION_EVENT_TYPES), POINTER_DEACTIVATION_EVENT_TYPES_2_1 = POINTER_DEACTIVATION_EVENT_TYPES_2.next(); !POINTER_DEACTIVATION_EVENT_TYPES_2_1.done; POINTER_DEACTIVATION_EVENT_TYPES_2_1 = POINTER_DEACTIVATION_EVENT_TYPES_2.next()) {
+                    var evtType = POINTER_DEACTIVATION_EVENT_TYPES_2_1.value;
+                    this.adapter.deregisterDocumentInteractionHandler(evtType, this.deactivateHandler);
+                }
+            } catch (e_4_1) {
+                e_4 = { error: e_4_1 };
+            } finally {
+                try {
+                    if (POINTER_DEACTIVATION_EVENT_TYPES_2_1 && !POINTER_DEACTIVATION_EVENT_TYPES_2_1.done && (_a = POINTER_DEACTIVATION_EVENT_TYPES_2.return)) _a.call(POINTER_DEACTIVATION_EVENT_TYPES_2);
+                } finally {
+                    if (e_4) throw e_4.error;
+                }
+            }
+        };
+        MDCRippleFoundation.prototype.removeCssVars = function () {
+            var _this = this;
+            var rippleStrings = MDCRippleFoundation.strings;
+            var keys = Object.keys(rippleStrings);
+            keys.forEach(function (key) {
+                if (key.indexOf('VAR_') === 0) {
+                    _this.adapter.updateCssVariable(rippleStrings[key], null);
+                }
+            });
+        };
+        MDCRippleFoundation.prototype.activateImpl = function (evt) {
+            var _this = this;
+            if (this.adapter.isSurfaceDisabled()) {
+                return;
+            }
+            var activationState = this.activationState;
+            if (activationState.isActivated) {
+                return;
+            }
+            // Avoid reacting to follow-on events fired by touch device after an already-processed user interaction
+            var previousActivationEvent = this.previousActivationEvent;
+            var isSameInteraction = previousActivationEvent && evt !== undefined && previousActivationEvent.type !== evt.type;
+            if (isSameInteraction) {
+                return;
+            }
+            activationState.isActivated = true;
+            activationState.isProgrammatic = evt === undefined;
+            activationState.activationEvent = evt;
+            activationState.wasActivatedByPointer = activationState.isProgrammatic ? false : evt !== undefined && (evt.type === 'mousedown' || evt.type === 'touchstart' || evt.type === 'pointerdown');
+            var hasActivatedChild = evt !== undefined && activatedTargets.length > 0 && activatedTargets.some(function (target) {
+                return _this.adapter.containsEventTarget(target);
+            });
+            if (hasActivatedChild) {
+                // Immediately reset activation state, while preserving logic that prevents touch follow-on events
+                this.resetActivationState();
+                return;
+            }
+            if (evt !== undefined) {
+                activatedTargets.push(evt.target);
+                this.registerDeactivationHandlers(evt);
+            }
+            activationState.wasElementMadeActive = this.checkElementMadeActive(evt);
+            if (activationState.wasElementMadeActive) {
+                this.animateActivation();
+            }
+            requestAnimationFrame(function () {
+                // Reset array on next frame after the current event has had a chance to bubble to prevent ancestor ripples
+                activatedTargets = [];
+                if (!activationState.wasElementMadeActive && evt !== undefined && (evt.key === ' ' || evt.keyCode === 32)) {
+                    // If space was pressed, try again within an rAF call to detect :active, because different UAs report
+                    // active states inconsistently when they're called within event handling code:
+                    // - https://bugs.chromium.org/p/chromium/issues/detail?id=635971
+                    // - https://bugzilla.mozilla.org/show_bug.cgi?id=1293741
+                    // We try first outside rAF to support Edge, which does not exhibit this problem, but will crash if a CSS
+                    // variable is set within a rAF callback for a submit button interaction (#2241).
+                    activationState.wasElementMadeActive = _this.checkElementMadeActive(evt);
+                    if (activationState.wasElementMadeActive) {
+                        _this.animateActivation();
+                    }
+                }
+                if (!activationState.wasElementMadeActive) {
+                    // Reset activation state immediately if element was not made active.
+                    _this.activationState = _this.defaultActivationState();
+                }
+            });
+        };
+        MDCRippleFoundation.prototype.checkElementMadeActive = function (evt) {
+            return evt !== undefined && evt.type === 'keydown' ? this.adapter.isSurfaceActive() : true;
+        };
+        MDCRippleFoundation.prototype.animateActivation = function () {
+            var _this = this;
+            var _a = MDCRippleFoundation.strings,
+                VAR_FG_TRANSLATE_START = _a.VAR_FG_TRANSLATE_START,
+                VAR_FG_TRANSLATE_END = _a.VAR_FG_TRANSLATE_END;
+            var _b = MDCRippleFoundation.cssClasses,
+                FG_DEACTIVATION = _b.FG_DEACTIVATION,
+                FG_ACTIVATION = _b.FG_ACTIVATION;
+            var DEACTIVATION_TIMEOUT_MS = MDCRippleFoundation.numbers.DEACTIVATION_TIMEOUT_MS;
+            this.layoutInternal();
+            var translateStart = '';
+            var translateEnd = '';
+            if (!this.adapter.isUnbounded()) {
+                var _c = this.getFgTranslationCoordinates(),
+                    startPoint = _c.startPoint,
+                    endPoint = _c.endPoint;
+                translateStart = startPoint.x + "px, " + startPoint.y + "px";
+                translateEnd = endPoint.x + "px, " + endPoint.y + "px";
+            }
+            this.adapter.updateCssVariable(VAR_FG_TRANSLATE_START, translateStart);
+            this.adapter.updateCssVariable(VAR_FG_TRANSLATE_END, translateEnd);
+            // Cancel any ongoing activation/deactivation animations
+            clearTimeout(this.activationTimer);
+            clearTimeout(this.fgDeactivationRemovalTimer);
+            this.rmBoundedActivationClasses();
+            this.adapter.removeClass(FG_DEACTIVATION);
+            // Force layout in order to re-trigger the animation.
+            this.adapter.computeBoundingRect();
+            this.adapter.addClass(FG_ACTIVATION);
+            this.activationTimer = setTimeout(function () {
+                _this.activationTimerCallback();
+            }, DEACTIVATION_TIMEOUT_MS);
+        };
+        MDCRippleFoundation.prototype.getFgTranslationCoordinates = function () {
+            var _a = this.activationState,
+                activationEvent = _a.activationEvent,
+                wasActivatedByPointer = _a.wasActivatedByPointer;
+            var startPoint;
+            if (wasActivatedByPointer) {
+                startPoint = util_1.getNormalizedEventCoords(activationEvent, this.adapter.getWindowPageOffset(), this.adapter.computeBoundingRect());
+            } else {
+                startPoint = {
+                    x: this.frame.width / 2,
+                    y: this.frame.height / 2
+                };
+            }
+            // Center the element around the start point.
+            startPoint = {
+                x: startPoint.x - this.initialSize / 2,
+                y: startPoint.y - this.initialSize / 2
+            };
+            var endPoint = {
+                x: this.frame.width / 2 - this.initialSize / 2,
+                y: this.frame.height / 2 - this.initialSize / 2
+            };
+            return { startPoint: startPoint, endPoint: endPoint };
+        };
+        MDCRippleFoundation.prototype.runDeactivationUXLogicIfReady = function () {
+            var _this = this;
+            // This method is called both when a pointing device is released, and when the activation animation ends.
+            // The deactivation animation should only run after both of those occur.
+            var FG_DEACTIVATION = MDCRippleFoundation.cssClasses.FG_DEACTIVATION;
+            var _a = this.activationState,
+                hasDeactivationUXRun = _a.hasDeactivationUXRun,
+                isActivated = _a.isActivated;
+            var activationHasEnded = hasDeactivationUXRun || !isActivated;
+            if (activationHasEnded && this.activationAnimationHasEnded) {
+                this.rmBoundedActivationClasses();
+                this.adapter.addClass(FG_DEACTIVATION);
+                this.fgDeactivationRemovalTimer = setTimeout(function () {
+                    _this.adapter.removeClass(FG_DEACTIVATION);
+                }, constants_1.numbers.FG_DEACTIVATION_MS);
+            }
+        };
+        MDCRippleFoundation.prototype.rmBoundedActivationClasses = function () {
+            var FG_ACTIVATION = MDCRippleFoundation.cssClasses.FG_ACTIVATION;
+            this.adapter.removeClass(FG_ACTIVATION);
+            this.activationAnimationHasEnded = false;
+            this.adapter.computeBoundingRect();
+        };
+        MDCRippleFoundation.prototype.resetActivationState = function () {
+            var _this = this;
+            this.previousActivationEvent = this.activationState.activationEvent;
+            this.activationState = this.defaultActivationState();
+            // Touch devices may fire additional events for the same interaction within a short time.
+            // Store the previous event until it's safe to assume that subsequent events are for new interactions.
+            setTimeout(function () {
+                return _this.previousActivationEvent = undefined;
+            }, MDCRippleFoundation.numbers.TAP_DELAY_MS);
+        };
+        MDCRippleFoundation.prototype.deactivateImpl = function () {
+            var _this = this;
+            var activationState = this.activationState;
+            // This can happen in scenarios such as when you have a keyup event that blurs the element.
+            if (!activationState.isActivated) {
+                return;
+            }
+            var state = __assign({}, activationState);
+            if (activationState.isProgrammatic) {
+                requestAnimationFrame(function () {
+                    _this.animateDeactivation(state);
+                });
+                this.resetActivationState();
+            } else {
+                this.deregisterDeactivationHandlers();
+                requestAnimationFrame(function () {
+                    _this.activationState.hasDeactivationUXRun = true;
+                    _this.animateDeactivation(state);
+                    _this.resetActivationState();
+                });
+            }
+        };
+        MDCRippleFoundation.prototype.animateDeactivation = function (_a) {
+            var wasActivatedByPointer = _a.wasActivatedByPointer,
+                wasElementMadeActive = _a.wasElementMadeActive;
+            if (wasActivatedByPointer || wasElementMadeActive) {
+                this.runDeactivationUXLogicIfReady();
+            }
+        };
+        MDCRippleFoundation.prototype.layoutInternal = function () {
+            var _this = this;
+            this.frame = this.adapter.computeBoundingRect();
+            var maxDim = Math.max(this.frame.height, this.frame.width);
+            // Surface diameter is treated differently for unbounded vs. bounded ripples.
+            // Unbounded ripple diameter is calculated smaller since the surface is expected to already be padded appropriately
+            // to extend the hitbox, and the ripple is expected to meet the edges of the padded hitbox (which is typically
+            // square). Bounded ripples, on the other hand, are fully expected to expand beyond the surface's longest diameter
+            // (calculated based on the diagonal plus a constant padding), and are clipped at the surface's border via
+            // `overflow: hidden`.
+            var getBoundedRadius = function getBoundedRadius() {
+                var hypotenuse = Math.sqrt(Math.pow(_this.frame.width, 2) + Math.pow(_this.frame.height, 2));
+                return hypotenuse + MDCRippleFoundation.numbers.PADDING;
+            };
+            this.maxRadius = this.adapter.isUnbounded() ? maxDim : getBoundedRadius();
+            // Ripple is sized as a fraction of the largest dimension of the surface, then scales up using a CSS scale transform
+            var initialSize = Math.floor(maxDim * MDCRippleFoundation.numbers.INITIAL_ORIGIN_SCALE);
+            // Unbounded ripple size should always be even number to equally center align.
+            if (this.adapter.isUnbounded() && initialSize % 2 !== 0) {
+                this.initialSize = initialSize - 1;
+            } else {
+                this.initialSize = initialSize;
+            }
+            this.fgScale = "" + this.maxRadius / this.initialSize;
+            this.updateLayoutCssVars();
+        };
+        MDCRippleFoundation.prototype.updateLayoutCssVars = function () {
+            var _a = MDCRippleFoundation.strings,
+                VAR_FG_SIZE = _a.VAR_FG_SIZE,
+                VAR_LEFT = _a.VAR_LEFT,
+                VAR_TOP = _a.VAR_TOP,
+                VAR_FG_SCALE = _a.VAR_FG_SCALE;
+            this.adapter.updateCssVariable(VAR_FG_SIZE, this.initialSize + "px");
+            this.adapter.updateCssVariable(VAR_FG_SCALE, this.fgScale);
+            if (this.adapter.isUnbounded()) {
+                this.unboundedCoords = {
+                    left: Math.round(this.frame.width / 2 - this.initialSize / 2),
+                    top: Math.round(this.frame.height / 2 - this.initialSize / 2)
+                };
+                this.adapter.updateCssVariable(VAR_LEFT, this.unboundedCoords.left + "px");
+                this.adapter.updateCssVariable(VAR_TOP, this.unboundedCoords.top + "px");
+            }
+        };
+        return MDCRippleFoundation;
+    }(foundation_1.MDCFoundation);
+    exports.MDCRippleFoundation = MDCRippleFoundation;
+    // tslint:disable-next-line:no-default-export Needed for backward compatibility with MDC Web v0.44.0 and earlier.
+    exports.default = MDCRippleFoundation;
+
+    /***/ }),
+
+    /***/ "./packages/mdc-ripple/util.ts":
+    /*!*************************************!*\
+      !*** ./packages/mdc-ripple/util.ts ***!
+      \*************************************/
+    /*! no static exports found */
+    /***/ (function(module, exports, __webpack_require__) {
+
+
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.getNormalizedEventCoords = exports.supportsCssVariables = void 0;
+    /**
+     * Stores result from supportsCssVariables to avoid redundant processing to
+     * detect CSS custom variable support.
+     */
+    var supportsCssVariables_;
+    function supportsCssVariables(windowObj, forceRefresh) {
+        if (forceRefresh === void 0) {
+            forceRefresh = false;
+        }
+        var CSS = windowObj.CSS;
+        var supportsCssVars = supportsCssVariables_;
+        if (typeof supportsCssVariables_ === 'boolean' && !forceRefresh) {
+            return supportsCssVariables_;
+        }
+        var supportsFunctionPresent = CSS && typeof CSS.supports === 'function';
+        if (!supportsFunctionPresent) {
+            return false;
+        }
+        var explicitlySupportsCssVars = CSS.supports('--css-vars', 'yes');
+        // See: https://bugs.webkit.org/show_bug.cgi?id=154669
+        // See: README section on Safari
+        var weAreFeatureDetectingSafari10plus = CSS.supports('(--css-vars: yes)') && CSS.supports('color', '#00000000');
+        supportsCssVars = explicitlySupportsCssVars || weAreFeatureDetectingSafari10plus;
+        if (!forceRefresh) {
+            supportsCssVariables_ = supportsCssVars;
+        }
+        return supportsCssVars;
+    }
+    exports.supportsCssVariables = supportsCssVariables;
+    function getNormalizedEventCoords(evt, pageOffset, clientRect) {
+        if (!evt) {
+            return { x: 0, y: 0 };
+        }
+        var x = pageOffset.x,
+            y = pageOffset.y;
+        var documentX = x + clientRect.left;
+        var documentY = y + clientRect.top;
+        var normalizedX;
+        var normalizedY;
+        // Determine touch point relative to the ripple container.
+        if (evt.type === 'touchstart') {
+            var touchEvent = evt;
+            normalizedX = touchEvent.changedTouches[0].pageX - documentX;
+            normalizedY = touchEvent.changedTouches[0].pageY - documentY;
+        } else {
+            var mouseEvent = evt;
+            normalizedX = mouseEvent.pageX - documentX;
+            normalizedY = mouseEvent.pageY - documentY;
+        }
+        return { x: normalizedX, y: normalizedY };
+    }
+    exports.getNormalizedEventCoords = getNormalizedEventCoords;
+
+    /***/ }),
+
+    /***/ "./packages/mdc-segmented-button/index.ts":
+    /*!************************************************!*\
+      !*** ./packages/mdc-segmented-button/index.ts ***!
+      \************************************************/
+    /*! no static exports found */
+    /***/ (function(module, exports, __webpack_require__) {
 
     /**
      * @license
@@ -16373,18 +17915,974 @@ var app = (function () {
      * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
      * THE SOFTWARE.
      */
-    var MDCSegmentedButtonFoundation = /** @class */ (function (_super) {
+
+    var __createBinding = this && this.__createBinding || (Object.create ? function (o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        Object.defineProperty(o, k2, { enumerable: true, get: function get() {
+                return m[k];
+            } });
+    } : function (o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        o[k2] = m[k];
+    });
+    var __exportStar = this && this.__exportStar || function (m, exports) {
+        for (var p in m) {
+            if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+        }
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    __exportStar(__webpack_require__(/*! ./segmented-button/index */ "./packages/mdc-segmented-button/segmented-button/index.ts"), exports);
+    __exportStar(__webpack_require__(/*! ./segment/index */ "./packages/mdc-segmented-button/segment/index.ts"), exports);
+    __exportStar(__webpack_require__(/*! ./types */ "./packages/mdc-segmented-button/types.ts"), exports);
+
+    /***/ }),
+
+    /***/ "./packages/mdc-segmented-button/segment/adapter.ts":
+    /*!**********************************************************!*\
+      !*** ./packages/mdc-segmented-button/segment/adapter.ts ***!
+      \**********************************************************/
+    /*! no static exports found */
+    /***/ (function(module, exports, __webpack_require__) {
+
+    /**
+     * @license
+     * Copyright 2020 Google Inc.
+     *
+     * Permission is hereby granted, free of charge, to any person obtaining a copy
+     * of this software and associated documentation files (the "Software"), to deal
+     * in the Software without restriction, including without limitation the rights
+     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     * copies of the Software, and to permit persons to whom the Software is
+     * furnished to do so, subject to the following conditions:
+     *
+     * The above copyright notice and this permission notice shall be included in
+     * all copies or substantial portions of the Software.
+     *
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+     * THE SOFTWARE.
+     */
+
+    Object.defineProperty(exports, "__esModule", { value: true });
+
+    /***/ }),
+
+    /***/ "./packages/mdc-segmented-button/segment/component.ts":
+    /*!************************************************************!*\
+      !*** ./packages/mdc-segmented-button/segment/component.ts ***!
+      \************************************************************/
+    /*! no static exports found */
+    /***/ (function(module, exports, __webpack_require__) {
+
+    /**
+     * @license
+     * Copyright 2020 Google Inc.
+     *
+     * Permission is hereby granted, free of charge, to any person obtaining a copy
+     * of this software and associated documentation files (the "Software"), to deal
+     * in the Software without restriction, including without limitation the rights
+     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     * copies of the Software, and to permit persons to whom the Software is
+     * furnished to do so, subject to the following conditions:
+     *
+     * The above copyright notice and this permission notice shall be included in
+     * all copies or substantial portions of the Software.
+     *
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+     * THE SOFTWARE.
+     */
+
+    var __extends = this && this.__extends || function () {
+        var _extendStatics = function extendStatics(d, b) {
+            _extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function (d, b) {
+                d.__proto__ = b;
+            } || function (d, b) {
+                for (var p in b) {
+                    if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+                }
+            };
+            return _extendStatics(d, b);
+        };
+        return function (d, b) {
+            if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+            _extendStatics(d, b);
+            function __() {
+                this.constructor = d;
+            }
+            d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+        };
+    }();
+    var __assign = this && this.__assign || function () {
+        __assign = Object.assign || function (t) {
+            for (var s, i = 1, n = arguments.length; i < n; i++) {
+                s = arguments[i];
+                for (var p in s) {
+                    if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+                }
+            }
+            return t;
+        };
+        return __assign.apply(this, arguments);
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.MDCSegmentedButtonSegment = void 0;
+    var component_1 = __webpack_require__(/*! @material/base/component */ "./packages/mdc-base/component.ts");
+    var component_2 = __webpack_require__(/*! @material/ripple/component */ "./packages/mdc-ripple/component.ts");
+    var foundation_1 = __webpack_require__(/*! @material/ripple/foundation */ "./packages/mdc-ripple/foundation.ts");
+    var constants_1 = __webpack_require__(/*! ./constants */ "./packages/mdc-segmented-button/segment/constants.ts");
+    var foundation_2 = __webpack_require__(/*! ./foundation */ "./packages/mdc-segmented-button/segment/foundation.ts");
+    /**
+     * Implementation of MDCSegmentedButtonSegmentFoundation
+     */
+    var MDCSegmentedButtonSegment = /** @class */function (_super) {
+        __extends(MDCSegmentedButtonSegment, _super);
+        function MDCSegmentedButtonSegment() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        Object.defineProperty(MDCSegmentedButtonSegment.prototype, "ripple", {
+            get: function get() {
+                return this.rippleComponent;
+            },
+            enumerable: false,
+            configurable: true
+        });
+        MDCSegmentedButtonSegment.attachTo = function (root) {
+            return new MDCSegmentedButtonSegment(root);
+        };
+        MDCSegmentedButtonSegment.prototype.initialize = function (rippleFactory) {
+            var _this = this;
+            if (rippleFactory === void 0) {
+                rippleFactory = function rippleFactory(el, foundation) {
+                    return new component_2.MDCRipple(el, foundation);
+                };
+            }
+            var rippleAdapter = __assign(__assign({}, component_2.MDCRipple.createAdapter(this)), { computeBoundingRect: function computeBoundingRect() {
+                    return _this.foundation.getDimensions();
+                } });
+            this.rippleComponent = rippleFactory(this.root, new foundation_1.MDCRippleFoundation(rippleAdapter));
+        };
+        MDCSegmentedButtonSegment.prototype.initialSyncWithDOM = function () {
+            var _this = this;
+            this.handleClick = function () {
+                _this.foundation.handleClick();
+            };
+            this.listen(constants_1.events.CLICK, this.handleClick);
+        };
+        MDCSegmentedButtonSegment.prototype.destroy = function () {
+            this.ripple.destroy();
+            this.unlisten(constants_1.events.CLICK, this.handleClick);
+            _super.prototype.destroy.call(this);
+        };
+        MDCSegmentedButtonSegment.prototype.getDefaultFoundation = function () {
+            var _this = this;
+            // DO NOT INLINE this variable. For backward compatibility, foundations take
+            // a Partial<MDCFooAdapter>. To ensure we don't accidentally omit any
+            // methods, we need a separate, strongly typed adapter variable.
+            // tslint:disable:object-literal-sort-keys Methods should be in the same order as the adapter interface.
+            var adapter = {
+                isSingleSelect: function isSingleSelect() {
+                    return _this.isSingleSelect;
+                },
+                getAttr: function getAttr(attrName) {
+                    return _this.root.getAttribute(attrName);
+                },
+                setAttr: function setAttr(attrName, value) {
+                    _this.root.setAttribute(attrName, value);
+                },
+                addClass: function addClass(className) {
+                    _this.root.classList.add(className);
+                },
+                removeClass: function removeClass(className) {
+                    _this.root.classList.remove(className);
+                },
+                hasClass: function hasClass(className) {
+                    return _this.root.classList.contains(className);
+                },
+                notifySelectedChange: function notifySelectedChange(selected) {
+                    _this.emit(constants_1.events.SELECTED, {
+                        index: _this.index,
+                        selected: selected,
+                        segmentId: _this.getSegmentId()
+                    }, true /* shouldBubble */);
+                },
+                getRootBoundingClientRect: function getRootBoundingClientRect() {
+                    return _this.root.getBoundingClientRect();
+                }
+            };
+            return new foundation_2.MDCSegmentedButtonSegmentFoundation(adapter);
+        };
+        /**
+         * Sets segment's index value
+         *
+         * @param index Segment's index within wrapping segmented button
+         */
+        MDCSegmentedButtonSegment.prototype.setIndex = function (index) {
+            this.index = index;
+        };
+        /**
+         * Sets segment's isSingleSelect value
+         *
+         * @param isSingleSelect True if wrapping segmented button is single select
+         */
+        MDCSegmentedButtonSegment.prototype.setIsSingleSelect = function (isSingleSelect) {
+            this.isSingleSelect = isSingleSelect;
+        };
+        /**
+         * @return Returns true if segment is currently selected, otherwise returns
+         * false
+         */
+        MDCSegmentedButtonSegment.prototype.isSelected = function () {
+            return this.foundation.isSelected();
+        };
+        /**
+         * Sets segment to be selected
+         */
+        MDCSegmentedButtonSegment.prototype.setSelected = function () {
+            this.foundation.setSelected();
+        };
+        /**
+         * Sets segment to be not selected
+         */
+        MDCSegmentedButtonSegment.prototype.setUnselected = function () {
+            this.foundation.setUnselected();
+        };
+        /**
+         * @return Returns segment's segmentId if it was set by client
+         */
+        MDCSegmentedButtonSegment.prototype.getSegmentId = function () {
+            return this.foundation.getSegmentId();
+        };
+        return MDCSegmentedButtonSegment;
+    }(component_1.MDCComponent);
+    exports.MDCSegmentedButtonSegment = MDCSegmentedButtonSegment;
+
+    /***/ }),
+
+    /***/ "./packages/mdc-segmented-button/segment/constants.ts":
+    /*!************************************************************!*\
+      !*** ./packages/mdc-segmented-button/segment/constants.ts ***!
+      \************************************************************/
+    /*! no static exports found */
+    /***/ (function(module, exports, __webpack_require__) {
+
+    /**
+     * @license
+     * Copyright 2020 Google Inc.
+     *
+     * Permission is hereby granted, free of charge, to any person obtaining a copy
+     * of this software and associated documentation files (the "Software"), to deal
+     * in the Software without restriction, including without limitation the rights
+     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     * copies of the Software, and to permit persons to whom the Software is
+     * furnished to do so, subject to the following conditions:
+     *
+     * The above copyright notice and this permission notice shall be included in
+     * all copies or substantial portions of the Software.
+     *
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+     * THE SOFTWARE.
+     */
+
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.cssClasses = exports.events = exports.attributes = exports.booleans = void 0;
+    /**
+     * Boolean strings for segment
+     */
+    exports.booleans = {
+      TRUE: 'true',
+      FALSE: 'false'
+    };
+    /**
+     * Attributes referenced by segment
+     */
+    exports.attributes = {
+      ARIA_CHECKED: 'aria-checked',
+      ARIA_PRESSED: 'aria-pressed',
+      DATA_SEGMENT_ID: 'data-segment-id'
+    };
+    /**
+     * Events received or emitted by segment
+     */
+    exports.events = {
+      CLICK: 'click',
+      SELECTED: 'selected'
+    };
+    /**
+     * Style classes for segment
+     */
+    exports.cssClasses = {
+      SELECTED: 'mdc-segmented-button__segment--selected'
+    };
+
+    /***/ }),
+
+    /***/ "./packages/mdc-segmented-button/segment/foundation.ts":
+    /*!*************************************************************!*\
+      !*** ./packages/mdc-segmented-button/segment/foundation.ts ***!
+      \*************************************************************/
+    /*! no static exports found */
+    /***/ (function(module, exports, __webpack_require__) {
+
+    /**
+     * @license
+     * Copyright 2020 Google Inc.
+     *
+     * Permission is hereby granted, free of charge, to any person obtaining a copy
+     * of this software and associated documentation files (the "Software"), to deal
+     * in the Software without restriction, including without limitation the rights
+     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     * copies of the Software, and to permit persons to whom the Software is
+     * furnished to do so, subject to the following conditions:
+     *
+     * The above copyright notice and this permission notice shall be included in
+     * all copies or substantial portions of the Software.
+     *
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+     * THE SOFTWARE.
+     */
+
+    var __extends = this && this.__extends || function () {
+        var _extendStatics = function extendStatics(d, b) {
+            _extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function (d, b) {
+                d.__proto__ = b;
+            } || function (d, b) {
+                for (var p in b) {
+                    if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+                }
+            };
+            return _extendStatics(d, b);
+        };
+        return function (d, b) {
+            if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+            _extendStatics(d, b);
+            function __() {
+                this.constructor = d;
+            }
+            d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+        };
+    }();
+    var __assign = this && this.__assign || function () {
+        __assign = Object.assign || function (t) {
+            for (var s, i = 1, n = arguments.length; i < n; i++) {
+                s = arguments[i];
+                for (var p in s) {
+                    if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+                }
+            }
+            return t;
+        };
+        return __assign.apply(this, arguments);
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.MDCSegmentedButtonSegmentFoundation = void 0;
+    var foundation_1 = __webpack_require__(/*! @material/base/foundation */ "./packages/mdc-base/foundation.ts");
+    var constants_1 = __webpack_require__(/*! ./constants */ "./packages/mdc-segmented-button/segment/constants.ts");
+    var emptyClientRect = {
+        bottom: 0,
+        height: 0,
+        left: 0,
+        right: 0,
+        top: 0,
+        width: 0
+    };
+    var MDCSegmentedButtonSegmentFoundation = /** @class */function (_super) {
+        __extends(MDCSegmentedButtonSegmentFoundation, _super);
+        function MDCSegmentedButtonSegmentFoundation(adapter) {
+            return _super.call(this, __assign(__assign({}, MDCSegmentedButtonSegmentFoundation.defaultAdapter), adapter)) || this;
+        }
+        Object.defineProperty(MDCSegmentedButtonSegmentFoundation, "defaultAdapter", {
+            get: function get() {
+                return {
+                    isSingleSelect: function isSingleSelect() {
+                        return false;
+                    }, getAttr: function getAttr() {
+                        return '';
+                    }, setAttr: function setAttr() {
+                        return undefined;
+                    },
+                    addClass: function addClass() {
+                        return undefined;
+                    }, removeClass: function removeClass() {
+                        return undefined;
+                    },
+                    hasClass: function hasClass() {
+                        return false;
+                    },
+                    notifySelectedChange: function notifySelectedChange() {
+                        return undefined;
+                    },
+                    getRootBoundingClientRect: function getRootBoundingClientRect() {
+                        return emptyClientRect;
+                    }
+                };
+            },
+            enumerable: false,
+            configurable: true
+        });
+        /**
+         * @return Returns true if segment is currently selected, otherwise returns
+         * false
+         */
+        MDCSegmentedButtonSegmentFoundation.prototype.isSelected = function () {
+            return this.adapter.hasClass(constants_1.cssClasses.SELECTED);
+        };
+        /**
+         * Sets segment to be selected
+         */
+        MDCSegmentedButtonSegmentFoundation.prototype.setSelected = function () {
+            this.adapter.addClass(constants_1.cssClasses.SELECTED);
+            this.setAriaAttr(constants_1.booleans.TRUE);
+        };
+        /**
+         * Sets segment to be not selected
+         */
+        MDCSegmentedButtonSegmentFoundation.prototype.setUnselected = function () {
+            this.adapter.removeClass(constants_1.cssClasses.SELECTED);
+            this.setAriaAttr(constants_1.booleans.FALSE);
+        };
+        /**
+         * @return Returns segment's segmentId if it was set by client
+         */
+        MDCSegmentedButtonSegmentFoundation.prototype.getSegmentId = function () {
+            var _a;
+            return (_a = this.adapter.getAttr(constants_1.attributes.DATA_SEGMENT_ID)) !== null && _a !== void 0 ? _a : undefined;
+        };
+        /**
+         * Called when segment is clicked. If the wrapping segmented button is single
+         * select, doesn't allow segment to be set to not selected. Otherwise, toggles
+         * segment's selected status. Finally, emits event to wrapping segmented
+         * button.
+         *
+         * @event selected With detail - SegmentDetail
+         */
+        MDCSegmentedButtonSegmentFoundation.prototype.handleClick = function () {
+            if (this.adapter.isSingleSelect()) {
+                this.setSelected();
+            } else {
+                this.toggleSelection();
+            }
+            this.adapter.notifySelectedChange(this.isSelected());
+        };
+        /**
+         * @return Returns bounding rectangle for ripple effect
+         */
+        MDCSegmentedButtonSegmentFoundation.prototype.getDimensions = function () {
+            return this.adapter.getRootBoundingClientRect();
+        };
+        /**
+         * Sets segment from not selected to selected, or selected to not selected
+         */
+        MDCSegmentedButtonSegmentFoundation.prototype.toggleSelection = function () {
+            if (this.isSelected()) {
+                this.setUnselected();
+            } else {
+                this.setSelected();
+            }
+        };
+        /**
+         * Sets appropriate aria attribute, based on wrapping segmented button's
+         * single selected value, to new value
+         *
+         * @param value Value that represents selected status
+         */
+        MDCSegmentedButtonSegmentFoundation.prototype.setAriaAttr = function (value) {
+            if (this.adapter.isSingleSelect()) {
+                this.adapter.setAttr(constants_1.attributes.ARIA_CHECKED, value);
+            } else {
+                this.adapter.setAttr(constants_1.attributes.ARIA_PRESSED, value);
+            }
+        };
+        return MDCSegmentedButtonSegmentFoundation;
+    }(foundation_1.MDCFoundation);
+    exports.MDCSegmentedButtonSegmentFoundation = MDCSegmentedButtonSegmentFoundation;
+
+    /***/ }),
+
+    /***/ "./packages/mdc-segmented-button/segment/index.ts":
+    /*!********************************************************!*\
+      !*** ./packages/mdc-segmented-button/segment/index.ts ***!
+      \********************************************************/
+    /*! no static exports found */
+    /***/ (function(module, exports, __webpack_require__) {
+
+    /**
+     * @license
+     * Copyright 2020 Google Inc.
+     *
+     * Permission is hereby granted, free of charge, to any person obtaining a copy
+     * of this software and associated documentation files (the "Software"), to deal
+     * in the Software without restriction, including without limitation the rights
+     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     * copies of the Software, and to permit persons to whom the Software is
+     * furnished to do so, subject to the following conditions:
+     *
+     * The above copyright notice and this permission notice shall be included in
+     * all copies or substantial portions of the Software.
+     *
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+     * THE SOFTWARE.
+     */
+
+    var __createBinding = this && this.__createBinding || (Object.create ? function (o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        Object.defineProperty(o, k2, { enumerable: true, get: function get() {
+                return m[k];
+            } });
+    } : function (o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        o[k2] = m[k];
+    });
+    var __exportStar = this && this.__exportStar || function (m, exports) {
+        for (var p in m) {
+            if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+        }
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    __exportStar(__webpack_require__(/*! ./adapter */ "./packages/mdc-segmented-button/segment/adapter.ts"), exports);
+    __exportStar(__webpack_require__(/*! ./foundation */ "./packages/mdc-segmented-button/segment/foundation.ts"), exports);
+    __exportStar(__webpack_require__(/*! ./component */ "./packages/mdc-segmented-button/segment/component.ts"), exports);
+
+    /***/ }),
+
+    /***/ "./packages/mdc-segmented-button/segmented-button/adapter.ts":
+    /*!*******************************************************************!*\
+      !*** ./packages/mdc-segmented-button/segmented-button/adapter.ts ***!
+      \*******************************************************************/
+    /*! no static exports found */
+    /***/ (function(module, exports, __webpack_require__) {
+
+    /**
+     * @license
+     * Copyright 2020 Google Inc.
+     *
+     * Permission is hereby granted, free of charge, to any person obtaining a copy
+     * of this software and associated documentation files (the "Software"), to deal
+     * in the Software without restriction, including without limitation the rights
+     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     * copies of the Software, and to permit persons to whom the Software is
+     * furnished to do so, subject to the following conditions:
+     *
+     * The above copyright notice and this permission notice shall be included in
+     * all copies or substantial portions of the Software.
+     *
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+     * THE SOFTWARE.
+     */
+
+    Object.defineProperty(exports, "__esModule", { value: true });
+
+    /***/ }),
+
+    /***/ "./packages/mdc-segmented-button/segmented-button/component.ts":
+    /*!*********************************************************************!*\
+      !*** ./packages/mdc-segmented-button/segmented-button/component.ts ***!
+      \*********************************************************************/
+    /*! no static exports found */
+    /***/ (function(module, exports, __webpack_require__) {
+
+    /**
+     * @license
+     * Copyright 2020 Google Inc.
+     *
+     * Permission is hereby granted, free of charge, to any person obtaining a copy
+     * of this software and associated documentation files (the "Software"), to deal
+     * in the Software without restriction, including without limitation the rights
+     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     * copies of the Software, and to permit persons to whom the Software is
+     * furnished to do so, subject to the following conditions:
+     *
+     * The above copyright notice and this permission notice shall be included in
+     * all copies or substantial portions of the Software.
+     *
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+     * THE SOFTWARE.
+     */
+
+    var __extends = this && this.__extends || function () {
+        var _extendStatics = function extendStatics(d, b) {
+            _extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function (d, b) {
+                d.__proto__ = b;
+            } || function (d, b) {
+                for (var p in b) {
+                    if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+                }
+            };
+            return _extendStatics(d, b);
+        };
+        return function (d, b) {
+            if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+            _extendStatics(d, b);
+            function __() {
+                this.constructor = d;
+            }
+            d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+        };
+    }();
+    var __values = this && this.__values || function (o) {
+        var s = typeof Symbol === "function" && Symbol.iterator,
+            m = s && o[s],
+            i = 0;
+        if (m) return m.call(o);
+        if (o && typeof o.length === "number") return {
+            next: function next() {
+                if (o && i >= o.length) o = void 0;
+                return { value: o && o[i++], done: !o };
+            }
+        };
+        throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.MDCSegmentedButton = void 0;
+    var component_1 = __webpack_require__(/*! @material/base/component */ "./packages/mdc-base/component.ts");
+    var component_2 = __webpack_require__(/*! ../segment/component */ "./packages/mdc-segmented-button/segment/component.ts");
+    var constants_1 = __webpack_require__(/*! ./constants */ "./packages/mdc-segmented-button/segmented-button/constants.ts");
+    var foundation_1 = __webpack_require__(/*! ./foundation */ "./packages/mdc-segmented-button/segmented-button/foundation.ts");
+    var MDCSegmentedButton = /** @class */function (_super) {
+        __extends(MDCSegmentedButton, _super);
+        function MDCSegmentedButton() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        MDCSegmentedButton.attachTo = function (root) {
+            return new MDCSegmentedButton(root);
+        };
+        Object.defineProperty(MDCSegmentedButton.prototype, "segments", {
+            get: function get() {
+                return this.segmentsList.slice();
+            },
+            enumerable: false,
+            configurable: true
+        });
+        // initialSyncWithDOM
+        MDCSegmentedButton.prototype.initialize = function (segmentFactory) {
+            if (segmentFactory === void 0) {
+                segmentFactory = function segmentFactory(el) {
+                    return new component_2.MDCSegmentedButtonSegment(el);
+                };
+            }
+            this.segmentFactory = segmentFactory;
+            this.segmentsList = this.instantiateSegments(this.segmentFactory);
+        };
+        /**
+         * @param segmentFactory Factory to create new child segments
+         * @return Returns list of child segments found in DOM
+         */
+        MDCSegmentedButton.prototype.instantiateSegments = function (segmentFactory) {
+            var segmentElements = [].slice.call(this.root.querySelectorAll(constants_1.selectors.SEGMENT));
+            return segmentElements.map(function (el) {
+                return segmentFactory(el);
+            });
+        };
+        MDCSegmentedButton.prototype.initialSyncWithDOM = function () {
+            var _this = this;
+            this.handleSelected = function (event) {
+                _this.foundation.handleSelected(event.detail);
+            };
+            this.listen(constants_1.events.SELECTED, this.handleSelected);
+            var isSingleSelect = this.foundation.isSingleSelect();
+            for (var i = 0; i < this.segmentsList.length; i++) {
+                var segment = this.segmentsList[i];
+                segment.setIndex(i);
+                segment.setIsSingleSelect(isSingleSelect);
+            }
+            var selectedSegments = this.segmentsList.filter(function (segment) {
+                return segment.isSelected();
+            });
+            if (isSingleSelect && selectedSegments.length === 0 && this.segmentsList.length > 0) {
+                throw new Error('No segment selected in singleSelect mdc-segmented-button');
+            } else if (isSingleSelect && selectedSegments.length > 1) {
+                throw new Error('Multiple segments selected in singleSelect mdc-segmented-button');
+            }
+        };
+        MDCSegmentedButton.prototype.destroy = function () {
+            var e_1, _a;
+            try {
+                for (var _b = __values(this.segmentsList), _c = _b.next(); !_c.done; _c = _b.next()) {
+                    var segment = _c.value;
+                    segment.destroy();
+                }
+            } catch (e_1_1) {
+                e_1 = { error: e_1_1 };
+            } finally {
+                try {
+                    if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+                } finally {
+                    if (e_1) throw e_1.error;
+                }
+            }
+            this.unlisten(constants_1.events.SELECTED, this.handleSelected);
+            _super.prototype.destroy.call(this);
+        };
+        MDCSegmentedButton.prototype.getDefaultFoundation = function () {
+            var _this = this;
+            var adapter = {
+                hasClass: function hasClass(className) {
+                    return _this.root.classList.contains(className);
+                },
+                getSegments: function getSegments() {
+                    return _this.mappedSegments();
+                },
+                selectSegment: function selectSegment(indexOrSegmentId) {
+                    var segmentDetail = _this.mappedSegments().find(function (detail) {
+                        return detail.index === indexOrSegmentId || detail.segmentId === indexOrSegmentId;
+                    });
+                    if (segmentDetail) {
+                        _this.segmentsList[segmentDetail.index].setSelected();
+                    }
+                },
+                unselectSegment: function unselectSegment(indexOrSegmentId) {
+                    var segmentDetail = _this.mappedSegments().find(function (detail) {
+                        return detail.index === indexOrSegmentId || detail.segmentId === indexOrSegmentId;
+                    });
+                    if (segmentDetail) {
+                        _this.segmentsList[segmentDetail.index].setUnselected();
+                    }
+                },
+                notifySelectedChange: function notifySelectedChange(detail) {
+                    _this.emit(constants_1.events.CHANGE, detail, true /* shouldBubble */);
+                }
+            };
+            return new foundation_1.MDCSegmentedButtonFoundation(adapter);
+        };
+        /**
+         * @return Returns readonly list of selected child segments as SegmentDetails
+         */
+        MDCSegmentedButton.prototype.getSelectedSegments = function () {
+            return this.foundation.getSelectedSegments();
+        };
+        /**
+         * Sets identified segment to be selected
+         *
+         * @param indexOrSegmentId Number index or string segmentId that identifies
+         * child segment
+         */
+        MDCSegmentedButton.prototype.selectSegment = function (indexOrSegmentId) {
+            this.foundation.selectSegment(indexOrSegmentId);
+        };
+        /**
+         * Sets identified segment to be not selected
+         *
+         * @param indexOrSegmentId Number index or string segmentId that identifies
+         * child segment
+         */
+        MDCSegmentedButton.prototype.unselectSegment = function (indexOrSegmentId) {
+            this.foundation.unselectSegment(indexOrSegmentId);
+        };
+        /**
+         * @param indexOrSegmentId Number index or string segmentId that identifies
+         * child segment
+         * @return Returns true if identified child segment is currently selected,
+         * otherwise returns false
+         */
+        MDCSegmentedButton.prototype.isSegmentSelected = function (indexOrSegmentId) {
+            return this.foundation.isSegmentSelected(indexOrSegmentId);
+        };
+        /**
+         * @return Returns child segments mapped to readonly SegmentDetail list
+         */
+        MDCSegmentedButton.prototype.mappedSegments = function () {
+            return this.segmentsList.map(function (segment, index) {
+                return {
+                    index: index,
+                    selected: segment.isSelected(),
+                    segmentId: segment.getSegmentId()
+                };
+            });
+        };
+        return MDCSegmentedButton;
+    }(component_1.MDCComponent);
+    exports.MDCSegmentedButton = MDCSegmentedButton;
+
+    /***/ }),
+
+    /***/ "./packages/mdc-segmented-button/segmented-button/constants.ts":
+    /*!*********************************************************************!*\
+      !*** ./packages/mdc-segmented-button/segmented-button/constants.ts ***!
+      \*********************************************************************/
+    /*! no static exports found */
+    /***/ (function(module, exports, __webpack_require__) {
+
+    /**
+     * @license
+     * Copyright 2020 Google Inc.
+     *
+     * Permission is hereby granted, free of charge, to any person obtaining a copy
+     * of this software and associated documentation files (the "Software"), to deal
+     * in the Software without restriction, including without limitation the rights
+     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     * copies of the Software, and to permit persons to whom the Software is
+     * furnished to do so, subject to the following conditions:
+     *
+     * The above copyright notice and this permission notice shall be included in
+     * all copies or substantial portions of the Software.
+     *
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+     * THE SOFTWARE.
+     */
+
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.cssClasses = exports.events = exports.selectors = void 0;
+    /**
+     * Selectors used by segmented-button
+     */
+    exports.selectors = {
+      SEGMENT: '.mdc-segmented-button__segment'
+    };
+    /**
+     * Events received or emitted by segmented-button
+     */
+    exports.events = {
+      SELECTED: 'selected',
+      CHANGE: 'change'
+    };
+    /**
+     * Style classes for segmented-button
+     */
+    exports.cssClasses = {
+      SINGLE_SELECT: 'mdc-segmented-button--single-select'
+    };
+
+    /***/ }),
+
+    /***/ "./packages/mdc-segmented-button/segmented-button/foundation.ts":
+    /*!**********************************************************************!*\
+      !*** ./packages/mdc-segmented-button/segmented-button/foundation.ts ***!
+      \**********************************************************************/
+    /*! no static exports found */
+    /***/ (function(module, exports, __webpack_require__) {
+
+    /**
+     * @license
+     * Copyright 2020 Google Inc.
+     *
+     * Permission is hereby granted, free of charge, to any person obtaining a copy
+     * of this software and associated documentation files (the "Software"), to deal
+     * in the Software without restriction, including without limitation the rights
+     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     * copies of the Software, and to permit persons to whom the Software is
+     * furnished to do so, subject to the following conditions:
+     *
+     * The above copyright notice and this permission notice shall be included in
+     * all copies or substantial portions of the Software.
+     *
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+     * THE SOFTWARE.
+     */
+
+    var __extends = this && this.__extends || function () {
+        var _extendStatics = function extendStatics(d, b) {
+            _extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function (d, b) {
+                d.__proto__ = b;
+            } || function (d, b) {
+                for (var p in b) {
+                    if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+                }
+            };
+            return _extendStatics(d, b);
+        };
+        return function (d, b) {
+            if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+            _extendStatics(d, b);
+            function __() {
+                this.constructor = d;
+            }
+            d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+        };
+    }();
+    var __assign = this && this.__assign || function () {
+        __assign = Object.assign || function (t) {
+            for (var s, i = 1, n = arguments.length; i < n; i++) {
+                s = arguments[i];
+                for (var p in s) {
+                    if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+                }
+            }
+            return t;
+        };
+        return __assign.apply(this, arguments);
+    };
+    var __values = this && this.__values || function (o) {
+        var s = typeof Symbol === "function" && Symbol.iterator,
+            m = s && o[s],
+            i = 0;
+        if (m) return m.call(o);
+        if (o && typeof o.length === "number") return {
+            next: function next() {
+                if (o && i >= o.length) o = void 0;
+                return { value: o && o[i++], done: !o };
+            }
+        };
+        throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.MDCSegmentedButtonFoundation = void 0;
+    var foundation_1 = __webpack_require__(/*! @material/base/foundation */ "./packages/mdc-base/foundation.ts");
+    var constants_1 = __webpack_require__(/*! ./constants */ "./packages/mdc-segmented-button/segmented-button/constants.ts");
+    var MDCSegmentedButtonFoundation = /** @class */function (_super) {
         __extends(MDCSegmentedButtonFoundation, _super);
         function MDCSegmentedButtonFoundation(adapter) {
             return _super.call(this, __assign(__assign({}, MDCSegmentedButtonFoundation.defaultAdapter), adapter)) || this;
         }
         Object.defineProperty(MDCSegmentedButtonFoundation, "defaultAdapter", {
-            get: function () {
+            get: function get() {
                 return {
-                    hasClass: function () { return false; }, getSegments: function () { return []; },
-                    selectSegment: function () { return undefined; },
-                    unselectSegment: function () { return undefined; },
-                    notifySelectedChange: function () { return undefined; }
+                    hasClass: function hasClass() {
+                        return false;
+                    }, getSegments: function getSegments() {
+                        return [];
+                    },
+                    selectSegment: function selectSegment() {
+                        return undefined;
+                    },
+                    unselectSegment: function unselectSegment() {
+                        return undefined;
+                    },
+                    notifySelectedChange: function notifySelectedChange() {
+                        return undefined;
+                    }
                 };
             },
             enumerable: false,
@@ -16413,7 +18911,9 @@ var app = (function () {
          * SegmentDetails
          */
         MDCSegmentedButtonFoundation.prototype.getSelectedSegments = function () {
-            return this.adapter.getSegments().filter(function (segmentDetail) { return segmentDetail.selected; });
+            return this.adapter.getSegments().filter(function (segmentDetail) {
+                return segmentDetail.selected;
+            });
         };
         /**
          * @param indexOrSegmentId Number index or string segmentId that identifies
@@ -16422,16 +18922,16 @@ var app = (function () {
          * otherwise returns false
          */
         MDCSegmentedButtonFoundation.prototype.isSegmentSelected = function (indexOrSegmentId) {
-            return this.adapter.getSegments().some(function (segmentDetail) { return (segmentDetail.index === indexOrSegmentId ||
-                segmentDetail.segmentId === indexOrSegmentId) &&
-                segmentDetail.selected; });
+            return this.adapter.getSegments().some(function (segmentDetail) {
+                return (segmentDetail.index === indexOrSegmentId || segmentDetail.segmentId === indexOrSegmentId) && segmentDetail.selected;
+            });
         };
         /**
          * @return Returns true if segmented button is single select, otherwise
          * returns false
          */
         MDCSegmentedButtonFoundation.prototype.isSingleSelect = function () {
-            return this.adapter.hasClass(cssClasses$1.SINGLE_SELECT);
+            return this.adapter.hasClass(constants_1.cssClasses.SINGLE_SELECT);
         };
         /**
          * Called when child segment's selected status may have changed. If segmented
@@ -16462,20 +18962,114 @@ var app = (function () {
                         this.unselectSegment(selectedSegment.index);
                     }
                 }
-            }
-            catch (e_1_1) { e_1 = { error: e_1_1 }; }
-            finally {
+            } catch (e_1_1) {
+                e_1 = { error: e_1_1 };
+            } finally {
                 try {
                     if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+                } finally {
+                    if (e_1) throw e_1.error;
                 }
-                finally { if (e_1) throw e_1.error; }
             }
         };
         return MDCSegmentedButtonFoundation;
-    }(MDCFoundation));
+    }(foundation_1.MDCFoundation);
+    exports.MDCSegmentedButtonFoundation = MDCSegmentedButtonFoundation;
 
-    /* node_modules\@smui\segmented-button\dist\SegmentedButton.svelte generated by Svelte v3.52.0 */
-    const file$4 = "node_modules\\@smui\\segmented-button\\dist\\SegmentedButton.svelte";
+    /***/ }),
+
+    /***/ "./packages/mdc-segmented-button/segmented-button/index.ts":
+    /*!*****************************************************************!*\
+      !*** ./packages/mdc-segmented-button/segmented-button/index.ts ***!
+      \*****************************************************************/
+    /*! no static exports found */
+    /***/ (function(module, exports, __webpack_require__) {
+
+    /**
+     * @license
+     * Copyright 2020 Google Inc.
+     *
+     * Permission is hereby granted, free of charge, to any person obtaining a copy
+     * of this software and associated documentation files (the "Software"), to deal
+     * in the Software without restriction, including without limitation the rights
+     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     * copies of the Software, and to permit persons to whom the Software is
+     * furnished to do so, subject to the following conditions:
+     *
+     * The above copyright notice and this permission notice shall be included in
+     * all copies or substantial portions of the Software.
+     *
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+     * THE SOFTWARE.
+     */
+
+    var __createBinding = this && this.__createBinding || (Object.create ? function (o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        Object.defineProperty(o, k2, { enumerable: true, get: function get() {
+                return m[k];
+            } });
+    } : function (o, m, k, k2) {
+        if (k2 === undefined) k2 = k;
+        o[k2] = m[k];
+    });
+    var __exportStar = this && this.__exportStar || function (m, exports) {
+        for (var p in m) {
+            if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+        }
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    __exportStar(__webpack_require__(/*! ./adapter */ "./packages/mdc-segmented-button/segmented-button/adapter.ts"), exports);
+    __exportStar(__webpack_require__(/*! ./foundation */ "./packages/mdc-segmented-button/segmented-button/foundation.ts"), exports);
+    __exportStar(__webpack_require__(/*! ./component */ "./packages/mdc-segmented-button/segmented-button/component.ts"), exports);
+
+    /***/ }),
+
+    /***/ "./packages/mdc-segmented-button/types.ts":
+    /*!************************************************!*\
+      !*** ./packages/mdc-segmented-button/types.ts ***!
+      \************************************************/
+    /*! no static exports found */
+    /***/ (function(module, exports, __webpack_require__) {
+
+    /**
+     * @license
+     * Copyright 2020 Google Inc.
+     *
+     * Permission is hereby granted, free of charge, to any person obtaining a copy
+     * of this software and associated documentation files (the "Software"), to deal
+     * in the Software without restriction, including without limitation the rights
+     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+     * copies of the Software, and to permit persons to whom the Software is
+     * furnished to do so, subject to the following conditions:
+     *
+     * The above copyright notice and this permission notice shall be included in
+     * all copies or substantial portions of the Software.
+     *
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+     * THE SOFTWARE.
+     */
+
+    Object.defineProperty(exports, "__esModule", { value: true });
+
+    /***/ })
+
+    /******/ });
+    });
+
+    }(mdc_segmentedButton));
+
+    /* node_modules/@smui/segmented-button/dist/SegmentedButton.svelte generated by Svelte v3.56.0 */
+    const file$4 = "node_modules/@smui/segmented-button/dist/SegmentedButton.svelte";
 
     function get_each_context$2(ctx, list, i) {
     	const child_ctx = ctx.slice();
@@ -16732,7 +19326,9 @@ var app = (function () {
     			insert_dev(target, div, anchor);
 
     			for (let i = 0; i < each_blocks.length; i += 1) {
-    				each_blocks[i].m(div, null);
+    				if (each_blocks[i]) {
+    					each_blocks[i].m(div, null);
+    				}
     			}
 
     			/*div_binding*/ ctx[17](div);
@@ -16742,9 +19338,9 @@ var app = (function () {
     				dispose = [
     					action_destroyer(useActions_action = useActions.call(null, div, /*use*/ ctx[0])),
     					action_destroyer(/*forwardEvents*/ ctx[7].call(null, div)),
-    					listen_dev(div, "SMUISegmentedButtonSegment:mount", /*SMUISegmentedButtonSegment_mount_handler*/ ctx[18], false, false, false),
-    					listen_dev(div, "SMUISegmentedButtonSegment:unmount", /*SMUISegmentedButtonSegment_unmount_handler*/ ctx[19], false, false, false),
-    					listen_dev(div, "selected", /*selected_handler*/ ctx[20], false, false, false)
+    					listen_dev(div, "SMUISegmentedButtonSegment:mount", /*SMUISegmentedButtonSegment_mount_handler*/ ctx[18], false, false, false, false),
+    					listen_dev(div, "SMUISegmentedButtonSegment:unmount", /*SMUISegmentedButtonSegment_unmount_handler*/ ctx[19], false, false, false, false),
+    					listen_dev(div, "selected", /*selected_handler*/ ctx[20], false, false, false, false)
     				];
 
     				mounted = true;
@@ -16849,7 +19445,7 @@ var app = (function () {
     	let previousSelected = singleSelect ? selected : new Set(selected);
 
     	onMount(() => {
-    		$$invalidate(5, instance = new MDCSegmentedButtonFoundation({
+    		$$invalidate(5, instance = new mdc_segmentedButton.exports.MDCSegmentedButtonFoundation({
     				hasClass: className => {
     					return getElement().classList.contains(className);
     				},
@@ -16991,7 +19587,7 @@ var app = (function () {
     	};
 
     	$$self.$capture_state = () => ({
-    		MDCSegmentedButtonFoundation,
+    		MDCSegmentedButtonFoundation: mdc_segmentedButton.exports.MDCSegmentedButtonFoundation,
     		onMount,
     		setContext,
     		writable,
@@ -17204,184 +19800,13 @@ var app = (function () {
     	}
     }
 
-    /**
-     * @license
-     * Copyright 2020 Google Inc.
-     *
-     * Permission is hereby granted, free of charge, to any person obtaining a copy
-     * of this software and associated documentation files (the "Software"), to deal
-     * in the Software without restriction, including without limitation the rights
-     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-     * copies of the Software, and to permit persons to whom the Software is
-     * furnished to do so, subject to the following conditions:
-     *
-     * The above copyright notice and this permission notice shall be included in
-     * all copies or substantial portions of the Software.
-     *
-     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-     * THE SOFTWARE.
-     */
-    /**
-     * Boolean strings for segment
-     */
-    var booleans = {
-        TRUE: 'true',
-        FALSE: 'false'
-    };
-    /**
-     * Attributes referenced by segment
-     */
-    var attributes = {
-        ARIA_CHECKED: 'aria-checked',
-        ARIA_PRESSED: 'aria-pressed',
-        DATA_SEGMENT_ID: 'data-segment-id'
-    };
-    /**
-     * Style classes for segment
-     */
-    var cssClasses = {
-        SELECTED: 'mdc-segmented-button__segment--selected'
-    };
-
-    /**
-     * @license
-     * Copyright 2020 Google Inc.
-     *
-     * Permission is hereby granted, free of charge, to any person obtaining a copy
-     * of this software and associated documentation files (the "Software"), to deal
-     * in the Software without restriction, including without limitation the rights
-     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-     * copies of the Software, and to permit persons to whom the Software is
-     * furnished to do so, subject to the following conditions:
-     *
-     * The above copyright notice and this permission notice shall be included in
-     * all copies or substantial portions of the Software.
-     *
-     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-     * THE SOFTWARE.
-     */
-    var emptyClientRect = {
-        bottom: 0,
-        height: 0,
-        left: 0,
-        right: 0,
-        top: 0,
-        width: 0,
-    };
-    var MDCSegmentedButtonSegmentFoundation = /** @class */ (function (_super) {
-        __extends(MDCSegmentedButtonSegmentFoundation, _super);
-        function MDCSegmentedButtonSegmentFoundation(adapter) {
-            return _super.call(this, __assign(__assign({}, MDCSegmentedButtonSegmentFoundation.defaultAdapter), adapter)) || this;
-        }
-        Object.defineProperty(MDCSegmentedButtonSegmentFoundation, "defaultAdapter", {
-            get: function () {
-                return {
-                    isSingleSelect: function () { return false; }, getAttr: function () { return ''; }, setAttr: function () { return undefined; },
-                    addClass: function () { return undefined; }, removeClass: function () { return undefined; },
-                    hasClass: function () { return false; },
-                    notifySelectedChange: function () { return undefined; },
-                    getRootBoundingClientRect: function () { return emptyClientRect; },
-                };
-            },
-            enumerable: false,
-            configurable: true
-        });
-        /**
-         * @return Returns true if segment is currently selected, otherwise returns
-         * false
-         */
-        MDCSegmentedButtonSegmentFoundation.prototype.isSelected = function () {
-            return this.adapter.hasClass(cssClasses.SELECTED);
-        };
-        /**
-         * Sets segment to be selected
-         */
-        MDCSegmentedButtonSegmentFoundation.prototype.setSelected = function () {
-            this.adapter.addClass(cssClasses.SELECTED);
-            this.setAriaAttr(booleans.TRUE);
-        };
-        /**
-         * Sets segment to be not selected
-         */
-        MDCSegmentedButtonSegmentFoundation.prototype.setUnselected = function () {
-            this.adapter.removeClass(cssClasses.SELECTED);
-            this.setAriaAttr(booleans.FALSE);
-        };
-        /**
-         * @return Returns segment's segmentId if it was set by client
-         */
-        MDCSegmentedButtonSegmentFoundation.prototype.getSegmentId = function () {
-            var _a;
-            return (_a = this.adapter.getAttr(attributes.DATA_SEGMENT_ID)) !== null && _a !== void 0 ? _a : undefined;
-        };
-        /**
-         * Called when segment is clicked. If the wrapping segmented button is single
-         * select, doesn't allow segment to be set to not selected. Otherwise, toggles
-         * segment's selected status. Finally, emits event to wrapping segmented
-         * button.
-         *
-         * @event selected With detail - SegmentDetail
-         */
-        MDCSegmentedButtonSegmentFoundation.prototype.handleClick = function () {
-            if (this.adapter.isSingleSelect()) {
-                this.setSelected();
-            }
-            else {
-                this.toggleSelection();
-            }
-            this.adapter.notifySelectedChange(this.isSelected());
-        };
-        /**
-         * @return Returns bounding rectangle for ripple effect
-         */
-        MDCSegmentedButtonSegmentFoundation.prototype.getDimensions = function () {
-            return this.adapter.getRootBoundingClientRect();
-        };
-        /**
-         * Sets segment from not selected to selected, or selected to not selected
-         */
-        MDCSegmentedButtonSegmentFoundation.prototype.toggleSelection = function () {
-            if (this.isSelected()) {
-                this.setUnselected();
-            }
-            else {
-                this.setSelected();
-            }
-        };
-        /**
-         * Sets appropriate aria attribute, based on wrapping segmented button's
-         * single selected value, to new value
-         *
-         * @param value Value that represents selected status
-         */
-        MDCSegmentedButtonSegmentFoundation.prototype.setAriaAttr = function (value) {
-            if (this.adapter.isSingleSelect()) {
-                this.adapter.setAttr(attributes.ARIA_CHECKED, value);
-            }
-            else {
-                this.adapter.setAttr(attributes.ARIA_PRESSED, value);
-            }
-        };
-        return MDCSegmentedButtonSegmentFoundation;
-    }(MDCFoundation));
-
-    /* node_modules\@smui\segmented-button\dist\Segment.svelte generated by Svelte v3.52.0 */
+    /* node_modules/@smui/segmented-button/dist/Segment.svelte generated by Svelte v3.56.0 */
 
     const { Error: Error_1 } = globals;
-    const file$3 = "node_modules\\@smui\\segmented-button\\dist\\Segment.svelte";
+    const file$3 = "node_modules/@smui/segmented-button/dist/Segment.svelte";
 
     // (33:3) {#if ripple}
-    function create_if_block_1$2(ctx) {
+    function create_if_block_1$3(ctx) {
     	let div;
 
     	const block = {
@@ -17400,7 +19825,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_if_block_1$2.name,
+    		id: create_if_block_1$3.name,
     		type: "if",
     		source: "(33:3) {#if ripple}",
     		ctx
@@ -17451,7 +19876,7 @@ var app = (function () {
     	let current;
     	let mounted;
     	let dispose;
-    	let if_block0 = /*ripple*/ ctx[4] && create_if_block_1$2(ctx);
+    	let if_block0 = /*ripple*/ ctx[4] && create_if_block_1$3(ctx);
     	const default_slot_template = /*#slots*/ ctx[23].default;
     	const default_slot = create_slot(default_slot_template, ctx, /*$$scope*/ ctx[22], null);
     	let if_block1 = /*touch*/ ctx[5] && create_if_block$3(ctx);
@@ -17530,7 +19955,7 @@ var app = (function () {
     					})),
     					action_destroyer(/*forwardEvents*/ ctx[11].call(null, button)),
     					action_destroyer(useActions_action = useActions.call(null, button, /*use*/ ctx[1])),
-    					listen_dev(button, "click", /*click_handler*/ ctx[25], false, false, false)
+    					listen_dev(button, "click", /*click_handler*/ ctx[25], false, false, false, false)
     				];
 
     				mounted = true;
@@ -17539,7 +19964,7 @@ var app = (function () {
     		p: function update(ctx, dirty) {
     			if (/*ripple*/ ctx[4]) {
     				if (if_block0) ; else {
-    					if_block0 = create_if_block_1$2(ctx);
+    					if_block0 = create_if_block_1$3(ctx);
     					if_block0.c();
     					if_block0.m(button, if_block0_anchor);
     				}
@@ -17694,7 +20119,7 @@ var app = (function () {
     	}
 
     	onMount(() => {
-    		$$invalidate(6, instance = new MDCSegmentedButtonSegmentFoundation({
+    		$$invalidate(6, instance = new mdc_segmentedButton.exports.MDCSegmentedButtonSegmentFoundation({
     				isSingleSelect: () => {
     					return $singleSelect;
     				},
@@ -17811,7 +20236,7 @@ var app = (function () {
     	};
 
     	$$self.$capture_state = () => ({
-    		MDCSegmentedButtonSegmentFoundation,
+    		MDCSegmentedButtonSegmentFoundation: mdc_segmentedButton.exports.MDCSegmentedButtonSegmentFoundation,
     		onMount,
     		getContext,
     		get_current_component,
@@ -18015,8 +20440,8 @@ var app = (function () {
 
     const Segment = Segment$1;
 
-    /* website\src\pages\Activity.svelte generated by Svelte v3.52.0 */
-    const file$2 = "website\\src\\pages\\Activity.svelte";
+    /* website/src/pages/Activity.svelte generated by Svelte v3.56.0 */
+    const file$2 = "website/src/pages/Activity.svelte";
 
     function get_each_context$1(ctx, list, i) {
     	const child_ctx = ctx.slice();
@@ -18154,36 +20579,36 @@ var app = (function () {
     				each_blocks[i].c();
     			}
 
-    			add_location(h3, file$2, 233, 8, 7335);
+    			add_location(h3, file$2, 233, 8, 7102);
     			attr_dev(label0, "for", "grouplist");
-    			add_location(label0, file$2, 236, 16, 7439);
+    			add_location(label0, file$2, 236, 16, 7203);
     			attr_dev(div0, "class", "col-12 col-sm-6");
-    			add_location(div0, file$2, 235, 12, 7392);
+    			add_location(div0, file$2, 235, 12, 7157);
     			attr_dev(label1, "for", "sortlist");
-    			add_location(label1, file$2, 245, 16, 7941);
+    			add_location(label1, file$2, 245, 16, 7696);
     			attr_dev(div1, "class", "col-12 col-sm-6");
-    			add_location(div1, file$2, 244, 12, 7894);
+    			add_location(div1, file$2, 244, 12, 7650);
     			attr_dev(div2, "class", "row");
-    			add_location(div2, file$2, 234, 8, 7361);
+    			add_location(div2, file$2, 234, 8, 7127);
     			attr_dev(input, "id", "serverfilter");
     			attr_dev(input, "type", "text");
     			attr_dev(input, "class", "full form-control svelte-1ijd2e0");
     			attr_dev(input, "placeholder", "Search servers by name or ID");
     			attr_dev(input, "aria-label", "Search");
-    			add_location(input, file$2, 258, 20, 8531);
-    			add_location(small, file$2, 259, 20, 8705);
+    			add_location(input, file$2, 258, 20, 8273);
+    			add_location(small, file$2, 259, 20, 8446);
     			attr_dev(div3, "class", "input-group mb-3");
-    			add_location(div3, file$2, 257, 16, 8479);
+    			add_location(div3, file$2, 257, 16, 8222);
     			attr_dev(div4, "class", "col");
-    			add_location(div4, file$2, 256, 12, 8444);
+    			add_location(div4, file$2, 256, 12, 8188);
     			attr_dev(div5, "class", "row");
-    			add_location(div5, file$2, 255, 8, 8413);
+    			add_location(div5, file$2, 255, 8, 8158);
     			attr_dev(div6, "class", "row");
-    			add_location(div6, file$2, 263, 8, 8989);
+    			add_location(div6, file$2, 263, 8, 8726);
     			attr_dev(div7, "id", "server-list");
     			set_style(div7, "position", "relative");
     			attr_dev(div7, "class", "svelte-1ijd2e0");
-    			add_location(div7, file$2, 232, 4, 7276);
+    			add_location(div7, file$2, 232, 4, 7044);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div7, anchor);
@@ -18211,7 +20636,9 @@ var app = (function () {
     			append_dev(div7, div6);
 
     			for (let i = 0; i < each_blocks.length; i += 1) {
-    				each_blocks[i].m(div6, null);
+    				if (each_blocks[i]) {
+    					each_blocks[i].m(div6, null);
+    				}
     			}
 
     			current = true;
@@ -18595,6 +21022,41 @@ var app = (function () {
     	return block;
     }
 
+    // (273:28) {#if server.partner}
+    function create_if_block_1$2(ctx) {
+    	let img;
+    	let img_src_value;
+
+    	const block = {
+    		c: function create() {
+    			img = element("img");
+    			if (!src_url_equal(img.src, img_src_value = "/lib/img/partner-logo.png")) attr_dev(img, "src", img_src_value);
+    			attr_dev(img, "alt", "Discord Partner");
+    			set_style(img, "width", "20px");
+    			set_style(img, "height", "20px");
+    			set_style(img, "display", "inline");
+    			attr_dev(img, "class", "svelte-1ijd2e0");
+    			add_location(img, file$2, 273, 28, 9505);
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, img, anchor);
+    		},
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(img);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_if_block_1$2.name,
+    		type: "if",
+    		source: "(273:28) {#if server.partner}",
+    		ctx
+    	});
+
+    	return block;
+    }
+
     // (265:12) {#each servers.filter(server => server.id.toLowerCase().indexOf(serverFilter.toLowerCase()) > -1 || server.name.toLowerCase().indexOf(serverFilter.toLowerCase()) > -1) as server}
     function create_each_block$1(ctx) {
     	let div6;
@@ -18606,22 +21068,24 @@ var app = (function () {
     	let t0;
     	let div4;
     	let div1;
-    	let t1_value = /*server*/ ctx[30].name + "";
     	let t1;
+    	let t2_value = /*server*/ ctx[30].name + "";
     	let t2;
-    	let div2;
     	let t3;
-    	let t4_value = /*server*/ ctx[30].members + "";
+    	let div2;
     	let t4;
+    	let t5_value = /*server*/ ctx[30].members + "";
     	let t5;
-    	let div3;
     	let t6;
-    	let t7_value = /*server*/ ctx[30].count + "";
+    	let div3;
     	let t7;
+    	let t8_value = /*server*/ ctx[30].count + "";
     	let t8;
+    	let t9;
     	let div6_class_value;
     	let mounted;
     	let dispose;
+    	let if_block = /*server*/ ctx[30].partner && create_if_block_1$2(ctx);
 
     	function click_handler() {
     		return /*click_handler*/ ctx[14](/*server*/ ctx[30]);
@@ -18636,37 +21100,39 @@ var app = (function () {
     			t0 = space();
     			div4 = element("div");
     			div1 = element("div");
-    			t1 = text(t1_value);
-    			t2 = space();
+    			if (if_block) if_block.c();
+    			t1 = space();
+    			t2 = text(t2_value);
+    			t3 = space();
     			div2 = element("div");
-    			t3 = text("Users: ");
-    			t4 = text(t4_value);
-    			t5 = space();
+    			t4 = text("Users: ");
+    			t5 = text(t5_value);
+    			t6 = space();
     			div3 = element("div");
-    			t6 = text("Scams: ");
-    			t7 = text(t7_value);
-    			t8 = space();
+    			t7 = text("Scams: ");
+    			t8 = text(t8_value);
+    			t9 = space();
     			if (!src_url_equal(img.src, img_src_value = /*server*/ ctx[30].avatar)) attr_dev(img, "src", img_src_value);
     			attr_dev(img, "alt", img_alt_value = /*server*/ ctx[30].name + "Server Icon");
     			attr_dev(img, "class", "mdc-elevation--z2 svelte-1ijd2e0");
-    			add_location(img, file$2, 268, 24, 9512);
+    			add_location(img, file$2, 268, 24, 9244);
     			attr_dev(div0, "class", "col-3");
-    			add_location(div0, file$2, 267, 20, 9467);
-    			add_location(div1, file$2, 271, 24, 9693);
+    			add_location(div0, file$2, 267, 20, 9200);
+    			add_location(div1, file$2, 271, 24, 9422);
     			attr_dev(div2, "class", "usercount svelte-1ijd2e0");
-    			add_location(div2, file$2, 272, 24, 9743);
+    			add_location(div2, file$2, 277, 24, 9745);
     			attr_dev(div3, "class", "incidents svelte-1ijd2e0");
-    			add_location(div3, file$2, 273, 24, 9821);
+    			add_location(div3, file$2, 278, 24, 9822);
     			attr_dev(div4, "class", "col-9");
-    			add_location(div4, file$2, 270, 20, 9648);
+    			add_location(div4, file$2, 270, 20, 9378);
     			attr_dev(div5, "class", "row mdc-elevation--z6 svelte-1ijd2e0");
-    			add_location(div5, file$2, 266, 16, 9410);
+    			add_location(div5, file$2, 266, 16, 9144);
 
     			attr_dev(div6, "class", div6_class_value = "col-12 col-sm-6 col-md-4 server-icon " + (/*selectedServer*/ ctx[2] === /*server*/ ctx[30].id
     			? "selected"
     			: "") + " " + (/*server*/ ctx[30].count === 0 ? "safe" : "") + " svelte-1ijd2e0");
 
-    			add_location(div6, file$2, 265, 12, 9212);
+    			add_location(div6, file$2, 265, 12, 8947);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div6, anchor);
@@ -18676,19 +21142,21 @@ var app = (function () {
     			append_dev(div5, t0);
     			append_dev(div5, div4);
     			append_dev(div4, div1);
+    			if (if_block) if_block.m(div1, null);
     			append_dev(div1, t1);
-    			append_dev(div4, t2);
+    			append_dev(div1, t2);
+    			append_dev(div4, t3);
     			append_dev(div4, div2);
-    			append_dev(div2, t3);
     			append_dev(div2, t4);
-    			append_dev(div4, t5);
+    			append_dev(div2, t5);
+    			append_dev(div4, t6);
     			append_dev(div4, div3);
-    			append_dev(div3, t6);
     			append_dev(div3, t7);
-    			append_dev(div6, t8);
+    			append_dev(div3, t8);
+    			append_dev(div6, t9);
 
     			if (!mounted) {
-    				dispose = listen_dev(div6, "click", click_handler, false, false, false);
+    				dispose = listen_dev(div6, "click", click_handler, false, false, false, false);
     				mounted = true;
     			}
     		},
@@ -18703,9 +21171,20 @@ var app = (function () {
     				attr_dev(img, "alt", img_alt_value);
     			}
 
-    			if (dirty[0] & /*servers, serverFilter*/ 10 && t1_value !== (t1_value = /*server*/ ctx[30].name + "")) set_data_dev(t1, t1_value);
-    			if (dirty[0] & /*servers, serverFilter*/ 10 && t4_value !== (t4_value = /*server*/ ctx[30].members + "")) set_data_dev(t4, t4_value);
-    			if (dirty[0] & /*servers, serverFilter*/ 10 && t7_value !== (t7_value = /*server*/ ctx[30].count + "")) set_data_dev(t7, t7_value);
+    			if (/*server*/ ctx[30].partner) {
+    				if (if_block) ; else {
+    					if_block = create_if_block_1$2(ctx);
+    					if_block.c();
+    					if_block.m(div1, t1);
+    				}
+    			} else if (if_block) {
+    				if_block.d(1);
+    				if_block = null;
+    			}
+
+    			if (dirty[0] & /*servers, serverFilter*/ 10 && t2_value !== (t2_value = /*server*/ ctx[30].name + "")) set_data_dev(t2, t2_value);
+    			if (dirty[0] & /*servers, serverFilter*/ 10 && t5_value !== (t5_value = /*server*/ ctx[30].members + "")) set_data_dev(t5, t5_value);
+    			if (dirty[0] & /*servers, serverFilter*/ 10 && t8_value !== (t8_value = /*server*/ ctx[30].count + "")) set_data_dev(t8, t8_value);
 
     			if (dirty[0] & /*selectedServer, servers, serverFilter*/ 14 && div6_class_value !== (div6_class_value = "col-12 col-sm-6 col-md-4 server-icon " + (/*selectedServer*/ ctx[2] === /*server*/ ctx[30].id
     			? "selected"
@@ -18715,6 +21194,7 @@ var app = (function () {
     		},
     		d: function destroy(detaching) {
     			if (detaching) detach_dev(div6);
+    			if (if_block) if_block.d();
     			mounted = false;
     			dispose();
     		}
@@ -18751,15 +21231,15 @@ var app = (function () {
     			div0 = element("div");
     			t2 = space();
     			if (if_block) if_block.c();
-    			add_location(h3, file$2, 227, 4, 7090);
+    			add_location(h3, file$2, 227, 4, 6863);
     			attr_dev(div0, "id", "chart");
     			attr_dev(div0, "class", "mdc-elevation--z4 svelte-1ijd2e0");
-    			add_location(div0, file$2, 229, 8, 7171);
+    			add_location(div0, file$2, 229, 8, 6942);
     			attr_dev(div1, "id", "chart-container");
-    			add_location(div1, file$2, 228, 4, 7135);
+    			add_location(div1, file$2, 228, 4, 6907);
     			attr_dev(div2, "id", "activity");
     			attr_dev(div2, "class", "svelte-1ijd2e0");
-    			add_location(div2, file$2, 226, 0, 7065);
+    			add_location(div2, file$2, 226, 0, 6839);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -19155,11 +21635,11 @@ var app = (function () {
     	}
     }
 
-    /* website\src\pages\ContentReview.svelte generated by Svelte v3.52.0 */
+    /* website/src/pages/ContentReview.svelte generated by Svelte v3.56.0 */
 
     const { Object: Object_1, console: console_1$1 } = globals;
 
-    const file$1 = "website\\src\\pages\\ContentReview.svelte";
+    const file$1 = "website/src/pages/ContentReview.svelte";
 
     function get_each_context(ctx, list, i) {
     	const child_ctx = ctx.slice();
@@ -19194,7 +21674,9 @@ var app = (function () {
     		},
     		m: function mount(target, anchor) {
     			for (let i = 0; i < each_blocks.length; i += 1) {
-    				each_blocks[i].m(target, anchor);
+    				if (each_blocks[i]) {
+    					each_blocks[i].m(target, anchor);
+    				}
     			}
 
     			insert_dev(target, each_1_anchor, anchor);
@@ -19343,41 +21825,41 @@ var app = (function () {
     			button = element("button");
     			button.textContent = "Dismiss";
     			t18 = space();
-    			add_location(div0, file$1, 129, 20, 14297);
+    			add_location(div0, file$1, 129, 20, 14168);
     			attr_dev(div1, "class", "col-8");
-    			add_location(div1, file$1, 128, 16, 14256);
+    			add_location(div1, file$1, 128, 16, 14128);
     			attr_dev(div2, "class", "col-4");
     			set_style(div2, "text-align", "right");
-    			add_location(div2, file$1, 131, 16, 14409);
+    			add_location(div2, file$1, 131, 16, 14278);
     			attr_dev(div3, "class", "row");
-    			add_location(div3, file$1, 127, 12, 14221);
+    			add_location(div3, file$1, 127, 12, 14094);
     			attr_dev(div4, "class", "usercontent mdc-elevation--z4 svelte-k3dthz");
-    			add_location(div4, file$1, 137, 20, 14650);
+    			add_location(div4, file$1, 137, 20, 14513);
     			attr_dev(div5, "class", "col");
-    			add_location(div5, file$1, 136, 16, 14611);
+    			add_location(div5, file$1, 136, 16, 14475);
     			attr_dev(div6, "class", "row");
-    			add_location(div6, file$1, 135, 12, 14576);
-    			add_location(h4, file$1, 144, 20, 14907);
+    			add_location(div6, file$1, 135, 12, 14441);
+    			add_location(h4, file$1, 144, 20, 14763);
     			attr_dev(div7, "class", "col");
-    			add_location(div7, file$1, 143, 16, 14868);
+    			add_location(div7, file$1, 143, 16, 14725);
     			attr_dev(div8, "class", "row");
-    			add_location(div8, file$1, 142, 12, 14833);
-    			add_location(div9, file$1, 168, 20, 16185);
-    			add_location(div10, file$1, 169, 20, 16255);
+    			add_location(div8, file$1, 142, 12, 14691);
+    			add_location(div9, file$1, 168, 20, 16017);
+    			add_location(div10, file$1, 169, 20, 16086);
     			attr_dev(div11, "class", "col-8");
-    			add_location(div11, file$1, 167, 16, 16144);
+    			add_location(div11, file$1, 167, 16, 15977);
     			attr_dev(button, "type", "button");
     			attr_dev(button, "class", "btn btn-primary dismiss float-end svelte-k3dthz");
-    			add_location(button, file$1, 172, 20, 16376);
+    			add_location(button, file$1, 172, 20, 16204);
     			attr_dev(div12, "class", "col-4");
-    			add_location(div12, file$1, 171, 16, 16335);
+    			add_location(div12, file$1, 171, 16, 16164);
     			attr_dev(div13, "class", "row");
-    			add_location(div13, file$1, 166, 12, 16109);
+    			add_location(div13, file$1, 166, 12, 15943);
     			attr_dev(div14, "class", "card-body");
-    			add_location(div14, file$1, 126, 8, 14184);
+    			add_location(div14, file$1, 126, 8, 14058);
     			attr_dev(div15, "class", div15_class_value = "card " + /*$contentreview*/ ctx[1][/*id*/ ctx[9]].action + " svelte-k3dthz");
     			toggle_class(div15, "in-blacklist", /*inBlacklist*/ ctx[2](/*$contentreview*/ ctx[1][/*id*/ ctx[9]].message));
-    			add_location(div15, file$1, 125, 4, 14067);
+    			add_location(div15, file$1, 125, 4, 13942);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div15, anchor);
@@ -19404,7 +21886,9 @@ var app = (function () {
     			append_dev(div7, t10);
 
     			for (let i = 0; i < each_blocks.length; i += 1) {
-    				each_blocks[i].m(div7, null);
+    				if (each_blocks[i]) {
+    					each_blocks[i].m(div7, null);
+    				}
     			}
 
     			append_dev(div14, t11);
@@ -19422,7 +21906,7 @@ var app = (function () {
     			append_dev(div15, t18);
 
     			if (!mounted) {
-    				dispose = listen_dev(button, "click", click_handler_1, false, false, false);
+    				dispose = listen_dev(button, "click", click_handler_1, false, false, false, false);
     				mounted = true;
     			}
     		},
@@ -19507,14 +21991,14 @@ var app = (function () {
     			input.readOnly = true;
     			input.value = input_value_value = /*url*/ ctx[12];
     			attr_dev(input, "class", "svelte-k3dthz");
-    			add_location(input, file$1, 156, 28, 15711);
+    			add_location(input, file$1, 156, 28, 15555);
     			attr_dev(div0, "class", "col-8 col-md-9");
-    			add_location(div0, file$1, 155, 24, 15653);
+    			add_location(div0, file$1, 155, 24, 15498);
     			attr_dev(button, "type", "button");
     			attr_dev(button, "class", "btn btn-secondary float-end");
-    			add_location(button, file$1, 159, 28, 15857);
+    			add_location(button, file$1, 159, 28, 15698);
     			attr_dev(div1, "class", "col-4 col-md-3");
-    			add_location(div1, file$1, 158, 24, 15799);
+    			add_location(div1, file$1, 158, 24, 15641);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div0, anchor);
@@ -19574,15 +22058,15 @@ var app = (function () {
     			input.readOnly = true;
     			input.value = input_value_value = /*url*/ ctx[12];
     			attr_dev(input, "class", "svelte-k3dthz");
-    			add_location(input, file$1, 149, 28, 15278);
+    			add_location(input, file$1, 149, 28, 15129);
     			attr_dev(div0, "class", "col-8 col-md-9");
-    			add_location(div0, file$1, 148, 24, 15220);
+    			add_location(div0, file$1, 148, 24, 15072);
     			attr_dev(button, "type", "button");
     			attr_dev(button, "class", "btn btn-primary float-end");
     			attr_dev(button, "data-url", button_data_url_value = /*url*/ ctx[12]);
-    			add_location(button, file$1, 152, 28, 15424);
+    			add_location(button, file$1, 152, 28, 15272);
     			attr_dev(div1, "class", "col-4 col-md-3");
-    			add_location(div1, file$1, 151, 24, 15366);
+    			add_location(div1, file$1, 151, 24, 15215);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div0, anchor);
@@ -19593,7 +22077,7 @@ var app = (function () {
     			append_dev(button, t1);
 
     			if (!mounted) {
-    				dispose = listen_dev(button, "click", click_handler, false, false, false);
+    				dispose = listen_dev(button, "click", click_handler, false, false, false, false);
     				mounted = true;
     			}
     		},
@@ -19650,7 +22134,7 @@ var app = (function () {
     			if_block.c();
     			t = space();
     			attr_dev(div, "class", "row");
-    			add_location(div, file$1, 146, 20, 15029);
+    			add_location(div, file$1, 146, 20, 14883);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -19745,8 +22229,8 @@ var app = (function () {
     			h3.textContent = "Malicious Content";
     			t1 = space();
     			if (if_block) if_block.c();
-    			add_location(h3, file$1, 121, 4, 13932);
-    			add_location(div, file$1, 120, 0, 13921);
+    			add_location(h3, file$1, 121, 4, 13811);
+    			add_location(div, file$1, 120, 0, 13801);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -19966,10 +22450,10 @@ var app = (function () {
     	}
     }
 
-    /* website\src\App.svelte generated by Svelte v3.52.0 */
+    /* website/src/App.svelte generated by Svelte v3.56.0 */
 
     const { console: console_1 } = globals;
-    const file = "website\\src\\App.svelte";
+    const file = "website/src/App.svelte";
 
     // (47:3) <Title>
     function create_default_slot_20(ctx) {
@@ -21040,11 +23524,11 @@ var app = (function () {
     			attr_dev(button, "class", "btn btn-success");
     			attr_dev(button, "type", "button");
     			set_style(button, "margin-top", "14px");
-    			add_location(button, file, 111, 9, 3687);
+    			add_location(button, file, 111, 9, 3576);
     			attr_dev(a, "href", "/auth/oauth2");
-    			add_location(a, file, 110, 8, 3653);
+    			add_location(a, file, 110, 8, 3543);
     			attr_dev(div, "class", "needtologin svelte-cr993j");
-    			add_location(div, file, 109, 7, 3618);
+    			add_location(div, file, 109, 7, 3509);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -21094,24 +23578,24 @@ var app = (function () {
     			img = element("img");
     			attr_dev(button, "type", "button");
     			attr_dev(button, "class", "btn btn-primary");
-    			add_location(button, file, 102, 11, 3401);
+    			add_location(button, file, 102, 11, 3299);
     			attr_dev(a, "href", "/logout");
     			attr_dev(a, "class", "svelte-cr993j");
-    			add_location(a, file, 101, 10, 3370);
+    			add_location(a, file, 101, 10, 3269);
     			attr_dev(div0, "class", "item svelte-cr993j");
     			set_style(div0, "padding-top", "10px");
-    			add_location(div0, file, 100, 9, 3314);
+    			add_location(div0, file, 100, 9, 3214);
     			attr_dev(div1, "class", "usermenu svelte-cr993j");
     			attr_dev(div1, "style", div1_style_value = /*usermenu*/ ctx[3] ? "" : "display: none;");
-    			add_location(div1, file, 93, 8, 3052);
+    			add_location(div1, file, 93, 8, 2959);
     			if (!src_url_equal(img.src, img_src_value = /*user*/ ctx[2].avatar)) attr_dev(img, "src", img_src_value);
     			attr_dev(img, "id", "useravatar");
     			attr_dev(img, "alt", "avatar");
     			attr_dev(img, "class", "svelte-cr993j");
-    			add_location(img, file, 106, 8, 3521);
+    			add_location(img, file, 106, 8, 3415);
     			attr_dev(div2, "id", "userinfo");
     			attr_dev(div2, "class", "svelte-cr993j");
-    			add_location(div2, file, 92, 7, 2997);
+    			add_location(div2, file, 92, 7, 2905);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div2, anchor);
@@ -21123,7 +23607,7 @@ var app = (function () {
     			append_dev(div2, img);
 
     			if (!mounted) {
-    				dispose = listen_dev(div2, "click", /*toggleUsermenu*/ ctx[6], false, false, false);
+    				dispose = listen_dev(div2, "click", /*toggleUsermenu*/ ctx[6], false, false, false, false);
     				mounted = true;
     			}
     		},
@@ -21393,7 +23877,7 @@ var app = (function () {
     			div0 = element("div");
     			h1 = element("h1");
     			create_component(iconbutton.$$.fragment);
-    			t0 = text("\r\n\t\t\t\t\t\t\t\tScam Hunter");
+    			t0 = text("\n\t\t\t\t\t\t\t\tScam Hunter");
     			t1 = space();
     			div1 = element("div");
     			if_block.c();
@@ -21403,26 +23887,26 @@ var app = (function () {
     			create_component(router.$$.fragment);
     			set_style(h1, "color", "white");
     			set_style(h1, "padding-top", "16px");
-    			add_location(h1, file, 80, 7, 2470);
+    			add_location(h1, file, 80, 7, 2390);
     			attr_dev(div0, "class", "col svelte-cr993j");
-    			add_location(div0, file, 79, 6, 2444);
+    			add_location(div0, file, 79, 6, 2365);
     			set_style(div1, "position", "absolute");
     			set_style(div1, "right", "12px");
     			set_style(div1, "top", "8px");
-    			add_location(div1, file, 90, 6, 2918);
+    			add_location(div1, file, 90, 6, 2828);
     			attr_dev(div2, "class", "p-2 mb-4 bg-light rounded-3 jumbotron mdc-elevation--z6 svelte-cr993j");
     			set_style(div2, "position", "relative");
-    			add_location(div2, file, 78, 5, 2340);
+    			add_location(div2, file, 78, 5, 2262);
     			attr_dev(div3, "class", "row");
-    			add_location(div3, file, 77, 4, 2316);
+    			add_location(div3, file, 77, 4, 2239);
     			attr_dev(div4, "class", "col svelte-cr993j");
-    			add_location(div4, file, 119, 5, 3884);
+    			add_location(div4, file, 119, 5, 3765);
     			attr_dev(div5, "class", "row");
-    			add_location(div5, file, 118, 4, 3860);
+    			add_location(div5, file, 118, 4, 3742);
     			attr_dev(div6, "class", "container svelte-cr993j");
-    			add_location(div6, file, 76, 3, 2287);
+    			add_location(div6, file, 76, 3, 2211);
     			attr_dev(main, "class", "main-content");
-    			add_location(main, file, 75, 2, 2255);
+    			add_location(main, file, 75, 2, 2180);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, main, anchor);
@@ -21550,7 +24034,7 @@ var app = (function () {
     			t1 = space();
     			create_component(appcontent.$$.fragment);
     			attr_dev(div, "class", "drawer-container");
-    			add_location(div, file, 43, 0, 1003);
+    			add_location(div, file, 43, 0, 960);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
