@@ -9,7 +9,13 @@ module.exports = {
 		.setDescription('Specify a channel for recording logs. To disable logging, do not set the "to" parameter')
         .addChannelOption(option =>
             option.setName("to")
-                .setDescription("The channel to use for logging.  Make sure the bot has access to it!")),
+                .setDescription("The channel to use for logging.  Make sure the bot has access to it!"))
+        .setDefaultMemberPermissions(PermissionsBitField.Flags.ManageChannels),
+    /**
+     * 
+     * @param {Interaction} interaction 
+     * @returns 
+     */
 	async execute(interaction) {
         try {
             const target = interaction.options.getChannel("to");
@@ -43,6 +49,11 @@ module.exports = {
 
                 await logActivity(interaction.client, interaction.guild.id, "Logging enabled", `<@${interaction.user.id}> used:\n ${interaction.toString()}`);                
             } else {
+                if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) {
+                    await interaction.reply({ content: "You need the MANAGE_CHANNELS permission to run this command", ephemeral: true });
+                    return;
+                }
+
                 // turn off logging
                 await registerLogs(interaction.guild.id, null);
         
