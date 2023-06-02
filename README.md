@@ -66,3 +66,4 @@ For testing purposes, it's ok to run the bot via node in the terminal.  It is re
 pm2 start index.js --name "scam-terminator";
 pm2 save;
 ```
+
