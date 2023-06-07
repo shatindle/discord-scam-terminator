@@ -184,8 +184,10 @@ function containsKeyIndicators(message, removeUrl = true) {
             (message.indexOf("earn") > -1 || message.indexOf("phone") > -1)
             &&
             (message.indexOf("message") > -1 || message.indexOf("dm") > -1 || message.indexOf("private") > -1)
+            &&
+            (message.indexOf("teach") > -1 || message.indexOf("show") > -1 || message.indexOf("learn") > -1)
         )
-        indicators += 1;
+        indicators += 2;
 
     return indicators;
 }
