@@ -109,7 +109,7 @@ const logInformation = async (client, guildId, userId, channelId, message = "", 
     await logActivity(
         client,
         guildId, 
-        `Suspicious text detected, no warning. Reason: ${reason}`,
+        `${reason}, no warning`,
 `**<@${userId}> sent this message in <#${channelId}>**:
 
 \`${message.replace("`", "")}\``,
