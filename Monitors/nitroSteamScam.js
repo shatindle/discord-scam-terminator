@@ -84,8 +84,7 @@ async function monitor(message) {
 
         if (urlsFound.length === 0) {
             // no URLs, look for key indicators
-            if (keyIndicators) {
-                console.log("SUS");
+            if (containsKeyIndicators(message.content, false) > MINIMUM_INDICATORS) {
                 await logInformation(message.client, guildId, userId, message.channelId, message.content, "Suspicious text", message.url);
             }
         }
