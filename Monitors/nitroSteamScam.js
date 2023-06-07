@@ -3,6 +3,7 @@ const { extractUrlsFromContent, containsKeyIndicators, MINIMUM_INDICATORS, isRed
 const { validUrl, isSafeDeepCheck, isUrlInWhitelist, extractHostname } = require("../DAL/urlTesterApi");
 const { recordError } = require("../DAL/databaseApi");
 const { maliciousUrlDetected } = require("../DAL/maliciousUrlTracking");
+const { logInformation } = require("../DAL/logApi");
 
 const reason = "Nitro/Steam phishing";
 
@@ -79,6 +80,11 @@ async function monitor(message) {
                     }
                 }
             }
+        }
+
+        if (urlsFound.length === 0) {
+            // no URLs, look for key indicators
+            if (keyIndicators) await logInformation(message.client, guildId, userId, message.channelId, message.content, "Suspicious text", message.url);
         }
 
         return messageRemoved;

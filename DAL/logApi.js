@@ -10,7 +10,7 @@ const { getLogChannel } = require("../DAL/databaseApi");
  * @param {String} color 
  * @returns {Promise}
  */
-async function logActivity(client, guildId, action, activity, color = "#007bff") {
+async function logActivity(client, guildId, action, activity, color = "#007bff", messageLink = undefined) {
     try {
         const logChannel = getLogChannel(guildId);
 
@@ -28,7 +28,7 @@ async function logActivity(client, guildId, action, activity, color = "#007bff")
             .setDescription(activity)
             .setTimestamp();
 
-        await channel.send({ embeds: [message] });
+        await channel.send({ embeds: [message], content: messageLink });
     } catch (err) {
         console.log(`Error logging activity: ${err}`);
     }
@@ -93,9 +93,33 @@ async function logKick(client, guildId, userId, channelId, message = "", reason 
     alreadyKicked ? KICK_NOACTION_COLOR : KICK_COLOR);
 }
 
+const INFORMATION_COLOR = "#cccccc";
+
+/**
+ * 
+ * @param {Client} client 
+ * @param {String} guildId 
+ * @param {String} userId 
+ * @param {String} channelId 
+ * @param {String} message 
+ * @param {String} reason 
+ * @returns {Promise}
+ */
+const logInformation = async (client, guildId, userId, channelId, message = "", reason = "unknown", messageLink = undefined) =>
+    await logActivity(
+        client,
+        guildId, 
+        `Suspicious text detected, no warning. Reason: ${reason}`,
+`**<@${userId}> sent this message in <#${channelId}>**:
+
+\`${message.replace("`", "")}\``,
+    INFORMATION_COLOR,
+    messageLink);
+
 
 module.exports = {
     logActivity,
     logWarning,
-    logKick
+    logKick,
+    logInformation
 };

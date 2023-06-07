@@ -179,6 +179,13 @@ function containsKeyIndicators(message, removeUrl = true) {
 
     if (message.indexOf("test my first game") > -1) 
         indicators += 1;
+    
+    if (
+            (message.indexOf("earn") > -1 || message.indexOf("phone") > -1)
+            &&
+            (message.indexOf("message") > -1 || message.indexOf("dm") > -1 || message.indexOf("private") > -1)
+        )
+        indicators += 1;
 
     return indicators;
 }

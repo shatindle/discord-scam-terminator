@@ -324,7 +324,7 @@ function isBlacklisted(url) {
 /**
  * @description Checks to see if the URL is likely a scam by inspecting the head part of the HTML
  * @param {string} url The URL we need to perform a head check on
- * @returns {Boolean|Null} Whether or not the URL is safe
+ * @returns {Promise<Boolean|Null>} Whether or not the URL is safe
  */
 async function isSafeDeepCheck(url) {
     const hostname = extractHostname(url);
