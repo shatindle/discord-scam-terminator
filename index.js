@@ -1,4 +1,4 @@
-const { Client, Collection, GatewayIntentBits, Partials } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, Partials, Guild } = require('discord.js');
 const fs = require('fs');
 const { loadAllLogChannels } = require("./DAL/databaseApi");
 const nitroSteamScam = require("./Monitors/nitroSteamScam");
@@ -22,7 +22,10 @@ const client = new Client({
     ] 
 });
 
-const { token } = require('./settings.json');
+const { 
+    token, 
+    blockedUsers 
+} = require('./settings.json');
 
 client.commands = new Collection();
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
@@ -34,6 +37,23 @@ for (const file of commandFiles) {
 
 client.once('ready', async () => {
     await loadAllLogChannels();
+    
+    try {
+        if (blockedUsers && blockedUsers.length > 0) {
+            /** @type {Array<Guild>} */
+            const serversToLeave = [];
+        
+            client.guilds.cache.forEach(guild => {
+                if (blockedUsers.includes(guild.ownerId)) serversToLeave.push(guild);
+            });
+
+            for (const badServer of serversToLeave) {
+                await badServer.leave();
+            }
+        }
+    } catch (err) {
+        console.log(`Error leaving server of problematic users: ${err}`);
+    }
 
     require("./Monitors/serverCount")(client);
 });
@@ -62,6 +82,15 @@ client.on('messageCreate', async (message) => {
 
 	if (await maliciousRedirect(message))
 		return; // it was addressed here
+});
+
+client.on('guildCreate', async (guild) => {
+    // check if this user is blocked by the bot
+    try {
+        if (blockedUsers.includes(guild.ownerId)) await guild.leave();
+    } catch (err) {
+        console.log(`Error leaving server of problematic users: ${err}`);
+    }
 });
 
 // login to client - we should auto reconnect automatically

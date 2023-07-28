@@ -13,5 +13,6 @@
     "secure": false,
     "secureCookie": true,
     "testUsers": ["ANY_TEST_USERS_TO_EXCLUDE_FROM_GRAPHING"],
-    "realisticWebScraperKey": "API_KEY_FOR_REALISTIC_WEBSCRAPER"
+    "realisticWebScraperKey": "API_KEY_FOR_REALISTIC_WEBSCRAPER",
+    "blockedUsers": ["USER_ID_LIST"]
 }
