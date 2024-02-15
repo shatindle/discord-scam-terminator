@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { move, getSnapshot, batchRemove } from '../store/scamTerminatorApi';
+	import { move, getSnapshot } from '../store/scamTerminatorApi';
     import { startWebsocket, graylist, whitelist } from '../store/adminContent';
 
 	onMount(async () => {
@@ -26,7 +26,9 @@
     const removeAll = async (list, type) => {
         let uniqueUrls = [...new Set(list.map(t => t.url))];
 
-        await batchRemove(uniqueUrls, type);
+        for (const url of uniqueUrls) {
+            await move(url, type, null)
+        }
     };
 </script>
 
