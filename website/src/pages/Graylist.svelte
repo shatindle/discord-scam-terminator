@@ -34,7 +34,7 @@
     <h3>
         Graylist
         {#if $graylist}
-        <button type="button" class="btn btn-danger" on:click={async () => await removeAll($graylist, "graylist")}>
+        <button type="button" class="btn btn-danger" on:click={async () => await removeAll(Object.values($graylist), "graylist")}>
             Clear All
         </button>
         {/if}
@@ -84,7 +84,7 @@
     <h3>
         Whitelist
         {#if $whitelist}
-        <button type="button" class="btn btn-danger" on:click={async () => await removeAll($whitelist, "whitelist")}>
+        <button type="button" class="btn btn-danger" on:click={async () => await removeAll(Object.values($whitelist), "whitelist")}>
             Clear All
         </button>
         {/if}
