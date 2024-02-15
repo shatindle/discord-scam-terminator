@@ -23,6 +23,16 @@ export const remove = async (url, from) => await fetch('/api/remove', {
         "Content-Type": "application/json"
     }
 });
+export const batchRemove = async (urls, from) => await fetch('/api/batchremove', {
+    method: "POST",
+    body: JSON.stringify({
+        urls, 
+        from
+    }),
+    headers: {
+        "Content-Type": "application/json"
+    }
+});
 export const clearContentReview = async (id) => await fetch('/api/clearcontentreview', {
     method: "POST",
     body: JSON.stringify({

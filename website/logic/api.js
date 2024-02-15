@@ -56,6 +56,13 @@ router.post('/remove', adminAuth, express.json(), async (req, res) => {
 
     return res.sendStatus(202);
 });
+router.post('/batchremove', adminAuth, express.json(), async (req, res) => {
+    for (let url in res.body.urls) {
+        await moveUrl(url, req.body.from);
+    }
+
+    return res.sendStatus(202);
+});
 
 
 function extractUrlWithoutProtocol(url) {

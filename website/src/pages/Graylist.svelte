@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { move, getSnapshot } from '../store/scamTerminatorApi';
+	import { move, getSnapshot, batchRemove } from '../store/scamTerminatorApi';
     import { startWebsocket, graylist, whitelist } from '../store/adminContent';
 
 	onMount(async () => {
@@ -22,10 +22,23 @@
             selectedUrl = base64data;
         }
     }
+
+    const removeAll = async (list, type) => {
+        let uniqueUrls = [...new Set(list.map(t => t.url))];
+
+        await batchRemove(uniqueUrls, type);
+    };
 </script>
 
 <div>
-    <h3>Graylist</h3>
+    <h3>
+        Graylist
+        {#if $graylist}
+        <button type="button" class="btn btn-danger" on:click={async () => await removeAll($graylist, "graylist")}>
+            Clear All
+        </button>
+        {/if}
+    </h3>
     {#if $graylist}
     {#if Object.keys($graylist).length > 0}
     <ul>
@@ -68,7 +81,14 @@
     {/if}
 
     <hr class="rounded">
-    <h3>Whitelist</h3>
+    <h3>
+        Whitelist
+        {#if $whitelist}
+        <button type="button" class="btn btn-danger" on:click={async () => await removeAll($whitelist, "whitelist")}>
+            Clear All
+        </button>
+        {/if}
+    </h3>
     {#if $whitelist}
     {#if Object.keys($whitelist).length > 0}
     <ul>
