@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/shatindle/discord-scam-terminator#readme",
   "dependencies": {
-    "@google-cloud/firestore": "^6.5.0",
+    "@google-cloud/firestore": "^7.11.0",
     "confusables": "^1.1.1",
     "cookie-parser": "^1.4.6",
     "discord-api-types": "^0.33.5",
