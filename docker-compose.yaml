@@ -19,7 +19,7 @@ services:
     networks:
       - scam-hunter-site-network
     ports:
-      - '5011:80'
+      - '5007:80'
     volumes:
       - ./settings.json:/home/node/app/settings.json:ro
       - ./firebase.json:/home/node/app/firebase.json:ro
