@@ -5,6 +5,7 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile.bot
+    container_name: scam-hunter
     restart: unless-stopped
     networks:
       - scam-hunter-bot-network
@@ -15,6 +16,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.site
+    container_name: scam-hunter-site
     restart: unless-stopped
     networks:
       - scam-hunter-site-network
