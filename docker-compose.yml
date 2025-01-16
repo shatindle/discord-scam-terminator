@@ -1,12 +1,29 @@
 version: '3'
 
 services:
-  scam-hunter:
-    build: .
+  scam-hunter-bot:
+    build: 
+      context: .
+      dockerfile: Dockerfile.bot
     restart: unless-stopped
     networks:
-      - default
+      - scam-hunter-bot-network
+    volumes:
+      - ./settings.json:/home/node/app/settings.json:ro
+      - ./firebase.json:/home/node/app/firebase.json:ro
+  scam-hunter-site:
+    build:
+      context: .
+      dockerfile: Dockerfile.site
+    restart: unless-stopped
+    networks:
+      - scam-hunter-site-network
+    ports:
+      - '5011:80'
+    volumes:
+      - ./settings.json:/home/node/app/settings.json:ro
+      - ./firebase.json:/home/node/app/firebase.json:ro
 
-volumes:
-  - ./settings.json:/home/node/app/settings.json
-  - ./firebase.json:/home/node/app/firebase.json
+networks:
+  scam-hunter-bot-network:
+  scam-hunter-site-network:
