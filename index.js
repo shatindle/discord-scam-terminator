@@ -1,3 +1,15 @@
+// Added backup logging to investigate when DittoVC crashes
+const process = require('node:process');
+
+process.on('uncaughtExceptionMonitor', (err, origin) => {
+    console.error("***CRITICAL ERROR***");
+    console.error("Error:");
+    console.error(err);
+    console.error("Origin:");
+    console.error(origin);
+    console.error("***QUITTING***");
+});
+
 const { Client, Collection, GatewayIntentBits, Partials, Guild } = require('discord.js');
 const fs = require('fs');
 const { loadAllLogChannels } = require("./DAL/databaseApi");
