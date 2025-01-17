@@ -68,6 +68,7 @@ client.once('ready', async () => {
     }
 
     require("./Monitors/serverCount")(client);
+    console.log("ready!");
 });
 
 client.on('interactionCreate', async interaction => {
