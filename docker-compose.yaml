@@ -20,11 +20,20 @@ services:
     restart: unless-stopped
     networks:
       - scam-hunter-site-network
-    ports:
-      - '5007:80'
+    #ports:
+    #  - '5007:80'
     volumes:
       - ./settings.json:/home/node/app/settings.json:ro
       - ./firebase.json:/home/node/app/firebase.json:ro
+  scam-hunter-site-tunnel:
+    image: cloudflare/cloudflared
+    container_name: scam-hunter-site-tunnel
+    restart: unless-stopped
+    command: tunnel run
+    networks:
+      - scam-hunter-site-network
+    env_file:
+      - .env
 
 networks:
   scam-hunter-bot-network:
