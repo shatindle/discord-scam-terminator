@@ -20,6 +20,8 @@ services:
     restart: unless-stopped
     #ports:
     #  - '5007:80'
+    networks:
+      - scam-hunter-site
     volumes:
       - ./settings.json:/home/node/app/settings.json:ro
       - ./firebase.json:/home/node/app/firebase.json:ro
@@ -28,6 +30,8 @@ services:
     container_name: scam-hunter-site-tunnel
     restart: unless-stopped
     command: tunnel run
+    networks:
+      - scam-hunter-site
     env_file:
       - .env
     depends_on:
@@ -35,6 +39,4 @@ services:
 
 networks:
   scam-hunter-bot-network:
-  default:
-    name: scam-hunter-site
-    external: true
+  scam-hunter-site:
