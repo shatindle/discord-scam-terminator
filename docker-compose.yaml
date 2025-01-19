@@ -18,8 +18,6 @@ services:
       dockerfile: Dockerfile.site
     container_name: scam-hunter-site
     restart: unless-stopped
-    networks:
-      - scam-hunter-site-network
     #ports:
     #  - '5007:80'
     volumes:
@@ -30,8 +28,6 @@ services:
     container_name: scam-hunter-site-tunnel
     restart: unless-stopped
     command: tunnel run
-    networks:
-      - scam-hunter-site-network
     env_file:
       - .env
     depends_on:
@@ -39,6 +35,6 @@ services:
 
 networks:
   scam-hunter-bot-network:
-  scam-hunter-site-network:
-    external:
-      name: scam-hunter-site-network
+  default:
+    name: scam-hunter-site
+    external: true
