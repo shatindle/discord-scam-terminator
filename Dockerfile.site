@@ -17,6 +17,5 @@ COPY --chown=node:node . .
 RUN npm install
 RUN { npm audit fix || true; }
 RUN npm run build
-RUN node ./generate-sitemap.js
 
 ENTRYPOINT ["node", "server.js"]
