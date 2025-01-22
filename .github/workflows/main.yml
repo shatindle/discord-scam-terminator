@@ -24,4 +24,5 @@ jobs:
       - name: Copy the application to run folder
         run: |
           git -C /var/repos/discord-scam-terminator pull
+          git -C /var/repos/expressvpn-docker pull
           bash /var/dockerstart/discord-scam-hunter.sh

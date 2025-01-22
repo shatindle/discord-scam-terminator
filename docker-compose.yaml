@@ -7,9 +7,11 @@ services:
       dockerfile: Dockerfile.bot
     container_name: scam-hunter
     restart: unless-stopped
-    networks:
-      - scam-hunter-bot-network
+    depends_on:
+      - scam-hunter-expressvpn
+    command: /bin/bash -c "sleep 20 && cp /shared_data/resolv.conf /etc/resolv.conf && bash"
     volumes:
+      - shared-volume:/shared_data
       - ./settings.json:/home/node/app/settings.json:ro
       - ./firebase.json:/home/node/app/firebase.json:ro
   scam-hunter-site:
@@ -36,7 +38,28 @@ services:
       - .env
     depends_on:
       - scam-hunter-site
+  scam-hunter-expressvpn:
+    build: 
+      context: /var/repos/expressvpn-docker/expressvpn
+      dockerfile: /var/repos/expressvpn-docker/expressvpn/Dockerfile
+    container_name: scam-hunter-expressvpn
+    cap_add:
+      - NET_ADMIN
+    env_file:
+      - .env
+    devices: 
+      - /dev/net/tun
+    stdin_open: true
+    tty: true
+    command: /bin/bash -c "cp /etc/resolv.conf /shared_data/resolv.conf && bash"
+    privileged: true
+    restart: unless-stopped
+    volumes:
+      - shared-volume:/shared_data
 
 networks:
   scam-hunter-bot-network:
   scam-hunter-site:
+
+volumes:
+  shared-volume:
