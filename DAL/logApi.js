@@ -20,7 +20,7 @@ async function logActivity(client, guildId, action, activity, color = "#007bff",
         let channel = client.channels.cache.get(logChannel);
 
         if (!channel || !channel.send)
-            channel = client.channels.fetch(logChannel);
+            channel = await client.channels.fetch(logChannel);
 
         const message = new EmbedBuilder()
             .setColor(color)
