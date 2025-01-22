@@ -33,7 +33,11 @@ function extractUrlsFromContent(content, fullyQualify) {
         const test = content.match(urlRegex);
         if (test && test.forEach) {
             test.forEach((match) => {
-                urls.push(match);
+                match = match.trim();
+                if (match.endsWith(")")) // some URLs seem to end with ) which is not valid in Discord
+                    urls.push(match.slice(0, -1).trim());
+                else 
+                    urls.push(match);
             });
 
             // remove Discord channel URLs as there is not a known scam involving those
