@@ -16,6 +16,7 @@ const { loadAllLogChannels } = require("./DAL/databaseApi");
 const nitroSteamScam = require("./Monitors/nitroSteamScam");
 const antiLinkSpam = require("./Monitors/antiLinkSpam");
 const maliciousRedirect = require("./Monitors/maliciousRedirect");
+const { publicIpv4 } = require("public-ip");
 
 const client = new Client({ 
     intents: [
@@ -68,6 +69,9 @@ client.once('ready', async () => {
     }
 
     require("./Monitors/serverCount")(client);
+
+    console.log(`Bot IP: ${await publicIpv4()}`);
+
     console.log("ready!");
 });
 
