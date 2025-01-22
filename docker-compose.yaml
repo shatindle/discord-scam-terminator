@@ -9,6 +9,7 @@ services:
     restart: unless-stopped
     depends_on:
       - scam-hunter-expressvpn
+    network_mode: service:expressvpn
     command: /bin/bash -c "sleep 20 && cp /shared_data/resolv.conf /etc/resolv.conf && bash"
     volumes:
       - shared-volume:/shared_data
