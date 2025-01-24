@@ -1,4 +1,4 @@
-const { startFollowing } = require('follow-redirect-url');
+const { startFollowing } = require('./follow-redirect-url');
 
 /**
  * @description Gets all redirect URLs involved with this request
