@@ -264,7 +264,6 @@
         <div class="row">
             {#each servers.filter(server => server.id.toLowerCase().indexOf(serverFilter.toLowerCase()) > -1 || server.name.toLowerCase().indexOf(serverFilter.toLowerCase()) > -1) as server}
             <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div class="col-12 col-sm-6 col-md-4 server-icon {selectedServer === server.id ? "selected" : ""} {server.count === 0 ? "safe" : ""}" on:click={() => setSelectedServer(server.id)}>
                 <div class="row mdc-elevation--z6">
                     <div class="col-3">
