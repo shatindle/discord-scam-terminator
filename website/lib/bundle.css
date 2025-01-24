@@ -1,1 +1,181 @@
-.container.svelte-cr993j.svelte-cr993j{position:relative}#userinfo.svelte-cr993j img.svelte-cr993j{border-radius:50%;width:60px;position:absolute;top:10px;right:20px;border-width:4px;border-color:white;border-style:solid;box-shadow:2px 2px 5px black;transition:transform 250ms;cursor:pointer}.jumbotron.svelte-cr993j.svelte-cr993j{background-color:#3f0d6d !important;background-size:cover;background-position:left;padding-top:10px;margin-bottom:10px;padding-bottom:10px;position:relative;color:black}.needtologin.svelte-cr993j.svelte-cr993j{position:absolute;top:10px;right:20px}#userinfo.svelte-cr993j img.svelte-cr993j:hover{transform:translateY(-6px)}.usermenu.svelte-cr993j.svelte-cr993j{min-width:200px;margin:6px 8px;background:lightgray;position:absolute;right:4px;border-radius:2%;top:4px;box-shadow:2px 2px 7px black;opacity:0.9}.usermenu.svelte-cr993j .item.svelte-cr993j{padding:4px 12px;font-family:"SplatRegular";color:black}.usermenu.svelte-cr993j .item a.svelte-cr993j{color:black}.col.svelte-cr993j.svelte-cr993j{position:relative}ul.svelte-1fr6isi{margin:0;padding:0}li.svelte-1fr6isi{width:100%;list-style-type:none;margin:4px 6px;padding:10px 12px;box-shadow:0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);border-radius:8px;word-wrap:break-word}.badlink.svelte-1fr6isi{border:2px solid red}#activity.svelte-1ijd2e0.svelte-1ijd2e0{margin-bottom:40px}#chart.svelte-1ijd2e0.svelte-1ijd2e0{background-color:white;border-radius:6px}#server-list.svelte-1ijd2e0.svelte-1ijd2e0{margin-top:14px}.server-icon.svelte-1ijd2e0.svelte-1ijd2e0{cursor:pointer}.server-icon.safe.svelte-1ijd2e0.svelte-1ijd2e0{color:#777}.server-icon.selected.svelte-1ijd2e0>div.svelte-1ijd2e0{background:white;color:black}.server-icon.svelte-1ijd2e0>div.svelte-1ijd2e0{margin:6px 8px}.server-icon.svelte-1ijd2e0 img.svelte-1ijd2e0{width:50px;border-radius:25px}.usercount.svelte-1ijd2e0.svelte-1ijd2e0{color:#999}.incidents.svelte-1ijd2e0.svelte-1ijd2e0{color:#999}.selected.svelte-1ijd2e0 .usercount.svelte-1ijd2e0,.selected.svelte-1ijd2e0 .incidents.svelte-1ijd2e0{color:black}.safe.svelte-1ijd2e0 .incidents.svelte-1ijd2e0{opacity:0}.full.svelte-1ijd2e0.svelte-1ijd2e0{width:100%}#server-list.svelte-1ijd2e0 .mdc-segmented-button__segment--selected{color:white}.card.svelte-k3dthz{background-color:darkgoldenrod;border:none;margin-bottom:14px}.usercontent.svelte-k3dthz{color:black;background-color:white;margin-top:14px;margin-bottom:14px;padding:4px 8px;border-radius:4px}.dismiss.svelte-k3dthz{text-align:right;margin-top:14px}.kick-success.svelte-k3dthz{background-color:darkgreen}.kick-fail.svelte-k3dthz{background-color:darkred}.in-blacklist.svelte-k3dthz{background-color:#444}input.svelte-k3dthz{width:100%}
+
+    ul.svelte-1fr6isi {
+		margin: 0;
+		padding: 0;
+	}
+	li.svelte-1fr6isi {
+		width: 100%;
+		list-style-type: none;
+		margin: 4px 6px;
+		padding: 10px 12px;
+		box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+        border-radius: 8px;
+        word-wrap: break-word;
+	}
+
+	.badlink.svelte-1fr6isi {
+		border: 2px solid red;
+	}
+
+
+    #activity.svelte-1ijd2e0 {
+        margin-bottom: 40px;
+    }
+    #chart.svelte-1ijd2e0 {
+        background-color: white;
+        border-radius: 6px;
+    }
+
+    #server-list.svelte-1ijd2e0 {
+        margin-top: 14px;
+    }
+
+    .server-icon.svelte-1ijd2e0 {
+        cursor: pointer;
+    }
+
+    .server-icon.safe.svelte-1ijd2e0 {
+        color: #777;
+    }
+
+    .server-icon.selected.svelte-1ijd2e0 > div:where(.svelte-1ijd2e0) {
+        background: white;
+        color: black;
+        /* border-radius: 25px; */
+    }
+
+    .server-icon.svelte-1ijd2e0 > div:where(.svelte-1ijd2e0) {
+        margin: 6px 8px;
+        /* padding: 6px 10px; */
+    }
+
+    .server-icon.svelte-1ijd2e0 img:where(.svelte-1ijd2e0) {
+        width: 50px;
+        border-radius: 25px;
+    }
+
+    .usercount.svelte-1ijd2e0 {
+        color: #999;
+    }
+
+    .incidents.svelte-1ijd2e0 {
+        color: #999;
+    }
+
+    .selected.svelte-1ijd2e0 .usercount:where(.svelte-1ijd2e0), .selected.svelte-1ijd2e0 .incidents:where(.svelte-1ijd2e0) {
+        color: black;
+    }
+
+    .safe.svelte-1ijd2e0 .incidents:where(.svelte-1ijd2e0) {
+        opacity: 0;
+    }
+
+    .full.svelte-1ijd2e0 {
+        width: 100%;
+    }
+
+    #server-list.svelte-1ijd2e0 .mdc-segmented-button__segment--selected {
+        color: white;
+    }
+
+
+    .card.svelte-k3dthz {
+        background-color: darkgoldenrod;
+        border: none;
+        margin-bottom: 14px;
+    }
+    .usercontent.svelte-k3dthz {
+        color: black;
+        background-color: white;
+        margin-top:14px;
+        margin-bottom: 14px;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+
+    .dismiss.svelte-k3dthz {
+        text-align: right;
+        margin-top: 14px;
+    }
+
+    .kick-success.svelte-k3dthz {
+        background-color: darkgreen;
+    }
+
+    .kick-fail.svelte-k3dthz {
+        background-color: darkred;
+    }
+
+    .in-blacklist.svelte-k3dthz {
+        background-color: #444;
+    }
+
+    input.svelte-k3dthz {
+        width: 100%;
+    }
+
+
+	.container.svelte-cr993j {
+		position: relative;
+	}
+	#userinfo.svelte-cr993j img:where(.svelte-cr993j) {
+		border-radius: 50%;
+		width: 60px;
+		position: absolute;
+		top: 10px;
+		right: 20px;
+		border-width:4px;
+		border-color: white;
+		border-style: solid;
+		box-shadow: 2px 2px 5px black;
+		transition: transform 250ms;
+		cursor: pointer;
+	}
+
+	.jumbotron.svelte-cr993j {
+		background-color: #3f0d6d !important;
+		background-size:cover;
+		background-position: left;
+		padding-top:10px;
+		margin-bottom: 10px;
+		padding-bottom: 10px;
+		position: relative;
+		color: black;
+	}
+
+	.needtologin.svelte-cr993j {
+		position: absolute;
+		top: 10px;
+		right: 20px;
+	}
+
+	#userinfo.svelte-cr993j img:where(.svelte-cr993j):hover {
+		transform: translateY(-6px);
+	}
+
+	.usermenu.svelte-cr993j {
+		min-width: 200px;
+		margin: 6px 8px;
+		background: lightgray;
+		position: absolute;
+		right: 4px;
+		border-radius: 2%;
+		top: 4px;
+		box-shadow: 2px 2px 7px black;
+		opacity: 0.9;
+	}
+
+	.usermenu.svelte-cr993j .item:where(.svelte-cr993j) {
+		padding: 4px 12px;
+		font-family: "SplatRegular";
+		color:black;
+	}
+
+	.usermenu.svelte-cr993j .item:where(.svelte-cr993j) a:where(.svelte-cr993j) {
+		color:black;
+	}
+
+	.col.svelte-cr993j {
+		position: relative;
+	}
+

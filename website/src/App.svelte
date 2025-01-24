@@ -90,7 +90,8 @@
 						</div> -->
 						<div style="position:absolute;right:12px;top:8px;">
 							{#if user}
-							<!-- svelte-ignore a11y-click-events-have-key-events -->
+							<!-- svelte-ignore a11y_no_static_element_interactions -->
+							<!-- svelte-ignore a11y_click_events_have_key_events -->
 							<div id="userinfo" on:click={toggleUsermenu}>
 								<div class="usermenu" style="{usermenu ? "" : "display: none;"}">
 									<!-- <div style="height:70px;width:1px;"></div> -->

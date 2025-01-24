@@ -39,20 +39,20 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^21.1.0",
-    "@rollup/plugin-node-resolve": "^13.3.0",
-    "@rollup/plugin-terser": "^0.4.0",
-    "@smui/common": "^6.1.4",
-    "@smui/drawer": "^6.1.4",
-    "@smui/icon-button": "^6.1.4",
-    "@smui/list": "^6.1.4",
-    "@smui/segmented-button": "^6.1.4",
+    "@rollup/plugin-commonjs": "^28.0.2",
+    "@rollup/plugin-node-resolve": "^16.0.0",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@smui/common": "^8.0.0-beta.3",
+    "@smui/drawer": "^8.0.0-beta.3",
+    "@smui/icon-button": "^8.0.0-beta.3",
+    "@smui/list": "^8.0.0-beta.3",
+    "@smui/segmented-button": "^8.0.0-beta.3",
     "git-date-extractor": "^4.0.1",
-    "rollup": "^2.79.1",
-    "rollup-plugin-css-only": "^3.1.0",
+    "rollup": "^4.32.0",
+    "rollup-plugin-css-only": "^4.5.2",
     "rollup-plugin-livereload": "^2.0.5",
-    "rollup-plugin-svelte": "^7.1.4",
-    "svelte": "^3.56.0",
-    "svelte-routing": "^1.6.0"
+    "rollup-plugin-svelte": "^7.2.2",
+    "svelte": "^5.19.2",
+    "svelte-routing": "^2.13.0"
   }
 }
