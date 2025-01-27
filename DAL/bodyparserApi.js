@@ -34,7 +34,7 @@ function extractUrlsFromContent(content, fullyQualify) {
         if (test && test.forEach) {
             test.forEach((match) => {
                 match = match.trim();
-                if (match.endsWith(")")) // some URLs seem to end with ) which is not valid in Discord
+                if (match.endsWith(")") && !match.includes("(")) // some URLs seem to end with ) which is not valid in Discord unless there is a ( earlier in the string
                     urls.push(match.slice(0, -1).trim());
                 else 
                     urls.push(match);
