@@ -14,11 +14,17 @@
     * there are 3 URL patterns that discord will display without https:
     * discord.com/invite/XYZ
     * discord.gg/XYZ
+    * discord.gg/invite/XYZ
     * discordapp.com/invite/XYZ
     */
-    const discordInvitePattern = /(?:\w+|^)?discord(?:\.com\/invite\/|\.gg\/(?:invite\/)?|app\.com\/invite\/){1}[a-z0-9\-]+(?:\w+|$)?/ig;
+    const discordInvitePattern = /(?:discord(?:(?:app)?\.com\/invite\/|\.gg\/(?:invite\/)?))[A-Za-z0-9\-]{2,}/ig;
 
-    function extractUrlsFromContent(content) {
+    /*
+    * there is no known way for channel links to be malicious
+    */
+    const discordChannelPattern = /https:\/\/(?:\w+\.)?discord(?:app)?\.com\/channels\/(\d+)\/(\d+)(\/(\d+))?/ig;
+
+    function extractUrlsFromContent(content, fullyQualify) {
         try {
             let urls = [];
 
@@ -28,14 +34,21 @@
             const test = content.match(urlRegex);
             if (test && test.forEach) {
                 test.forEach((match) => {
-                    urls.push(match);
+                    match = match.trim();
+                    if (match.endsWith(")")) // some URLs seem to end with ) which is not valid in Discord
+                        urls.push(match.slice(0, -1).trim());
+                    else 
+                        urls.push(match);
                 });
-            }
 
+                // remove Discord channel URLs as there is not a known scam involving those
+                urls = urls.filter((a) => !discordChannelPattern.test(a));
+            }
+            
             const inviteMatch = content.match(discordInvitePattern);
             if (inviteMatch && inviteMatch.forEach) {
                 inviteMatch.forEach((match) => {
-                    urls.push(`https://${match}`);
+                    urls.push(fullyQualify ? `https://${match}` : match);
                 });
             }
 
