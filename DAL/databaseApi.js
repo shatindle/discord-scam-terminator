@@ -647,12 +647,17 @@ async function purgeUsers() {
                 .where("timestamp", "<", Firestore.Timestamp.fromDate(sevenDaysAgo));
             let docs = await ref.get();
 
-            docs.forEach(doc => {
-                doc.ref.update({
-                    userId: Firestore.FieldValue.delete(),
-                    username: Firestore.FieldValue.delete()
-                });
-            });
+            for (const doc of docs) {
+                try {
+                    await doc.ref.update({
+                        userId: Firestore.FieldValue.delete(),
+                        username: Firestore.FieldValue.delete()
+                    });
+                } catch (docErr) {
+                    console.log(`Error purging user record: ${docErr.toString()}`);
+                }
+                
+            }
         }
     } catch (err) {
         console.log(`Error purging historic users: ${err.toString()}`);
@@ -676,10 +681,14 @@ async function purgeRecords() {
             await saveRef.update({
                 count: Firestore.FieldValue.increment(docs.size)
             });
-    
-            docs.forEach(doc => {
-                doc.ref.delete();
-            });
+
+            try {
+                for (const doc of docs) {
+                    await doc.ref.delete();
+                }
+            } catch (docErr) {
+                console.log(`Error deleting old record: ${docErr.toString()}`);
+            }
         }
     } catch (err) {
         console.log(`Error deleting old records: ${err.toString()}`);
