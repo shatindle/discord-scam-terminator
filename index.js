@@ -12,7 +12,7 @@ process.on('uncaughtExceptionMonitor', (err, origin) => {
 
 const { Client, Collection, GatewayIntentBits, Partials, Guild } = require('discord.js');
 const fs = require('fs');
-const { loadAllLogChannels } = require("./DAL/databaseApi");
+const { loadAllLogChannels, background } = require("./DAL/databaseApi");
 const nitroSteamScam = require("./Monitors/nitroSteamScam");
 const antiLinkSpam = require("./Monitors/antiLinkSpam");
 const maliciousRedirect = require("./Monitors/maliciousRedirect");
@@ -50,6 +50,7 @@ for (const file of commandFiles) {
 
 client.once('ready', async () => {
     await loadAllLogChannels();
+    background();
     
     try {
         if (blockedUsers && blockedUsers.length > 0) {

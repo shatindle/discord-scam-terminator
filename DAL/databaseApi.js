@@ -715,8 +715,16 @@ async function totalActions() {
     return total;
 }
 
-setInterval(purgeUsers, 1000 * 60 * 60 * 24);
-setInterval(purgeRecords, 1000 * 60 * 60 * 24);
+let backgroundProcesses = {};
+
+function background() {
+    if (backgroundProcesses.usersPurge) clearInterval(backgroundProcesses.usersPurge);
+    backgroundProcesses.usersPurge = setInterval(purgeUsers, 1000 * 60 * 60 * 24);
+
+    if (backgroundProcesses.recordsPurge) clearInterval(backgroundProcesses.recordsPurge);
+    backgroundProcesses.recordsPurge = setInterval(purgeRecords, 1000 * 60 * 60 * 24);
+}
+
 
 module.exports = {
     shouldBanUser,
@@ -749,7 +757,6 @@ module.exports = {
 
     hashMessage,
 
-    purgeUsers,
-    purgeRecords,
+    background,
     totalActions
 };
