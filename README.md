@@ -66,3 +66,41 @@ For testing purposes, it's ok to run the bot via node in the terminal.  It is re
 pm2 start index.js --name "scam-terminator";
 pm2 save;
 ```
+
+## Docker
+
+The bot and website now support running in a Docker container!  The docker-compose.yaml file assumes a few things that may be different from your setup: 
+- The front-end of the website is routed through Cloudflare via a Cloudflare tunnel
+- You have an ExpressVPN subscription and can use one device license so owners of malicious websites can't locate your bot instance via IP
+
+In addition to the firebase.json and settings.json files, you will need a .env file.  See .env.sample for an example.
+
+The Docker version runs four containers:
+- **The bot** depends on settings.json and firebase.json
+- **The website** depends on settings.json and firebase.json
+- **An ExpressVPN tunnel instance** depends on .env
+- **A Cloudflare tunnel to route website traffic to your Cloudflare hosted domain** depends on .env
+
+After getting the source code, you'll need to [install docker](https://docs.docker.com/engine/install/), setup a [Cloudflare tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/get-started/), and get your [ExpressVPN activation code](https://www.expressvpn.com).  Once everything is configured, run the following command from the same directory as the source code:
+
+```
+docker compose up -d --build --remove-orphans
+```
+
+> **_NOTE:_**  The instructions below this line are approximate as I use docker compose in my environment and have no need for running containers without a compose file.  They should work, but there's a chance you'd need to do some Googling depending on your system and setup.
+
+Alternatively, you could build and run the bot and website without the compose file.  To do that, you'll need to run the following command for just the bot:
+
+```
+docker run -it $(docker build -f Dockerfile.bot -q .)
+```
+
+And/or the following command for just the site:
+
+```
+docker run -it $(docker build -f Dockerfile.site -q .)
+```
+
+## Questions
+
+Visit the [support server on Discord](https://discord.gg/8ykjyQ8wJw) and talk to me in #general.  Good luck!
