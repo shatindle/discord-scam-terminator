@@ -78,10 +78,10 @@ In addition to the firebase.json and settings.json files, you will need a .env f
 The Docker version runs four containers:
 - **The bot** depends on settings.json and firebase.json
 - **The website** depends on settings.json and firebase.json
-- **An ExpressVPN tunnel instance** depends on .env
+- **An ExpressVPN tunnel instance** depends on .env - [repo to build your ExpressVPN docker image](https://github.com/shatindle/expressvpn-docker/tree/master).  Be sure line 13 of the Dockerfile in this repo is updated to the latest ExpressVPN version
 - **A Cloudflare tunnel to route website traffic to your Cloudflare hosted domain** depends on .env
 
-After getting the source code, you'll need to [install docker](https://docs.docker.com/engine/install/), setup a [Cloudflare tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/get-started/), and get your [ExpressVPN activation code](https://www.expressvpn.com).  Once everything is configured, run the following command from the same directory as the source code:
+After getting the source code for both this bot and the ExpressVPN tunnel and placing them in /var/repos (adjust the [docker-compose.yaml](/docker-compose.yaml) file if you wish to place the source code in another directory), you'll need to [install docker](https://docs.docker.com/engine/install/), setup a [Cloudflare tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/get-started/), and get your [ExpressVPN activation code](https://www.expressvpn.com).  Once everything is configured, run the following command from the same directory as the source code:
 
 ```
 docker compose up -d --build --remove-orphans
