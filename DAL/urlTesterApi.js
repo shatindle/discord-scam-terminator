@@ -10,6 +10,8 @@ const {
     monitor
 } = require('./databaseApi');
 
+const antiphishingBizLinkExtractor = /Test of link '(.*)' for cyber security threats/ig;
+
 /**
  * 
  * @param {String} s 
@@ -324,9 +326,10 @@ function isBlacklisted(url) {
 /**
  * @description Checks to see if the URL is likely a scam by inspecting the head part of the HTML
  * @param {string} url The URL we need to perform a head check on
+ * @param {bool} final This should be the last attempt, don't recursively go deeper
  * @returns {Promise<Boolean|Null>} Whether or not the URL is safe
  */
-async function isSafeDeepCheck(url) {
+async function isSafeDeepCheck(url, final = false) {
     const hostname = extractHostname(url);
 
     // if we've encountered this scam before, then we know it's bad
@@ -410,6 +413,21 @@ async function isSafeDeepCheck(url) {
 
                 // this needs manual review
                 return null;
+            }
+
+            if (!final) {
+                // some URL shorteners are using a "antiphishing" intermediary site that includes the target URL in the meta description.  See if that's what we're dealing with.
+                /** @type {string} */
+                const ogDesc = graph.ogDescription ?? "";
+
+                if (ogDesc) {
+                    const antiphishingBizMatch = ogDesc.match(antiphishingBizLinkExtractor);
+                    
+                    if (antiphishingBizMatch && antiphishingBizMatch.length > 0) {
+                        // looks like this might be a sus site, check it
+                        return await isSafeDeepCheck(antiphishingBizMatch[0], true);
+                    }
+                }
             }
 
             // if we're here, then we can add it to the whitelist
