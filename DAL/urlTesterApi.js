@@ -10,7 +10,7 @@ const {
     monitor
 } = require('./databaseApi');
 
-const antiphishingBizLinkExtractor = /Test of link '(.*)' for cyber security threats/ig;
+const antiphishingBizLinkExtractor = /Test of link '(.*)' for cyber security threats/i;
 
 /**
  * 
@@ -216,6 +216,15 @@ function isUrlInWhitelist(url) {
     return discordUrl(url) || steamUrl(url) || whitelistedUrl(url) || isVerifiedDomain(url);
 }
 
+/**
+ * 
+ * @param {String} url 
+ * @returns 
+ */
+function isUrlPretendingToBeSafe(url) {
+    return discordUrl(url) || steamUrl(url);
+}
+
 // all encountered scams since boot
 let blacklist = {};
 let whitelist = {};
@@ -368,7 +377,8 @@ async function isSafeDeepCheck(url, final = false) {
         }
 
         const agent = new UserAgents();
-        const metadata = await ogs({ url, headers: agent.data });
+        // if this is a final check, then wait longer
+        const metadata = await ogs({ url, headers: agent.data, timeout: final ? 20000 : 2000 });
 
         if (metadata) {
             if (metadata.error)
@@ -404,6 +414,15 @@ async function isSafeDeepCheck(url, final = false) {
                 return false;
             }
 
+            if (graph.favicon) {
+                const faviconHost = extractHostname(graph.favicon);
+                if (hostname !== faviconHost && (isUrlPretendingToBeSafe(faviconHost))) {
+                    // the favicon is not from this site, and is pretending to be steam or discord
+                    // good chance this is a scam
+                    return false;
+                }
+            }
+
             // if this page is protected, add it to the gray list
             if (await isPageProtected(url)) {
                 if ((hostname in whitelist) === false && (hostname in blacklist) === false) {
@@ -418,14 +437,17 @@ async function isSafeDeepCheck(url, final = false) {
             if (!final) {
                 // some URL shorteners are using a "antiphishing" intermediary site that includes the target URL in the meta description.  See if that's what we're dealing with.
                 /** @type {string} */
-                const ogDesc = graph.ogDescription ?? "";
+                const ogDesc = graph.ogTitle ?? "";
 
                 if (ogDesc) {
                     const antiphishingBizMatch = ogDesc.match(antiphishingBizLinkExtractor);
                     
-                    if (antiphishingBizMatch && antiphishingBizMatch.length > 0) {
+                    if (antiphishingBizMatch && antiphishingBizMatch.length > 1) {
+                        let target = antiphishingBizMatch[1];
+
                         // looks like this might be a sus site, check it
-                        return await isSafeDeepCheck(antiphishingBizMatch[0], true);
+                        if (target)
+                            return await isSafeDeepCheck(target, true);
                     }
                 }
             }
