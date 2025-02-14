@@ -92,10 +92,10 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.on('messageCreate', async (message) => {
-    if (await nitroSteamScam(message))
+	if (await antiLinkSpam(message)) // check this first because it's the fastest check
 		return; // it was addressed here
 
-	if (await antiLinkSpam(message))
+    if (await nitroSteamScam(message))
 		return; // it was addressed here
 
 	if (await maliciousRedirect(message))
