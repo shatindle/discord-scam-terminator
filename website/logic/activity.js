@@ -67,7 +67,7 @@ router.get("/activity/servers", async (req, res) => {
     const adminGuilds = [];
 
     await Promise.all(
-        client.guilds.cache.files.map(
+        client.guilds.cache.map(
         /**
          * 
          * @param {Guild} guild 
