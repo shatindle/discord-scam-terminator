@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { PermissionsBitField, Client, GatewayIntentBits } = require("discord.js");
+const { PermissionsBitField, Client, GatewayIntentBits, Guild } = require("discord.js");
 const { monitor } = require("../../DAL/databaseApi");
 const settings = require("../../settings.json");
 
@@ -59,24 +59,37 @@ router.get("/activity/kicks", (req, res) => {
     res.json(kicked.filter(t => (testUsers || testUsers.indexOf(t.userId) === -1) && (adminUsers.indexOf(req.user.id) > -1 || guilds.indexOf(t.guildId) > -1)));
 });
 
-router.get("/activity/servers", (req, res) => {
+router.get("/activity/servers", async (req, res) => {
     if (!req.user)
         return res.json([]);
 
     const allGuilds = [];
     const adminGuilds = [];
 
-    client.guilds.cache.forEach(guild => {
-        allGuilds.push(guild.id);
-        adminGuilds.push({
-            id: guild.id,
-            name: guild.name,
-            avatar: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}` : 'https://cdn.discordapp.com/embed/avatars/0.png',
-            members: guild.memberCount,
-            partnered: guild.partnered,
-            verified: guild.verified
-        });
-    });
+    await Promise.all(
+        client.guilds.cache.files.map(
+        /**
+         * 
+         * @param {Guild} guild 
+         */
+        async guild => {
+            const owner = await guild.fetchOwner();
+            allGuilds.push(guild.id);
+            adminGuilds.push({
+                id: guild.id,
+                name: guild.name,
+                avatar: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}` : 'https://cdn.discordapp.com/embed/avatars/0.png',
+                members: guild.memberCount,
+                partnered: guild.partnered,
+                verified: guild.verified,
+                owner: {
+                    id: owner.id,
+                    avatar: owner.avatarURL() ?? "https://cdn.discordapp.com/embed/avatars/0.png",
+                    username: owner.user.username
+                }
+            });
+        })
+    );
         
     if (req.session && req.session.admin) {
         return res.json(adminGuilds);

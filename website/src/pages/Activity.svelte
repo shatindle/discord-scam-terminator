@@ -270,7 +270,7 @@
                         <img src={server.avatar} alt={server.name + "Server Icon"} class="mdc-elevation--z2"/>
                     </div>
                     <div class="col-9">
-                        <div>
+                        <div data-verified={server.verified} data-partnered={server.partnered}>
                             {#if server.verified}
                             <img src="/lib/img/verified-logo.png" alt="Discord Verified" style="width:20px;height:20px;display:inline;" />
                             {:else if server.partnered}
@@ -278,6 +278,12 @@
                             {/if}
                             {server.name}
                         </div>
+                        {#if server.owner}
+                        <div data-ownerid={server.owner.id}>
+                            <img src={server.owner.avatar} alt="Discord Server Owner" style="width:20px;height:20px;display:inline;" />
+                            {server.owner.username}
+                        </div>
+                        {/if}
                         <div class="usercount">Users: {server.members}</div>
                         <div class="incidents">Scams: {server.count}</div>
                     </div>
