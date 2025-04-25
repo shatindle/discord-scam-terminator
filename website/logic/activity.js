@@ -73,7 +73,19 @@ router.get("/activity/servers", async (req, res) => {
          * @param {Guild} guild 
          */
         async guild => {
-            const owner = await guild.fetchOwner();
+            let owner = {
+                id: "UNKNONWN",
+                avatarURL: () => null,
+                user: {
+                    username: "UNKNOWN"
+                }
+            };
+            try {
+                owner = await guild.fetchOwner();
+            } catch (err) {
+                console.log(`Unable to get owner or guild details: ${err}`);
+            }
+
             allGuilds.push(guild.id);
             adminGuilds.push({
                 id: guild.id,
