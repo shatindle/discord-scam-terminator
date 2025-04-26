@@ -97,7 +97,7 @@ router.get("/activity/servers", async (req, res) => {
 
             try {
                 if (!allOwners[guild.id] || allOwners[guild.id].retrieved >= Date.now() - 1000 * 60 * 60 * 24) {
-                    fetchOwner();
+                    fetchOwner(guild);
                 } else {
                     owner = allOwners[guild.id];
                 }
