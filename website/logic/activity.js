@@ -59,6 +59,22 @@ router.get("/activity/kicks", (req, res) => {
     res.json(kicked.filter(t => (testUsers || testUsers.indexOf(t.userId) === -1) && (adminUsers.indexOf(req.user.id) > -1 || guilds.indexOf(t.guildId) > -1)));
 });
 
+const allOwners = {};
+
+const fetchOwner = async (guild) => {
+    try {
+        const owner = await guild.fetchOwner();
+        allOwners[guild.id] = {
+            id: owner.id,
+            avatarURL: owner.avatarURL(),
+            username: owner.user.username,
+            retrieved: Date.now()
+        };
+    } catch (err) {
+        console.error(`Error retrieving owner: ${err}`);
+    }
+}
+
 router.get("/activity/servers", async (req, res) => {
     if (!req.user)
         return res.json([]);
@@ -74,19 +90,23 @@ router.get("/activity/servers", async (req, res) => {
          */
         async guild => {
             let owner = {
-                id: "UNKNONWN",
-                avatarURL: () => null,
-                user: {
-                    username: "UNKNOWN"
-                }
+                id: "RETRIEVING",
+                avatarURL: "https://cdn.discordapp.com/embed/avatars/0.png",
+                username: "RETRIEVING"
             };
+
             try {
-                owner = await guild.fetchOwner();
+                if (!allOwners[guild.id] || allOwners[guild.id].retrieved >= Date.now() - 1000 * 60 * 60 * 24) {
+                    fetchOwner();
+                } else {
+                    owner = allOwners[guild.id];
+                }
             } catch (err) {
                 console.log(`Unable to get owner or guild details: ${err}`);
             }
 
             allGuilds.push(guild.id);
+
             adminGuilds.push({
                 id: guild.id,
                 name: guild.name,
@@ -96,8 +116,8 @@ router.get("/activity/servers", async (req, res) => {
                 verified: guild.verified,
                 owner: {
                     id: owner.id,
-                    avatar: owner.avatarURL() ?? "https://cdn.discordapp.com/embed/avatars/0.png",
-                    username: owner.user.username
+                    avatar: owner.avatarURL ?? "https://cdn.discordapp.com/embed/avatars/0.png",
+                    username: owner.username
                 }
             });
         })
