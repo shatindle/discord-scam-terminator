@@ -59,22 +59,6 @@ router.get("/activity/kicks", (req, res) => {
     res.json(kicked.filter(t => (testUsers || testUsers.indexOf(t.userId) === -1) && (adminUsers.indexOf(req.user.id) > -1 || guilds.indexOf(t.guildId) > -1)));
 });
 
-const allOwners = {};
-
-const fetchOwner = async (guild) => {
-    try {
-        const owner = await guild.fetchOwner();
-        allOwners[guild.id] = {
-            id: owner.id,
-            avatarURL: owner.avatarURL(),
-            username: owner.user.username,
-            retrieved: Date.now()
-        };
-    } catch (err) {
-        console.error(`Error retrieving owner: ${err}`);
-    }
-}
-
 router.get("/activity/servers", async (req, res) => {
     if (!req.user)
         return res.json([]);
@@ -89,22 +73,6 @@ router.get("/activity/servers", async (req, res) => {
          * @param {Guild} guild 
          */
         async guild => {
-            let owner = {
-                id: "RETRIEVING",
-                avatarURL: "https://cdn.discordapp.com/embed/avatars/0.png",
-                username: "RETRIEVING"
-            };
-
-            try {
-                if (!allOwners[guild.id] || allOwners[guild.id].retrieved >= Date.now() - 1000 * 60 * 60 * 24) {
-                    fetchOwner(guild);
-                } else {
-                    owner = allOwners[guild.id];
-                }
-            } catch (err) {
-                console.log(`Unable to get owner or guild details: ${err}`);
-            }
-
             allGuilds.push(guild.id);
 
             adminGuilds.push({
@@ -115,9 +83,9 @@ router.get("/activity/servers", async (req, res) => {
                 partnered: guild.partnered,
                 verified: guild.verified,
                 owner: {
-                    id: owner.id,
-                    avatar: owner.avatarURL ?? "https://cdn.discordapp.com/embed/avatars/0.png",
-                    username: owner.username
+                    id: guild.ownerId,
+                    avatar: "https://cdn.discordapp.com/embed/avatars/0.png",
+                    username: guild.ownerId
                 }
             });
         })
