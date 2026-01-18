@@ -23,7 +23,7 @@
     "confusables": "^1.1.1",
     "cookie-parser": "^1.4.7",
     "discord-api-types": "^0.33.5",
-    "discord.js": "^14.19.1",
+    "discord.js": "^14.25.1",
     "ejs": "^3.1.10",
     "express": "^4.21.2",
     "express-session": "^1.18.1",

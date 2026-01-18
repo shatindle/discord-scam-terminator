@@ -1,10 +1,8 @@
 const { Message, PermissionsBitField, Client } = require("discord.js");
-const { extractUrlsFromContent, containsKeyIndicators, MINIMUM_INDICATORS, suspiciousDmRequests, discordInvitePattern } = require("../DAL/bodyparserApi");
 const { recordError, hashMessage } = require("../DAL/databaseApi");
 const { spamUrlDetected } = require("../DAL/maliciousUrlTracking");
-const { getServerIdFromInvite, extractHostname } = require("../DAL/urlTesterApi");
 
-const reason = "Link spam";
+const reason = "Image spam";
 
 const messageLogs = {};
 const time = 1000 * 40;
@@ -88,42 +86,17 @@ async function monitor(message) {
 
     try {
         const username = message.member.user.username + "#" + message.member.user.discriminator;
-        const urlsFound = extractUrlsFromContent(message.content, true);
-        const isTextSus = suspiciousDmRequests(message.content);
+        const hasImages = message.attachments && message.attachments.size > 0;
 
         // if the message contains a URL, log it.  If the same message is being spammed, remove it
         // if the user keeps spamming, kick the user, and back-delete all prior messages
 
-        if (urlsFound.length > 0 || isTextSus) {
-            if (!isTextSus) {
-                // check if the link is an invite code.  If it is, get the server ID
-                let isThisServer = true;
-                // ignore tenor.com since that's Discord's native GIF integration
-                let allApprovedDomains = true;
-                for (let url of urlsFound) {
-                    if (isThisServer) {
-                        let linkServer = await getServerIdFromInvite(url);
-
-                        if (linkServer) {
-                            if (linkServer === guildId) {
-                                continue;
-                            }
-                        }
-        
-                        isThisServer = false;
-                    }
-
-                    if (extractHostname(url) !== "tenor.com") allApprovedDomains = false;
-                }
-
-                if (isThisServer) return false;
-                if (allApprovedDomains) return false;
-            }
-
+        if (hasImages) {
             // get a key for the user + message + guild
             const userGuildHash = hashMessage(userId, guildId, "");
-            const cleanMessage = message.content ? message.content.replace(discordInvitePattern, '[DISCORDINVITE]') : '';
-            const hash = hashMessage(userId, guildId, cleanMessage);
+
+            // vary the hash if the image count changes
+            const hash = hashMessage(userId, guildId, message.attachments.size.toString());
 
             if (!messageLogs[userGuildHash] || messageLogs[userGuildHash].hash !== hash) {
                 // this is a unique message, hash it and exit
@@ -131,7 +104,6 @@ async function monitor(message) {
                     hash,
                     first: now,
                     last: now,
-                    hasKeyIndicators: containsKeyIndicators(message.content, true) > MINIMUM_INDICATORS,
                     messages: [{
                         messageId: message.id,
                         channelId,
@@ -151,45 +123,25 @@ async function monitor(message) {
             });
             log.last = now;
 
-            if (log.hasKeyIndicators) {
-                // be more strict - treat this as a scam
-                if (log.messages.length === 2) {
-                    // delete all and warn
-                    log.messages[log.messages.length - 1].deleted = true;
-                    var priorMessages = log.messages.filter(m => !m.deleted);
-                    await spamUrlDetected(message, guildId, userId, username, reason, "warn");
-                    await cleanup(client, priorMessages, guildId, userId);
-                    return true;
-                } else {
-                    // delete all and kick
-                    log.messages[log.messages.length - 1].deleted = true;
-                    var priorMessages = log.messages.filter(m => !m.deleted);
-                    // TODO: see if we're deleting this hash prematurely.  That may be why some messages fall through the cracks
-                    //delete messageLogs[userGuildHash]; // delete this because we don't need it anymore
-                    await spamUrlDetected(message, guildId, userId, username, reason, "kick");
-                    await cleanup(client, priorMessages, guildId, userId);
-                    return true;
-                }
+
+            // be more lax - it could just be spam
+            if (log.messages.length === 2) {
+                // do nothing
+                return false;
+            } else if (log.messages.length === 3) {
+                // delete just this one and warn
+                log.messages[log.messages.length - 1].deleted = true;
+                await spamUrlDetected(message, guildId, userId, username, reason, "warn");
+                return true;
             } else {
-                // be more lax - it could just be spam
-                if (log.messages.length === 2) {
-                    // do nothing
-                    return false;
-                } else if (log.messages.length === 3) {
-                    // delete just this one and warn
-                    log.messages[log.messages.length - 1].deleted = true;
-                    await spamUrlDetected(message, guildId, userId, username, reason, "warn");
-                    return true;
-                } else {
-                    // delete all and kick
-                    log.messages[log.messages.length - 1].deleted = true;
-                    var priorMessages = log.messages.filter(m => !m.deleted);
-                    // TODO: see if we're deleting this hash prematurely.  That may be why some messages fall through the cracks
-                    //delete messageLogs[userGuildHash]; // delete this because we don't need it anymore
-                    await spamUrlDetected(message, guildId, userId, username, reason, "kick");
-                    await cleanup(client, priorMessages, guildId, userId);
-                    return true;
-                }
+                // delete all and kick
+                log.messages[log.messages.length - 1].deleted = true;
+                var priorMessages = log.messages.filter(m => !m.deleted);
+                // TODO: see if we're deleting this hash prematurely.  That may be why some messages fall through the cracks
+                //delete messageLogs[userGuildHash]; // delete this because we don't need it anymore
+                await spamUrlDetected(message, guildId, userId, username, reason, "kick");
+                await cleanup(client, priorMessages, guildId, userId);
+                return true;
             }
         } else {
             // the user sent a message that is not suspicious.  They are likely not a botted user

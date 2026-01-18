@@ -134,7 +134,18 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
  * @param {String} perform 
  */
 async function spamUrlDetected(message, guildId, userId, username, reason, perform) {
-    const content = message.content;
+    let content;
+
+    if (reason === "Image spam") {
+        content = "Images attached:\n";
+        
+        message.attachments.forEach(t => {
+            content += t.url + "\n";
+        });
+    } else {
+        content = message.content;
+    }
+
     const client = message.client;
     const channelId = message.channel.id;
 

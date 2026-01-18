@@ -15,6 +15,7 @@ const fs = require('fs');
 const { loadAllLogChannels, background } = require("./DAL/databaseApi");
 const nitroSteamScam = require("./Monitors/nitroSteamScam");
 const antiLinkSpam = require("./Monitors/antiLinkSpam");
+const antiImageSpam = require("./Monitors/antiImageSpam");
 const maliciousRedirect = require("./Monitors/maliciousRedirect");
 const publicIp = (...args) => import('public-ip').then(({publicIpv4}) => publicIpv4(...args));
 
@@ -94,6 +95,9 @@ client.on('interactionCreate', async interaction => {
 client.on('messageCreate', async (message) => {
 	if (await antiLinkSpam(message)) // check this first because it's the fastest check
 		return; // it was addressed here
+
+    if (await antiImageSpam(message))
+        return; // it was addressed here
 
     if (await nitroSteamScam(message))
 		return; // it was addressed here
