@@ -1,8 +1,9 @@
 const uuidv5 = require('uuid').v5;
 const { uuidNamespace, firebaseProjectId } = require('../settings.json');
-const Firestore = require('@google-cloud/firestore');
+const { Firestore, Timestamp, FieldValue } = require('@google-cloud/firestore');
 const path = require("path");
 
+/** @type {Firestore} */
 const db = new Firestore({
     projectId: firebaseProjectId,
     keyFilename: path.join(__dirname, '../firebase.json'),
@@ -38,14 +39,14 @@ async function writeLog(type, guildId, userId, username, reason, error) {
 
     var moment = Date.now().valueOf().toString();
 
-    var ref = await db.collection(type).doc(moment);
+    var ref = db.collection(type).doc(moment);
     await ref.set({
         guildId,
         userId,
         username,
         reason,
         error,
-        timestamp: Firestore.Timestamp.now()
+        timestamp: Timestamp.now()
     });
 }
 
@@ -115,14 +116,14 @@ async function recordError(guildId, userId, error, reason) {
 async function recordContentReview(guildId, userId, username, action, message) {
     const moment = Date.now().valueOf().toString();
 
-    let ref = await db.collection("contentreview").doc(moment);
+    let ref = db.collection("contentreview").doc(moment);
     await ref.set({
         guildId,
         userId,
         username,
         action,
         message,
-        timestamp: Firestore.Timestamp.now()
+        timestamp: Timestamp.now()
     });
 }
 
@@ -148,29 +149,6 @@ function addToCache(item, cache, limit = 1000) {
 
     while (cache.length > limit)
         cache.pop();
-}
-
-/**
-  * @description Removes an item from the cache based on an ID property
-  * @param {Object} itemKey The key value to remove
-  * @param {String} property The property to compare
-  * @param {Array} cache The cache to remove from
-  * @returns {Boolean} Whether or not an item was removed
-  */
-function removeFromCache(itemKey, property, cache) {
-    for (var i = 0; i < cache.length; i++) {
-        if (cache[i][property] === itemKey) {
-            var first = cache[i];
-
-            cache.sort(function(x,y){ return x == first ? -1 : y == first ? 1 : 0; });
-
-            cache.shift();
-
-            return true;
-        }
-    }
-
-    return false;
 }
 
 /**
@@ -231,10 +209,10 @@ function hashMessage(userId, guildId, message) {
 async function addUrlToBlacklist(url) {
     var moment = Date.now().valueOf().toString();
 
-    var ref = await db.collection("blacklist").doc(moment);
+    var ref = db.collection("blacklist").doc(moment);
     await ref.set({
         url,
-        timestamp: Firestore.Timestamp.now()
+        timestamp: Timestamp.now()
     });
 }
 
@@ -249,11 +227,11 @@ async function addUrlToWhitelist(url, example) {
     if (!example)
         example = "";
 
-    var ref = await db.collection("whitelist").doc(moment);
+    var ref = db.collection("whitelist").doc(moment);
     await ref.set({
         url,
         example,
-        timestamp: Firestore.Timestamp.now()
+        timestamp: Timestamp.now()
     });
 }
 
@@ -264,10 +242,10 @@ async function addUrlToWhitelist(url, example) {
 async function flagUrl(url) {
     const id = getId(url);
     
-    var ref = await db.collection("maliciousinvites").doc(id);
+    var ref = db.collection("maliciousinvites").doc(id);
     await ref.set({
         url,
-        timestamp: Firestore.Timestamp.now()
+        timestamp: Timestamp.now()
     });
 }
 
@@ -287,7 +265,7 @@ async function moveUrl(url, fromList, toList) {
     if (fromList === toList)
         throw "Lists must be different";
 
-    var ref = await db.collection(fromList).where("url", "==", url);
+    var ref = db.collection(fromList).where("url", "==", url);
     var docs = await ref.get();
 
     var found = false, ids = [];
@@ -317,7 +295,7 @@ async function moveUrl(url, fromList, toList) {
         }
         
         for (var i = 0; i < ids.length; i++)
-            await (await db.collection(fromList).doc(ids[i])).delete();
+            await db.collection(fromList).doc(ids[i]).delete();
     }
 }
 
@@ -327,7 +305,7 @@ async function moveUrl(url, fromList, toList) {
  * @param {String} id 
  */
 async function deleteById(collection, id) {
-    var ref = await db.collection(collection).doc(id);
+    var ref = db.collection(collection).doc(id);
 
     if (ref)
         await ref.delete();
@@ -342,12 +320,12 @@ async function deleteById(collection, id) {
 async function addUrlToGraylist(url, example, removed) {
     var moment = Date.now().valueOf().toString();
 
-    var ref = await db.collection("graylist").doc(moment);
+    var ref = db.collection("graylist").doc(moment);
     await ref.set({
         url,
         example,
         removed,
-        timestamp: Firestore.Timestamp.now()
+        timestamp: Timestamp.now()
     });
 }
 
@@ -358,10 +336,10 @@ async function addUrlToGraylist(url, example, removed) {
 async function addUrlToVerifiedDomains(url) {
     var moment = Date.now().valueOf().toString();
 
-    var ref = await db.collection("verifieddomains").doc(moment);
+    var ref = db.collection("verifieddomains").doc(moment);
     await ref.set({
         url,
-        timestamp: Firestore.Timestamp.now()
+        timestamp: Timestamp.now()
     });
 }
 
@@ -375,84 +353,14 @@ async function addUrlToVerifiedDomains(url) {
 async function addMessageToScamList(url, message, user, guild) {
     var moment = Date.now().valueOf().toString();
 
-    var ref = await db.collection("scamlist").doc(moment);
+    var ref = db.collection("scamlist").doc(moment);
     await ref.set({
         url,
         message,
         user,
         guild,
-        timestamp: Firestore.Timestamp.now()
+        timestamp: Timestamp.now()
     });
-}
-
-/**
- * 
- * @returns {Array<any>}
- */
-async function loadUrlBlacklist() {
-    var ref = await db.collection("blacklist");
-    var docs = await ref.get();
-
-    const list = {};
-
-    if (docs)
-        docs.forEach(element => list[element.data().url] = true);
-
-    return list;
-}
-
-/**
- * 
- * @returns {Array<any>}
- */
-async function loadUrlWhitelist() {
-    var ref = await db.collection("whitelist");
-    var docs = await ref.get();
-
-    const list = {};
-
-    if (docs)
-        docs.forEach(element => list[element.data().url] = true);
-
-    return list;
-}
-
-/**
- * 
- * @param {Boolean} everything 
- * @returns {Array<any>}
- */
-async function loadUrlGraylist(everything) {
-    var ref = await db.collection("graylist");
-    var docs = await ref.get();
-
-    const list = {};
-
-    if (docs) {
-        if (everything) {
-            docs.forEach(element => list[element.data().url] = element.data());
-        } else {
-            docs.forEach(element => list[element.data().url] = true);
-        }
-    }
-
-    return list;
-}
-
-/**
- * 
- * @returns {Array<any>}
- */
-async function loadVerifiedDomains() {
-    var ref = await db.collection("verifieddomains");
-    var docs = await ref.get();
-
-    const list = {};
-
-    if (docs)
-        docs.forEach(element => list[element.data().url] = true);
-
-    return list;
 }
 
 const logs = {};
@@ -465,14 +373,14 @@ const LOGS_COLLECTION = "logchannels";
  * @param {String} owner The current owner user ID
  */
  async function registerLogs(guildId, channelId) {
-    var ref = await db.collection(LOGS_COLLECTION).doc(guildId);
+    var ref = db.collection(LOGS_COLLECTION).doc(guildId);
     var docs = await ref.get();
 
     if (channelId) {
         await ref.set({
             id: guildId,
             channelId,
-            createdOn: Firestore.Timestamp.now()
+            createdOn: Timestamp.now()
         });
     } else {
         if (docs.exists) {
@@ -490,7 +398,7 @@ const LOGS_COLLECTION = "logchannels";
  * 
  */
 async function loadAllLogChannels() {
-    var ref = await db.collection(LOGS_COLLECTION);
+    var ref = db.collection(LOGS_COLLECTION);
     var docs = await ref.get();
 
     if (docs.size > 0) {
@@ -643,15 +551,15 @@ async function purgeUsers() {
         const sevenDaysAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000);
 
         for (let table of userTables) {
-            let ref = await db.collection(table)
-                .where("timestamp", "<", Firestore.Timestamp.fromDate(sevenDaysAgo));
+            let ref = db.collection(table)
+                .where("timestamp", "<", Timestamp.fromDate(sevenDaysAgo));
             let docs = await ref.get();
 
             for (const doc of docs) {
                 try {
                     await doc.ref.update({
-                        userId: Firestore.FieldValue.delete(),
-                        username: Firestore.FieldValue.delete()
+                        userId: FieldValue.delete(),
+                        username: FieldValue.delete()
                     });
                 } catch (docErr) {
                     console.log(`Error purging user record: ${docErr.toString()}`);
@@ -673,13 +581,13 @@ async function purgeRecords() {
     
         for (let table of userTables) {
             let ref = await db.collection(table)
-                .where("timestamp", "<", Firestore.Timestamp.fromDate(sixMonthsAgo));
+                .where("timestamp", "<", Timestamp.fromDate(sixMonthsAgo));
             let docs = await ref.get();
     
             // save the count of records you're about to delete
             let saveRef = await db.collection("history").doc(table);
             await saveRef.update({
-                count: Firestore.FieldValue.increment(docs.size)
+                count: FieldValue.increment(docs.size)
             });
 
             try {
@@ -734,16 +642,12 @@ module.exports = {
     recordFail,
     recordError,
     addUrlToBlacklist,
-    loadUrlBlacklist,
     addUrlToWhitelist,
-    loadUrlWhitelist,
     addUrlToGraylist,
-    loadUrlGraylist,
     moveUrl,
     flagUrl,
     addMessageToScamList,
     addUrlToVerifiedDomains,
-    loadVerifiedDomains,
 
     recordContentReview,
 

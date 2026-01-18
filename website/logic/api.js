@@ -42,10 +42,6 @@ router.post('/user', (req, res) => {
     return res.status(401);
 });
 
-// router.get('/blacklist', adminAuth, async (req, res) => res.json(Object.keys(await loadUrlBlacklist())));
-// router.get('/graylist', adminAuth, async (req, res) => res.json(await loadUrlGraylist(true)));
-// router.get('/whitelist', adminAuth, async (req, res) => res.json(Object.keys(await loadUrlWhitelist())));
-// router.get('/verifieddomains', adminAuth, async (req, res) => res.json(Object.keys(await loadVerifiedDomains())));
 router.post('/move', adminAuth, express.json(), async (req, res) => {
     await moveUrl(req.body.url, req.body.from, req.body.to);
 
