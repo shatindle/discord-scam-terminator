@@ -25,18 +25,18 @@ async function monitor(message) {
         return false;
     }
 
-    var guildId = message.guild.id;
-    var userId = message.member.id;
+    const guildId = message.guild.id;
+    const userId = message.member.id;
 
     try {
-        var username = message.member.user.username + "#" + message.member.user.discriminator;
-        var messageRemoved = false;
+        const username = message.member.user.username + "#" + message.member.user.discriminator;
+        let messageRemoved = false;
         
         const keyIndicators = containsKeyIndicators(message.content, true) > MINIMUM_INDICATORS;
         const urlsFound = extractUrlsFromContent(message.content, true);
         const redlineStealer = await isRedlineStealer(message.content, urlsFound, userId, guildId);
 
-        for (var i = 0; i < urlsFound.length; i++) {
+        for (let i = 0; i < urlsFound.length; i++) {
             // possible scam.  What is in the URLs?
             if (validUrl(urlsFound[i])) {
                 // if this is a redline stealer, ignore the domain

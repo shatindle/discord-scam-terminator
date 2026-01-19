@@ -45,7 +45,7 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
         await message.delete();
     }
 
-    var response = await message.channel.send(
+    const response = await message.channel.send(
         "Potentially dangerous URL or message pattern detected.  If this was in error, please let a Mod know.");
 
     setTimeout(async function() {
@@ -155,7 +155,7 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
             await message.delete();
         }
 
-        var response = await message.channel.send(
+        const response = await message.channel.send(
             "Spam detected.  If this was in error, please let a Mod know.");
 
         setTimeout(async function() {

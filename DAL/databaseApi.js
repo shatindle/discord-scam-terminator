@@ -37,9 +37,9 @@ async function writeLog(type, guildId, userId, username, reason, error) {
     if (typeof error === "undefined")
         error = null;
 
-    var moment = Date.now().valueOf().toString();
+    const moment = Date.now().valueOf().toString();
 
-    var ref = db.collection(type).doc(moment);
+    const ref = db.collection(type).doc(moment);
     await ref.set({
         guildId,
         userId,
@@ -136,7 +136,7 @@ function getId(data) {
     return uuidv5(data, uuidNamespace);
 }
 
-var cache = [];
+const cache = [];
 
 /**
   * @description Adds an item to the cache
@@ -159,9 +159,9 @@ function addToCache(item, cache, limit = 1000) {
   * @returns {Object} The object if found, otherwise undefined
   */
 function checkCache(itemKey, property, cache) {
-    for (var i = 0; i < cache.length; i++) {
+    for (let i = 0; i < cache.length; i++) {
         if (cache[i][property] === itemKey) {
-            var first = cache[i];
+            let first = cache[i];
 
             cache.sort(function(x,y){ return x == first ? -1 : y == first ? 1 : 0; });
             
@@ -207,9 +207,9 @@ function hashMessage(userId, guildId, message) {
  * @param {String} url 
  */
 async function addUrlToBlacklist(url) {
-    var moment = Date.now().valueOf().toString();
+    const moment = Date.now().valueOf().toString();
 
-    var ref = db.collection("blacklist").doc(moment);
+    const ref = db.collection("blacklist").doc(moment);
     await ref.set({
         url,
         timestamp: Timestamp.now()
@@ -222,12 +222,12 @@ async function addUrlToBlacklist(url) {
  * @param {String} example 
  */
 async function addUrlToWhitelist(url, example) {
-    var moment = Date.now().valueOf().toString();
+    const moment = Date.now().valueOf().toString();
 
     if (!example)
         example = "";
 
-    var ref = db.collection("whitelist").doc(moment);
+    const ref = db.collection("whitelist").doc(moment);
     await ref.set({
         url,
         example,
@@ -242,7 +242,7 @@ async function addUrlToWhitelist(url, example) {
 async function flagUrl(url) {
     const id = getId(url);
     
-    var ref = db.collection("maliciousinvites").doc(id);
+    const ref = db.collection("maliciousinvites").doc(id);
     await ref.set({
         url,
         timestamp: Timestamp.now()
@@ -265,10 +265,11 @@ async function moveUrl(url, fromList, toList) {
     if (fromList === toList)
         throw "Lists must be different";
 
-    var ref = db.collection(fromList).where("url", "==", url);
-    var docs = await ref.get();
+    const ref = db.collection(fromList).where("url", "==", url);
+    const docs = await ref.get();
 
-    var found = false, ids = [];
+    let found = false
+    const ids = [];
 
     if (docs)
         docs.forEach(element => {
@@ -294,7 +295,7 @@ async function moveUrl(url, fromList, toList) {
             }
         }
         
-        for (var i = 0; i < ids.length; i++)
+        for (let i = 0; i < ids.length; i++)
             await db.collection(fromList).doc(ids[i]).delete();
     }
 }
@@ -305,7 +306,7 @@ async function moveUrl(url, fromList, toList) {
  * @param {String} id 
  */
 async function deleteById(collection, id) {
-    var ref = db.collection(collection).doc(id);
+    const ref = db.collection(collection).doc(id);
 
     if (ref)
         await ref.delete();
@@ -318,9 +319,9 @@ async function deleteById(collection, id) {
  * @param {Boolean} removed 
  */
 async function addUrlToGraylist(url, example, removed) {
-    var moment = Date.now().valueOf().toString();
+    const moment = Date.now().valueOf().toString();
 
-    var ref = db.collection("graylist").doc(moment);
+    const ref = db.collection("graylist").doc(moment);
     await ref.set({
         url,
         example,
@@ -334,9 +335,9 @@ async function addUrlToGraylist(url, example, removed) {
  * @param {String} url 
  */
 async function addUrlToVerifiedDomains(url) {
-    var moment = Date.now().valueOf().toString();
+    const moment = Date.now().valueOf().toString();
 
-    var ref = db.collection("verifieddomains").doc(moment);
+    const ref = db.collection("verifieddomains").doc(moment);
     await ref.set({
         url,
         timestamp: Timestamp.now()
@@ -351,9 +352,9 @@ async function addUrlToVerifiedDomains(url) {
  * @param {String} guild 
  */
 async function addMessageToScamList(url, message, user, guild) {
-    var moment = Date.now().valueOf().toString();
+    const moment = Date.now().valueOf().toString();
 
-    var ref = db.collection("scamlist").doc(moment);
+    const ref = db.collection("scamlist").doc(moment);
     await ref.set({
         url,
         message,
@@ -373,8 +374,8 @@ const LOGS_COLLECTION = "logchannels";
  * @param {String} owner The current owner user ID
  */
  async function registerLogs(guildId, channelId) {
-    var ref = db.collection(LOGS_COLLECTION).doc(guildId);
-    var docs = await ref.get();
+    const ref = db.collection(LOGS_COLLECTION).doc(guildId);
+    const docs = await ref.get();
 
     if (channelId) {
         await ref.set({
@@ -398,12 +399,12 @@ const LOGS_COLLECTION = "logchannels";
  * 
  */
 async function loadAllLogChannels() {
-    var ref = db.collection(LOGS_COLLECTION);
-    var docs = await ref.get();
+    const ref = db.collection(LOGS_COLLECTION);
+    const docs = await ref.get();
 
     if (docs.size > 0) {
         docs.forEach(e => {
-            var data = e.data();
+            let data = e.data();
 
             logs[data.id] = data;
         });

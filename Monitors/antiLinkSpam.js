@@ -35,15 +35,15 @@ async function cleanup(client, messageList, guildId, userId) {
     // shallow copy this array since it's possible other messages will be added
     messageList = [...messageList];
 
-    for (var i = 0; i < messageList.length; i++) {
+    for (let i = 0; i < messageList.length; i++) {
         try {
-            var ids = messageList[i];
+            const ids = messageList[i];
 
             // make sure something else didn't beat us to deleting this
             if (ids.deleted) continue;
 
-            var channel = await client.channels.fetch(ids.channelId);
-            var message = await channel.messages.fetch(ids.messageId);
+            const channel = await client.channels.fetch(ids.channelId);
+            const message = await channel.messages.fetch(ids.messageId);
 
             if (message.deletable) {
                 // final check to avoid a race condition
@@ -156,16 +156,14 @@ async function monitor(message) {
                 if (log.messages.length === 2) {
                     // delete all and warn
                     log.messages[log.messages.length - 1].deleted = true;
-                    var priorMessages = log.messages.filter(m => !m.deleted);
+                    const priorMessages = log.messages.filter(m => !m.deleted);
                     await spamUrlDetected(message, guildId, userId, username, reason, "warn");
                     await cleanup(client, priorMessages, guildId, userId);
                     return true;
                 } else {
                     // delete all and kick
                     log.messages[log.messages.length - 1].deleted = true;
-                    var priorMessages = log.messages.filter(m => !m.deleted);
-                    // TODO: see if we're deleting this hash prematurely.  That may be why some messages fall through the cracks
-                    //delete messageLogs[userGuildHash]; // delete this because we don't need it anymore
+                    const priorMessages = log.messages.filter(m => !m.deleted);
                     await spamUrlDetected(message, guildId, userId, username, reason, "kick");
                     await cleanup(client, priorMessages, guildId, userId);
                     return true;
@@ -183,9 +181,7 @@ async function monitor(message) {
                 } else {
                     // delete all and kick
                     log.messages[log.messages.length - 1].deleted = true;
-                    var priorMessages = log.messages.filter(m => !m.deleted);
-                    // TODO: see if we're deleting this hash prematurely.  That may be why some messages fall through the cracks
-                    //delete messageLogs[userGuildHash]; // delete this because we don't need it anymore
+                    const priorMessages = log.messages.filter(m => !m.deleted);
                     await spamUrlDetected(message, guildId, userId, username, reason, "kick");
                     await cleanup(client, priorMessages, guildId, userId);
                     return true;

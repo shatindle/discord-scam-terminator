@@ -7,7 +7,7 @@ const appSettings = require('./settings.json');
 
 const app = express();
 
-var server = require("http").createServer(app);
+const server = require("http").createServer(app);
 
 app.enable('trust proxy');
 

@@ -1,8 +1,10 @@
 const { Message, PermissionsBitField, Client } = require("discord.js");
+const { discordInvitePattern } = require("../DAL/bodyparserApi");
 const { recordError, hashMessage } = require("../DAL/databaseApi");
 const { spamUrlDetected } = require("../DAL/maliciousUrlTracking");
+const { textTooSimilar, candidateForComparison } = require("../DAL/textComparisonTools");
 
-const reason = "Image spam";
+const reason = "Text spam";
 
 const messageLogs = {};
 const time = 1000 * 40;
@@ -86,22 +88,20 @@ async function monitor(message) {
 
     try {
         const username = message.member.user.username + "#" + message.member.user.discriminator;
-        const hasImages = message.attachments && message.attachments.size > 0;
+        const isTextLong = candidateForComparison(message.content);
 
         // if the message contains a URL, log it.  If the same message is being spammed, remove it
         // if the user keeps spamming, kick the user, and back-delete all prior messages
 
-        if (hasImages) {
+        if (isTextLong) {
             // get a key for the user + message + guild
             const userGuildHash = hashMessage(userId, guildId, "");
+            const cleanMessage = message.content ? message.content.replace(discordInvitePattern, '[DISCORDINVITE]') : '';
 
-            // vary the hash if the image count changes
-            const hash = hashMessage(userId, guildId, message.attachments.size.toString());
-
-            if (!messageLogs[userGuildHash] || messageLogs[userGuildHash].hash !== hash) {
+            if (!messageLogs[userGuildHash]) {
                 // this is a unique message, hash it and exit
                 messageLogs[userGuildHash] = {
-                    hash,
+                    content: cleanMessage,
                     first: now,
                     last: now,
                     messages: [{
@@ -116,38 +116,57 @@ async function monitor(message) {
 
             const log = messageLogs[userGuildHash];
 
-            log.messages.push({
-                messageId: message.id,
-                channelId,
-                deleted: false
-            });
-            log.last = now;
+            // check if this message is being basically spammed
+            if (textTooSimilar(cleanMessage, log.content)) {
+                log.messages.push({
+                    messageId: message.id,
+                    channelId,
+                    deleted: false
+                });
+                log.last = now;
 
-
-            // be more lax - it could just be spam
-            if (log.messages.length === 2) {
-                // do nothing
-                return false;
-            } else if (log.messages.length === 3) {
-                // delete just this one and warn
-                log.messages[log.messages.length - 1].deleted = true;
-                await spamUrlDetected(message, guildId, userId, username, reason, "warn");
-                return true;
+                // be more lax - it could just be unintentional spam
+                if (log.messages.length === 2) {
+                    // do nothing
+                    return false;
+                } else if (log.messages.length === 3) {
+                    // delete just this one and warn
+                    log.messages[log.messages.length - 1].deleted = true;
+                    await spamUrlDetected(message, guildId, userId, username, reason, "warn");
+                    return true;
+                } else {
+                    // delete all and kick
+                    log.messages[log.messages.length - 1].deleted = true;
+                    const priorMessages = log.messages.filter(m => !m.deleted);
+                    await spamUrlDetected(message, guildId, userId, username, reason, "kick");
+                    await cleanup(client, priorMessages, guildId, userId);
+                    return true;
+                }
             } else {
-                // delete all and kick
-                log.messages[log.messages.length - 1].deleted = true;
-                const priorMessages = log.messages.filter(m => !m.deleted);
-                await spamUrlDetected(message, guildId, userId, username, reason, "kick");
-                await cleanup(client, priorMessages, guildId, userId);
-                return true;
+                // this is a unique message, hash it and exit
+                messageLogs[userGuildHash] = {
+                    content: cleanMessage,
+                    first: now,
+                    last: now,
+                    messages: [{
+                        messageId: message.id,
+                        channelId,
+                        deleted: false
+                    }]
+                };
+
+                return false;
             }
         } else {
             // the user sent a message that is not suspicious.  They are likely not a botted user
-            // if the user is hashed, clear it
-            const userGuildHash = hashMessage(userId, guildId, "");
-            if (messageLogs[userGuildHash]) {
-                delete messageLogs[userGuildHash];
-            }
+
+            // TODO: confirm if short messages sent between longer messages (or image messages) create false positives.
+            // for now, just let the spam fall out naturally
+            // // if the user is hashed, clear it
+            // const userGuildHash = hashMessage(userId, guildId, "");
+            // if (messageLogs[userGuildHash]) {
+            //     delete messageLogs[userGuildHash];
+            // }
         }
 
         return false;

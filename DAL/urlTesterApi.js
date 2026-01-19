@@ -120,7 +120,7 @@ const discordUrlList = [
 function discordUrl(url, stripDomain = false) {
     const hostname = extractHostname(url);
 
-    for (var domain of discordUrlList) {
+    for (let domain of discordUrlList) {
         if (domainsMatch(hostname, domain)) {
             if (stripDomain) {
                 url = url.substring(url.indexOf(domain) + domain.length);
@@ -266,7 +266,7 @@ async function isPageProtected(url) {
 
     try {
         const userAgent = new UserAgents(/Windows/);
-        var result = await fetch(url, {
+        const result = await fetch(url, {
             method: "GET",
             headers: {
                 'User-Agent': userAgent.toString()
@@ -275,7 +275,7 @@ async function isPageProtected(url) {
             signal: controller.signal
         });
     
-        var text = await result.text();
+        const text = await result.text();
     
         if (text.indexOf("<title>Please Wait... | Cloudflare</title>") > -1) {
             // this is likely a scam
@@ -360,8 +360,8 @@ async function isSafeDeepCheck(url, final = false) {
         if (isYouTube(hostname)) {
             try {
                 // this is youtube, perform extra checks
-                var youtubeData = await fetch(url);
-                var text = await youtubeData.text();
+                const youtubeData = await fetch(url);
+                const text = await youtubeData.text();
                 if (text.indexOf('<meta itemprop="unlisted" content="False">') > -1) {
                     // this is a public video.  Log it, but trust it because it's public and more likely to be reported
                     // manual review will still be performed

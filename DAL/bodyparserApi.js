@@ -134,9 +134,9 @@ function containsKeyIndicators(message, removeUrl = true) {
     words = [...new Set(words)];
 
     if (words && words.length)
-    for (var word of words) {
+    for (let word of words) {
         if (word === "@everyone")
-        indicators += 3;
+            indicators += 3;
 
         if (word === "discord")
             indicators += 1;
@@ -223,7 +223,7 @@ function suspiciousDmRequests(message) {
     let actionRequest = false;
 
     if (words && words.length)
-    for (var word of words) {
+    for (let word of words) {
         if (word === "@everyone")
             indicators += 3;
 
