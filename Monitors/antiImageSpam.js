@@ -108,8 +108,7 @@ async function monitor(message) {
                         messageId: message.id,
                         channelId,
                         deleted: false
-                    }],
-                    channels: {}
+                    }]
                 };
 
                 return false;
