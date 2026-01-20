@@ -108,13 +108,18 @@ async function monitor(message) {
                         messageId: message.id,
                         channelId,
                         deleted: false
-                    }]
+                    }],
+                    channels: {}
                 };
 
                 return false;
             }
 
             const log = messageLogs[userGuildHash];
+
+            // ignore this message if we've already seen it in this channel
+            if (!log.messages.some(t => t.channelId === channelId))
+                return false;
 
             log.messages.push({
                 messageId: message.id,
