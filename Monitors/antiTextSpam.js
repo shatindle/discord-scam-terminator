@@ -119,7 +119,7 @@ async function monitor(message) {
             // check if this message is being basically spammed
             if (textTooSimilar(cleanMessage, log.content)) {
                 // ignore this message if we've already seen it in this channel
-                if (!log.messages.some(t => t.channelId === channelId))
+                if (log.messages.some(t => t.channelId === channelId))
                     return false;
 
                 log.messages.push({
