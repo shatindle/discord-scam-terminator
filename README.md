@@ -14,9 +14,13 @@ The bot is specifically designed to look for key attributes common in scams.  It
 
 If the message doesn't contain any scam attributes but has a link, the bot will visit the link, impersonating a user to investigate data about the site.  If the site seems to be pretending to be a service such as Discord, Steam, or a few others, the bot will flag the message as a scam and follow the protocol for deleting/kicking outlined above.
 
-The bot is not perfect as it is not operating against a known set of bad domains.  Instead, it is using a less certain tactic for assessing if something is a scam in disguise.  It is highly advised to pair this bot with another bot that has a list of recent, known scam domains.  Between the two, very little will get through these filters.
+The bot is not perfect, but since it's creation on December 25, 2021, the logic and sophistication of the bot has grown to the point that it no longer really needs supplementation from other anti-scam/anti-spam bots. Feel free to add backups, by all means, just know that the logic has grown quite a lot over the years.
 
-Scam hunter's hit rate is near 100%, but it's not perfect.  Mods still need to be ready to remove links it and other bots may miss.  No bot is perfect, but hopefully this bot reduces the Moderator workload dramatically.
+Scam hunter's hit rate is near 100%, but it's not perfect. Mods still need to be ready to remove links it and other bots may miss. No bot is perfect, but hopefully this bot reduces the Moderator workload dramatically.
+
+Some server configurations that can cause the bot to be less effective:
+- Message cooldowns may interfere with malicious intending users spamming enough for spam to be detected
+- Image cooldowns may interfere with the bot's ability to identify a new spam scam involving posting "unique" images in multiple channels
 
 ## Required permissions
 
@@ -103,4 +107,6 @@ docker run -it $(docker build -f Dockerfile.site -q .)
 
 ## Questions
 
-Visit the [support server on Discord](https://discord.gg/8ykjyQ8wJw) and talk to me in #general.  Good luck!
+Visit the [support server on Discord](https://discord.gg/8ykjyQ8wJw) and talk to me in #general.
+
+The bot is provided free of charge. I am not monetizing it, and I have no intent to monetize any aspect of it in the future. The servers I designed it for originally are the [r/Splatoon](https://discord.gg/rsplatoon) and [r/PokemonUnite](https://discord.gg/pokemonunite) Discord servers. Special shout out to the [Trackmania](https://discord.gg/trackmania) community for all your feedback in what is working and what isn't with the bot that has made it as sophisticated as it is today!
