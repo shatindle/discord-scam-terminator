@@ -1,6 +1,7 @@
 const { Message, PermissionsBitField, Client } = require("discord.js");
 const { recordError, hashMessage } = require("../DAL/databaseApi");
 const { spamUrlDetected } = require("../DAL/maliciousUrlTracking");
+const { LESS_THAN_THIS_IS_SPAM } = require("../DAL/spamNumbers");
 
 const reason = "Image spam";
 
@@ -125,11 +126,20 @@ async function monitor(message) {
                 channelId,
                 deleted: false
             });
+
+            const tooSoon = now - log.last < LESS_THAN_THIS_IS_SPAM;
+
             log.last = now;
 
-
-            // be more lax - it could just be spam
-            if (log.messages.length === 2) {
+            if (tooSoon) {
+                // delete all and kick
+                log.messages[log.messages.length - 1].deleted = true;
+                const priorMessages = log.messages.filter(m => !m.deleted);
+                await spamUrlDetected(message, guildId, userId, username, reason, "kick");
+                await cleanup(client, priorMessages, guildId, userId);
+                return true;
+            } else if (log.messages.length === 2) {
+                // be more lax - it could be spam, but we're not completely sure yet
                 // do nothing
                 return false;
             } else if (log.messages.length === 3) {
