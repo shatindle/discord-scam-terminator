@@ -35,4 +35,4 @@ The use of the Application is not permitted for minors under the age of 13, or u
 
 ## Questions
 
-If you have any questions or are concerned about what data might be being stored from your account contact `shane#1353` on Discord. For more information check the [Discord Terms Of Service](https://discord.com/terms).
+If you have any questions or are concerned about what data might be being stored from your account contact `shane` through the [Discord Server](https://discord.gg/8ykjyQ8wJw). For more information check the [Discord Terms Of Service](https://discord.com/terms).
