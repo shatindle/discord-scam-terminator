@@ -25,7 +25,7 @@ module.exports = {
                 const channel = await interaction.guild.channels.fetch(target.id);
 
                 if (!channel) {
-                    await interaction.reply({ content: '<#' + target.id + '> does not appear to be visible to the bot.  Please ensure the bot can both view and send messages there, then try again', ephemeral: true });
+                    await interaction.reply({ content: 'I could not find the channel <#' + target.id + '>.\n\nI need the following permissions on the log channel to log properly:\n- VIEW_CHANNEL\n- SEND_MESSAGES\n- EMBED_LINKS', ephemeral: true });
                     return;
                 }
 
@@ -40,18 +40,13 @@ module.exports = {
                     await interaction.reply({ content: "You need the MANAGE_CHANNELS permission to run this command", ephemeral: true });
                     return;
                 }
-    
-                const canSendMessages = await channel.permissionsFor(interaction.client.user.id).has(PermissionsBitField.Flags.SendMessages);
-    
-                if (!canSendMessages) {
-                    await interaction.reply({ content: 'Please grant me SEND_MESSAGES in <#' + target.id + '>, then try again', ephemeral: true });
-                    return;
-                }
 
+                const canViewChannel = await channel.permissionsFor(interaction.client.user.id).has(PermissionsBitField.Flags.ViewChannel);
+                const canSendMessages = await channel.permissionsFor(interaction.client.user.id).has(PermissionsBitField.Flags.SendMessages);
                 const canSendEmbeds = await channel.permissionsFor(interaction.client.user.id).has(PermissionsBitField.Flags.EmbedLinks);
 
-                if (!canSendEmbeds) {
-                    await interaction.reply({ content: 'Please grant me EMBED_LINKS in <#' + target.id + '>, then try again', ephemeral: true });
+                if (!canViewChannel || !canSendMessages || !canSendEmbeds) {
+                    await interaction.reply({ content: `I'm missing permissions on the log channel. I need the following permissions to log properly:\n- VIEW_CHANNEL: ${canViewChannel ? "GRANTED" : "MISSING"}\n- SEND_MESSAGES: ${canSendMessages ? "GRANTED" : "MISSING"}\n- EMBED_LINKS: ${canSendEmbeds ? "GRANTED" : "MISSING"}`});
                     return;
                 }
     
@@ -70,7 +65,7 @@ module.exports = {
                     await interaction.reply({ content: 'Scams and commands will now be logged to <#' + target.id + '>', ephemeral: false });
                     return;
                 } else {
-                    await interaction.reply({ content: '<#' + target.id + '> does not appear to be visible to the bot.  Please ensure the bot can both view and send messages there, then try again', ephemeral: true });
+                    await interaction.reply({ content: ' something is not configured correctly when I tried to send a test message to the log channel <#' + target.id + '>.', ephemeral: true });
                     return;
                 }
             } else {
