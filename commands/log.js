@@ -49,10 +49,16 @@ module.exports = {
                 }
     
                 await registerLogs(interaction.guild.id, target.id);
-        
-                await interaction.reply({ content: 'Scams and commands will now be logged to <#' + target.id + '>', ephemeral: false });
 
-                await logActivity(interaction.client, interaction.guild.id, "Logging enabled", `<@${interaction.user.id}> used:\n ${interaction.toString()}`);                
+                const result = await logActivity(interaction.client, interaction.guild.id, "Logging enabled", `<@${interaction.user.id}> used:\n ${interaction.toString()}`); 
+        
+                if (result) {
+                    await interaction.reply({ content: 'Scams and commands will now be logged to <#' + target.id + '>', ephemeral: false });
+                    return;
+                } else {
+                    await interaction.reply({ content: '<#' + target.id + '> does not appear to be visible to the bot.  Please ensure the bot can both view and send messages there, then try again', ephemeral: true });
+                    return;
+                }
             } else {
                 if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) {
                     await interaction.reply({ content: "You need the MANAGE_CHANNELS permission to run this command", ephemeral: true });

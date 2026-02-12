@@ -15,7 +15,7 @@ async function logActivity(client, guildId, action, activity, color = "#007bff",
         const logChannel = getLogChannel(guildId);
 
         if (!logChannel)
-            return;
+            return true;
             
         let channel = client.channels.cache.get(logChannel);
 
@@ -29,8 +29,12 @@ async function logActivity(client, guildId, action, activity, color = "#007bff",
             .setTimestamp();
 
         await channel.send({ embeds: [message], content: messageLink });
+
+        return true;
     } catch (err) {
         console.log(`Error logging activity: ${err}`);
+
+        return false;
     }
 }
 
