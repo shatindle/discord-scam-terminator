@@ -48,8 +48,6 @@ module.exports = {
                     return;
                 }
     
-                
-
                 const result = await logActivity(
                     interaction.client, 
                     interaction.guild.id, 
