@@ -46,7 +46,7 @@ module.exports = {
                 const canSendEmbeds = await channel.permissionsFor(interaction.client.user.id).has(PermissionsBitField.Flags.EmbedLinks);
 
                 if (!canViewChannel || !canSendMessages || !canSendEmbeds) {
-                    await interaction.reply({ content: `I'm missing permissions on the log channel. I need the following permissions to log properly:\n- VIEW_CHANNEL: ${canViewChannel ? "GRANTED" : "MISSING"}\n- SEND_MESSAGES: ${canSendMessages ? "GRANTED" : "MISSING"}\n- EMBED_LINKS: ${canSendEmbeds ? "GRANTED" : "MISSING"}`});
+                    await interaction.reply({ content: `I'm missing permissions on <#${target.id}> where logs should be recorded. I need the following permissions to log properly:\n- VIEW_CHANNEL: ${canViewChannel ? "GRANTED" : "MISSING"}\n- SEND_MESSAGES: ${canSendMessages ? "GRANTED" : "MISSING"}\n- EMBED_LINKS: ${canSendEmbeds ? "GRANTED" : "MISSING"}\n\nOnce these permissions are corrected, re-run the /log command, and logging should be setup.\n> NOTE: The bot will continue to need VIEW_CHANNEL, SEND_MESSAGES, and EMBED_LINKS on <#${target.id}>. If the bot loses these permissions to that channel, the bot will continue doing it's job, but logging will no longer work.`});
                     return;
                 }
     
