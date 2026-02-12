@@ -48,11 +48,20 @@ module.exports = {
                     return;
                 }
     
-                await registerLogs(interaction.guild.id, target.id);
+                
 
-                const result = await logActivity(interaction.client, interaction.guild.id, "Logging enabled", `<@${interaction.user.id}> used:\n ${interaction.toString()}`); 
+                const result = await logActivity(
+                    interaction.client, 
+                    interaction.guild.id, 
+                    "Logging enabled", 
+                    `<@${interaction.user.id}> used:\n ${interaction.toString()}`,
+                    "#007bff",
+                    undefined,
+                    target.id
+                ); 
         
                 if (result) {
+                    await registerLogs(interaction.guild.id, target.id);
                     await interaction.reply({ content: 'Scams and commands will now be logged to <#' + target.id + '>', ephemeral: false });
                     return;
                 } else {

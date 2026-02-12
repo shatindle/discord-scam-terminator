@@ -10,9 +10,9 @@ const { getLogChannel } = require("../DAL/databaseApi");
  * @param {String} color 
  * @returns {Promise}
  */
-async function logActivity(client, guildId, action, activity, color = "#007bff", messageLink = undefined) {
+async function logActivity(client, guildId, action, activity, color = "#007bff", messageLink = undefined, override = undefined) {
     try {
-        const logChannel = getLogChannel(guildId);
+        const logChannel = override ?? getLogChannel(guildId);
 
         if (!logChannel)
             return true;
