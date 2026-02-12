@@ -24,6 +24,10 @@ module.exports = {
                 // logging requested
                 const channel = await interaction.guild.channels.fetch(target.id);
 
+                if (!channel) {
+                    await interaction.reply({ content: '<#' + target.id + '> does not appear to be visible to the bot.  Please ensure the bot can both view and send messages there, then try again', ephemeral: true });
+                }
+
                 if (channel.type !== ChannelType.GuildText) {
                     await interaction.reply({ content: '<#' + target.id + '> is not a text channel.  Please specify a text channel, then try again', ephemeral: true });
                     return;
@@ -61,6 +65,7 @@ module.exports = {
             }
         } catch (err) {
             console.log(`Error in /log: ${err}`);
+            await interaction.reply({ content: 'An unknown error occurred. Please let the developer know', ephemeral: false });
         }
 	},
 };
