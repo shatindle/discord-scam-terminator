@@ -26,6 +26,7 @@ module.exports = {
 
                 if (!channel) {
                     await interaction.reply({ content: '<#' + target.id + '> does not appear to be visible to the bot.  Please ensure the bot can both view and send messages there, then try again', ephemeral: true });
+                    return;
                 }
 
                 if (channel.type !== ChannelType.GuildText) {
