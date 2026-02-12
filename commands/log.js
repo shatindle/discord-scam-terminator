@@ -47,6 +47,13 @@ module.exports = {
                     await interaction.reply({ content: 'Please grant me SEND_MESSAGES in <#' + target.id + '>, then try again', ephemeral: true });
                     return;
                 }
+
+                const canSendEmbeds = await channel.permissionsFor(interaction.client.user.id).has(PermissionsBitField.Flags.EmbedLinks);
+
+                if (!canSendEmbeds) {
+                    await interaction.reply({ content: 'Please grant me EMBED_LINKS in <#' + target.id + '>, then try again', ephemeral: true });
+                    return;
+                }
     
                 const result = await logActivity(
                     interaction.client, 
