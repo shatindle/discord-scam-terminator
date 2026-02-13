@@ -17,6 +17,23 @@ const discordInvitePattern = /(?:discord(?:(?:app)?\.com\/invite\/|\.gg\/(?:invi
  */
 const discordChannelPattern = /https:\/\/(?:\w+\.)?discord(?:app)?\.com\/channels\/(\d+)\/(\d+)(\/(\d+))?/ig;
 
+/*
+ * Discord disregards the quote pattern when evaluating URLs
+ * So for example, this:
+ * > string
+ * 
+ * becomes:
+ * string
+ * 
+ * when evaluating URLs
+ */
+const removeQuotesPattern = /^>\s{1}/gm
+
+/*
+ * Discord treats content between < and > as a candidate to evaluate as a link, even if it is multi-line
+ */
+const compressMultilineLinksPattern = /(<[^>]+>)/g
+
 /**
  * 
  * @param {String} content 
@@ -30,6 +47,23 @@ function extractUrlsFromContent(content, fullyQualify) {
         if (!content)
             return urls;
 
+        // we need to do some clean up on URLs and include them at the end
+        content = content.replace(removeQuotesPattern, "");
+
+        const compressedUrlCandidates = content.match(compressMultilineLinksPattern);
+
+        if (compressedUrlCandidates && compressedUrlCandidates.forEach) {
+            compressedUrlCandidates.forEach((match) => {
+                match = match.replace(/\n|\r|\r\n/gm, "");
+
+                if (match.length > 2)
+                    match = match.substring(1, match.length - 1);
+
+                content += "\n" + match;
+            });
+        }
+
+        // now that we've cleaned up our matching, let's look for URLs
         const test = content.match(urlRegex);
         if (test && test.forEach) {
             test.forEach((match) => {
