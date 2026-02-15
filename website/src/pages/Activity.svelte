@@ -1,6 +1,6 @@
 <script>
 	import { onMount, afterUpdate, beforeUpdate, onDestroy } from 'svelte';
-    import { getWarnings, getKicks, getServers } from '../store/scamTerminatorApi';
+    import { getWarnings, getKicks, getFails, getServers } from '../store/scamTerminatorApi';
     import SegmentedButton, { Segment } from '@smui/segmented-button';
     import { Label } from '@smui/common';
 
