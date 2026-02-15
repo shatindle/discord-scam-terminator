@@ -27,16 +27,16 @@
             server.count = 0;
             server.warnings = 0;
             server.kicks = 0;
-            server.failed = 0;
+            server.fails = 0;
 
             let warningCount = warnings.filter(item => item.guildId === server.id).length;
             let kickCount = kicks.filter(item => item.guildId === server.id).length;
-            let failCount = failed.filter(item => item.guildId === server.id).length;
+            let failCount = fails.filter(item => item.guildId === server.id).length;
 
             server.count = warningCount + kickCount;
             server.warnings = warningCount;
             server.kicks = kickCount;
-            server.failed = failCount;
+            server.fails = failCount;
         });
 
         servers = servers.sort((a, b) => (a.count > b.count ? -1 : 1));
@@ -290,7 +290,7 @@
         <div class="row">
             {#each servers.filter(server => server.id.toLowerCase().indexOf(serverFilter.toLowerCase()) > -1 || server.name.toLowerCase().indexOf(serverFilter.toLowerCase()) > -1) as server}
             <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <div class="col-12 col-sm-6 col-md-4 server-icon" class:selected={selectedServer === server.id} class:safe={server.count === 0} class:bad-setup={server.failed > 0} on:click={() => setSelectedServer(server.id)}>
+            <div class="col-12 col-sm-6 col-md-4 server-icon" class:selected={selectedServer === server.id} class:safe={server.count === 0} class:bad-setup={server.fails > 0} on:click={() => setSelectedServer(server.id)}>
                 <div class="row mdc-elevation--z6">
                     <div class="col-3">
                         <img src={server.avatar} alt={server.name + "Server Icon"} class="mdc-elevation--z2"/>
@@ -313,8 +313,8 @@
                         <div class="usercount">Users: {server.members}</div>
                         <div class="incidents">Total Scams: {server.count}</div>
                         <div class="incidents">Warnings: {server.warnings}</div>
-                        <div class="incidents">Kicks: {server.kicks - server.failed}</div>
-                        <div class="incidents">Failed Kicks: {server.failed}</div>
+                        <div class="incidents">Kicks: {server.kicks - server.fails}</div>
+                        <div class="incidents">Failed Kicks: {server.fails}</div>
                     </div>
                 </div>
             </div>
