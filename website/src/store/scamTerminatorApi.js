@@ -43,6 +43,7 @@ export const flag = async (invite) => await fetch('/api/flag', {
 });
 export const getWarnings = async () => await (await fetch('/api/activity/warnings')).json();
 export const getKicks = async () => await (await fetch('/api/activity/kicks')).json();
+export const getFails = async () => await (await fetch('/api/activity/fails')).json();
 export const getServers = async () => await (await fetch('/api/activity/servers')).json();
 export const getSnapshot = async (url) => await fetch('/api/snapshot', {
     method: "POST",

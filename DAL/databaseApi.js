@@ -553,8 +553,9 @@ async function purgeUsers() {
 
         for (let table of userTables) {
             let ref = db.collection(table)
-                .where("timestamp", "<", Timestamp.fromDate(sevenDaysAgo));
-            let docs = await ref.get();
+                .where("timestamp", "<", Timestamp.fromDate(sevenDaysAgo))
+                .where("userId", "!=", null);
+            const { docs } = await ref.get();
 
             for (const doc of docs) {
                 try {
@@ -583,12 +584,12 @@ async function purgeRecords() {
         for (let table of userTables) {
             let ref = await db.collection(table)
                 .where("timestamp", "<", Timestamp.fromDate(sixMonthsAgo));
-            let docs = await ref.get();
+            const { docs } = await ref.get();
     
             // save the count of records you're about to delete
             let saveRef = await db.collection("history").doc(table);
             await saveRef.update({
-                count: FieldValue.increment(docs.size)
+                count: FieldValue.increment(docs.length)
             });
 
             try {
@@ -663,5 +664,8 @@ module.exports = {
     hashMessage,
 
     background,
-    totalActions
+    totalActions,
+
+    purgeUsers,
+    purgeRecords
 };

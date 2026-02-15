@@ -21,7 +21,7 @@ function adminAuth(req, res, next) {
     return next();
 }
 
-const warned = [], kicked = [];
+const warned = [], kicked = [], failed = [];
 
 monitor("warning", async (changes) => {
     changes.added.forEach(record => {
@@ -43,6 +43,17 @@ monitor("kick", async (changes) => {
     });
 });
 
+// ban is actually failed attempts to kick
+monitor("ban", async (changes) => {
+    changes.added.forEach(record => {
+        failed.push({
+            guildId: record.guildId,
+            date: record.timestamp.toDate(),
+            userId: record.userId
+        });
+    });
+});
+
 router.get("/activity/warnings", (req, res) => {
     if (!req.user)
         return res.json([]);
@@ -52,6 +63,14 @@ router.get("/activity/warnings", (req, res) => {
 });
 
 router.get("/activity/kicks", (req, res) => {
+    if (!req.user)
+        return res.json([]);
+
+    const guilds = req.user.guilds.filter(guild => new PermissionsBitField(guild.permissions_new).has(PermissionsBitField.Flags.ManageMessages)).map(guild => guild.id);
+    res.json(kicked.filter(t => (testUsers || testUsers.indexOf(t.userId) === -1) && (adminUsers.indexOf(req.user.id) > -1 || guilds.indexOf(t.guildId) > -1)));
+});
+
+router.get("/activity/fails", (req, res) => {
     if (!req.user)
         return res.json([]);
 

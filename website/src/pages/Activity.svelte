@@ -4,7 +4,7 @@
     import SegmentedButton, { Segment } from '@smui/segmented-button';
     import { Label } from '@smui/common';
 
-    let xAxis, warningYAxis, kickYAxis, data, element, chart, servers, warnings, kicks;
+    let xAxis, warningYAxis, kickYAxis, failYAxis, data, element, chart, servers, warnings, kicks, fails;
 
     let selectedServer = "";
     let serverFilter = "";
@@ -20,6 +20,7 @@
     onMount(async () => {
         warnings = await getWarnings();
         kicks = await getKicks();
+        fails = await getFails();
         servers = await getServers();
 
         servers.forEach(server => {
@@ -36,13 +37,16 @@
 
         let warningTemp = getY(warnings, null, groupSelected, xAxis);
         let kickTemp = getY(kicks, null, groupSelected, xAxis);
+        let failTemp = getY(fails, null, groupSelected, xAxis);
 
         warningYAxis = [];
         kickYAxis = [];
+        failYAxis = [];
 
         for (let xDate of xAxis) {
             warningYAxis.push(warningTemp[xDate] ?? 0);
             kickYAxis.push(kickTemp[xDate] ?? 0);
+            failYAxis.push(failTemp[xDate] ?? 0);
         }
 
         data = {
@@ -56,6 +60,11 @@
                 {
                     name: "Kicks",
                     values: kickYAxis,
+                    chartType: 'line'
+                },
+                {
+                    name: "Failed Kicks",
+                    values: failYAxis,
                     chartType: 'line'
                 }
             ],
@@ -74,7 +83,7 @@
             data,
             type: "axis-mixed",
             height: 400,
-            colors: ['#ffc107', '#dc3545']
+            colors: ['#ffc107', '#dc3545', '#000000']
         });
     });
 
@@ -156,13 +165,16 @@
         xAxis = getX(groupSelected);
         let warningTemp = getY(warnings, selectedServer, groupSelected, xAxis);
         let kickTemp = getY(kicks, selectedServer, groupSelected, xAxis);
+        let failTemp = getY(fails, null, groupSelected, xAxis);
 
         warningYAxis = [];
         kickYAxis = [];
+        failYAxis = [];
 
         for (let xDate of xAxis) {
             warningYAxis.push(warningTemp[xDate] ?? 0);
             kickYAxis.push(kickTemp[xDate] ?? 0);
+            failYAxis.push(failTemp[xDate] ?? 0);
         }
 
         data = {
@@ -176,6 +188,11 @@
                 {
                     name: "Kicks",
                     values: kickYAxis,
+                    chartType: 'line'
+                },
+                {
+                    name: "Failed Kicks",
+                    values: failYAxis,
                     chartType: 'line'
                 }
             ],
