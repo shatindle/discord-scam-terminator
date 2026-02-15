@@ -75,7 +75,7 @@ router.get("/activity/fails", (req, res) => {
         return res.json([]);
 
     const guilds = req.user.guilds.filter(guild => new PermissionsBitField(guild.permissions_new).has(PermissionsBitField.Flags.ManageMessages)).map(guild => guild.id);
-    res.json(kicked.filter(t => (testUsers || testUsers.indexOf(t.userId) === -1) && (adminUsers.indexOf(req.user.id) > -1 || guilds.indexOf(t.guildId) > -1)));
+    res.json(failed.filter(t => (testUsers || testUsers.indexOf(t.userId) === -1) && (adminUsers.indexOf(req.user.id) > -1 || guilds.indexOf(t.guildId) > -1)));
 });
 
 router.get("/activity/servers", async (req, res) => {

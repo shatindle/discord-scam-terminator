@@ -165,7 +165,7 @@
         xAxis = getX(groupSelected);
         let warningTemp = getY(warnings, selectedServer, groupSelected, xAxis);
         let kickTemp = getY(kicks, selectedServer, groupSelected, xAxis);
-        let failTemp = getY(fails, null, groupSelected, xAxis);
+        let failTemp = getY(fails, selectedServer, groupSelected, xAxis);
 
         warningYAxis = [];
         kickYAxis = [];
