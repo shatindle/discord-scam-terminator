@@ -179,7 +179,7 @@
             </div>
             <div class="row">
                 <div class="col-8">
-                    <div>Guild ID {$contentreview[id].guildId}</div>
+                    <div><a href="/activity?guild={$contentreview[id].guildId}" class="guild-link">Guild ID {$contentreview[id].guildId}</a></div>
                     <div>{$contentreview[id].action}</div>
                 </div>
                 <div class="col-4">
@@ -223,6 +223,11 @@
 
     .in-blacklist {
         background-color: #444;
+    }
+
+    .guild-link {
+        color: white;
+        text-decoration: underline;
     }
 
     input {

@@ -4,20 +4,35 @@
     import SegmentedButton, { Segment } from '@smui/segmented-button';
     import { Label } from '@smui/common';
 
-    let xAxis, warningYAxis, kickYAxis, failYAxis, data, element, chart, servers, warnings, kicks, fails;
+    let xAxis, warningYAxis, kickYAxis, failYAxis, data, activityLineChart, activityLineChartElement, ownerChart, ownerChartElement, servers, warnings, kicks, fails;
 
     let selectedServer = "";
     let serverFilter = "";
 
-    let groupChoices = ["Month", "Week", "Day"];
+    let groupChoices = ["Month", "Week", "Day", "Hour"];
     let groupSelected = "Month";
     let previousGroupSelected = "Month";
 
-    let sortChoices = ["Scams Caught", "Name", "User Count"];
+    let sortChoices = ["Scams Caught", "Name", "User Count", "Owner"];
     let sortSelected = "Scams Caught";
     let previousSortSelected = "Scams Caught";
 
+    // TODO: turn these into a toggle
+    let includeWarnings = true;
+    let includeKicks = true;
+    let includeFails = true;
+
     onMount(async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+
+        const filterToGuild = urlParams.get('guild');
+
+        if (filterToGuild) {
+            serverFilter = filterToGuild;
+            selectedServer = filterToGuild;
+        }
+
+        // activity line chart
         warnings = await getWarnings();
         kicks = await getKicks();
         fails = await getFails();
@@ -33,7 +48,7 @@
             let kickCount = kicks.filter(item => item.guildId === server.id).length;
             let failCount = fails.filter(item => item.guildId === server.id).length;
 
-            server.count = warningCount + kickCount;
+            server.count = warningCount + kickCount + failCount;
             server.warnings = warningCount;
             server.kicks = kickCount;
             server.fails = failCount;
@@ -44,9 +59,9 @@
         // massage the data down to month groups
         xAxis = getX(groupSelected);
 
-        let warningTemp = getY(warnings, null, groupSelected, xAxis);
-        let kickTemp = getY(kicks, null, groupSelected, xAxis);
-        let failTemp = getY(fails, null, groupSelected, xAxis);
+        let warningTemp = getY(warnings, selectedServer, groupSelected, xAxis);
+        let kickTemp = getY(kicks, selectedServer, groupSelected, xAxis);
+        let failTemp = getY(fails, selectedServer, groupSelected, xAxis);
 
         warningYAxis = [];
         kickYAxis = [];
@@ -58,25 +73,39 @@
             failYAxis.push(failTemp[xDate] ?? 0);
         }
 
+        const datasetstoshow = [];
+        const colors = [];
+
+        if (includeWarnings) {
+            datasetstoshow.push({
+                name: "Warnings",
+                values: warningYAxis,
+                chartType: 'bar'
+            });
+            colors.push('#ffc107');
+        }
+
+        if (includeKicks) {
+            datasetstoshow.push({
+                name: "Kicks",
+                values: kickYAxis,
+                chartType: 'line'
+            });
+            colors.push('#dc3545');
+        }
+
+        if (includeFails) {
+            datasetstoshow.push({
+                name: "Failed Kicks",
+                values: failYAxis,
+                chartType: 'line'
+            });
+            colors.push('#000000');
+        }
+
         data = {
             labels: xAxis,
-            datasets: [
-                {
-                    name: "Warnings",
-                    values: warningYAxis,
-                    chartType: 'bar'
-                },
-                {
-                    name: "Kicks",
-                    values: kickYAxis,
-                    chartType: 'line'
-                },
-                {
-                    name: "Failed Kicks",
-                    values: failYAxis,
-                    chartType: 'line'
-                }
-            ],
+            datasets: datasetstoshow,
             yMarkers: [
                 {
                     label: '',
@@ -87,32 +116,43 @@
         };
 
         rendered = true;
-        chart = new frappe.Chart(element, {
+        activityLineChart = new frappe.Chart(activityLineChartElement, {
             // title: "Potentially Malicious Removals",
             data,
             type: "axis-mixed",
             height: 400,
-            colors: ['#ffc107', '#dc3545', '#000000']
+            colors: colors
         });
+
+        // owner line chart
     });
 
-    onDestroy(() => chart.unbindWindowEvents() && chart.destroy());
+    onDestroy(() => {
+        activityLineChart.unbindWindowEvents();
+    });
 
     let rendered = false;
 
     const monthFormatter = new Intl.DateTimeFormat('en', { month: 'short' });
 
+    /**
+     * 
+     * @param {Date} date
+     * @param {string | null} format
+     */
     function formatTime(date, format) {
         if (!format) return `${monthFormatter.format(date)}-${date.getFullYear()}`;
         
         switch (format.toLowerCase()) {
+            case "hour":
+                return `${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}h`;
             case "day":
                 return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
             case "week":
                 const oneJan = new Date(date.getFullYear(),0,1);
                 const numberOfDays = Math.floor((date - oneJan) / (24 * 60 * 60 * 1000));
                 const result = Math.ceil(( date.getDay() + 1 + numberOfDays) / 7);
-                return `${date.getFullYear()}-${result}`;
+                return `${date.getFullYear()} week ${result}`;
             case "month":
             default:
                 return `${monthFormatter.format(date)}-${date.getFullYear()}`;
@@ -135,6 +175,8 @@
             case "day":
                 then = new Date(computedNow.setDate(computedNow.getDate() - 7));
                 break;
+            case "hour":
+                then = new Date(computedNow.setDate(computedNow.getDate() - 5));
         }
 
         const currentMonYear = formatTime(now, format);
@@ -150,7 +192,24 @@
                 allTime.push(instance);
                 gotAllTime[instance] = true;
             }
-            then = new Date(then.setDate(then.getDate() + 1));
+            switch (format.toLowerCase()) {
+                case "month":
+                    then = new Date(then.setDate(then.getDate() + 1));
+                    break;
+                case "week":
+                    then = new Date(then.setDate(then.getDate() + 1));
+                    break;
+                case "day":
+                    then = new Date(then.setDate(then.getDate() + 1));
+                    break;
+                case "hour":
+                    then = new Date(then.setTime(then.getTime() + 1000 * 60 * 60));
+                    break;
+                default:
+                    then = new Date(then.setDate(then.getDate() + 1));
+                    break;
+            }
+            
         } while (instance !== currentMonYear);
 
         return allTime;
@@ -170,7 +229,7 @@
         return formattedData;
     }
 
-    const recalculateData = () => {
+    const recalculateActivityLineChartData = () => {
         xAxis = getX(groupSelected);
         let warningTemp = getY(warnings, selectedServer, groupSelected, xAxis);
         let kickTemp = getY(kicks, selectedServer, groupSelected, xAxis);
@@ -186,25 +245,39 @@
             failYAxis.push(failTemp[xDate] ?? 0);
         }
 
+        const datasetstoshow = [];
+        const colors = [];
+
+        if (includeWarnings) {
+            datasetstoshow.push({
+                name: "Warnings",
+                values: warningYAxis,
+                chartType: 'bar'
+            });
+            colors.push('#ffc107');
+        }
+
+        if (includeKicks) {
+            datasetstoshow.push({
+                name: "Kicks",
+                values: kickYAxis,
+                chartType: 'line'
+            });
+            colors.push('#dc3545');
+        }
+
+        if (includeFails) {
+            datasetstoshow.push({
+                name: "Failed Kicks",
+                values: failYAxis,
+                chartType: 'line'
+            });
+            colors.push('#000000');
+        }
+
         data = {
             labels: groupSelected.toLowerCase() === "day" ? xAxis.map(day => day.substring(5)) : xAxis,
-            datasets: [
-                {
-                    name: "Warnings",
-                    values: warningYAxis,
-                    chartType: 'bar'
-                },
-                {
-                    name: "Kicks",
-                    values: kickYAxis,
-                    chartType: 'line'
-                },
-                {
-                    name: "Failed Kicks",
-                    values: failYAxis,
-                    chartType: 'line'
-                }
-            ],
+            datasets: datasetstoshow,
             yMarkers: [
                 {
                     label: '',
@@ -214,7 +287,7 @@
             ]
         };
 
-        chart.update(data);
+        activityLineChart.update(data);
     }
 
     const setSelectedServer = (server) => {
@@ -224,7 +297,7 @@
             selectedServer = server;
         }
 
-        recalculateData();
+        recalculateActivityLineChartData();
     }
 
     beforeUpdate(() => {
@@ -232,6 +305,7 @@
             servers.sort((a, b) => {
                 if (sortSelected === "User Count") return a.members > b.members ? -1 : 1;
                 if (sortSelected === "Scams Caught") return a.count > b.count ? -1 : 1;
+                if (sortSelected === "Owner") return a.owner.id > b.owner.id ? -1 : 1;
                 return a.name > b.name ? 1 : -1;
             });
 
@@ -245,32 +319,33 @@
         if (previousGroupSelected !== groupSelected) {
             previousGroupSelected = groupSelected;
 
-            recalculateData();
+            recalculateActivityLineChartData();
         }
     });
 </script>
 
 <div id="activity">
     <h3>Potentially Malicious Removals</h3>
-    <div id="chart-container">
-        <div id="chart" bind:this={element} class="mdc-elevation--z4"></div>
+    <div id="activity-container">
+        <div id="activity-line-chart" bind:this={activityLineChartElement} class="mdc-elevation--z4"></div>
+    </div>
+    <div id="owner-container">
+        <div id="owner-chart" bind:this={ownerChartElement} class="mdc-elevation--z4"></div>
     </div>
     {#if servers}
     <div id="server-list" style="position:relative;">
         <h3>Servers</h3>
         <div class="row">
-            <div class="col-12 col-sm-6">
+            <div class="col-12 col-md-6">
+                <label for="serverfilter" id="serverfilter-label">Search by</label>
+                <div class="input-group mb-3">
+                    <input id="serverfilter" type="text" bind:value={serverFilter} class="full form-control" placeholder="Search servers by name or ID" aria-label="Search" name="serverfilter">
+                    <small>note: Scam counts only reflect the last 6 months of data. Older records are purged. Usernames and user IDs of compromised accounts may be kept up to one week, but are usually purged sooner than that. New servers may take up to 24 hours to show up in metrics.</small>
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
                 <label for="grouplist">Group by</label>
                 <SegmentedButton segments={groupChoices} let:segment singleSelect bind:selected={groupSelected} style="width:100%;" name="grouplist">
-                    <!-- Note: the `segment` property is required! -->
-                    <Segment {segment}>
-                        <Label>{segment}</Label>
-                    </Segment>
-                </SegmentedButton>
-            </div>
-            <div class="col-12 col-sm-6">
-                <label for="sortlist">Sort by</label>
-                <SegmentedButton segments={sortChoices} let:segment singleSelect bind:selected={sortSelected} style="width:100%;" name="sortlist">
                     <!-- Note: the `segment` property is required! -->
                     <Segment {segment}>
                         <Label>{segment}</Label>
@@ -281,10 +356,13 @@
         
         <div class="row">
             <div class="col">
-                <div class="input-group mb-3">
-                    <input id="serverfilter" type="text" bind:value={serverFilter} class="full form-control" placeholder="Search servers by name or ID" aria-label="Search">
-                    <small>note: scam counts only reflect the last 6 months of data. Older records are purged. Usernames and user IDs of compromised accounts may be kept up to one week, but are usually purged sooner than that.</small>
-                </div>
+                <label for="sortlist">Sort by</label>
+                <SegmentedButton segments={sortChoices} let:segment singleSelect bind:selected={sortSelected} style="width:100%;" name="sortlist">
+                    <!-- Note: the `segment` property is required! -->
+                    <Segment {segment}>
+                        <Label>{segment}</Label>
+                    </Segment>
+                </SegmentedButton>
             </div>
         </div>
         <div class="row">
@@ -296,7 +374,7 @@
                         <img src={server.avatar} alt={server.name + "Server Icon"} class="mdc-elevation--z2"/>
                     </div>
                     <div class="col-9">
-                        <div data-verified={server.verified} data-partnered={server.partnered}>
+                        <div data-verified={server.verified} data-partnered={server.partnered} class="servername">
                             {#if server.verified}
                             <img src="/lib/img/verified-logo.png" alt="Discord Verified" style="width:20px;height:20px;display:inline;" />
                             {:else if server.partnered}
@@ -304,17 +382,19 @@
                             {/if}
                             {server.name}
                         </div>
+                        <div class="server-id">
+                            ID: {server.id}
+                        </div>
                         {#if server.owner}
-                        <div data-ownerid={server.owner.id}>
-                            <img src={server.owner.avatar} alt="Discord Server Owner" style="width:20px;height:20px;display:inline;" />
+                        <div data-ownerid={server.owner.id} class="owner-id">
+                            Owner: <img src={server.owner.avatar} alt="Discord Server Owner" style="width:20px;height:20px;display:inline;" />
                             {server.owner.username}
                         </div>
                         {/if}
                         <div class="usercount">Users: {server.members}</div>
                         <div class="incidents">Total Scams: {server.count}</div>
                         <div class="incidents">Warnings: {server.warnings}</div>
-                        <div class="incidents">Kicks: {server.kicks - server.fails}</div>
-                        <div class="incidents">Failed Kicks: {server.fails}</div>
+                        <div class="incidents">Kicks: {server.kicks} success, {server.fails} failed</div>
                     </div>
                 </div>
             </div>
@@ -328,7 +408,7 @@
     #activity {
         margin-bottom: 40px;
     }
-    #chart {
+    #activity-line-chart {
         background-color: white;
         border-radius: 6px;
     }
@@ -343,6 +423,11 @@
 
     .server-icon.safe {
         color: #777;
+    }
+    
+    .server-icon.bad-setup > div {
+        background: lightcoral;
+        color: white;
     }
 
     .server-icon.selected > div {
@@ -361,12 +446,35 @@
         border-radius: 25px;
     }
 
+    #serverfilter-label {
+        margin-bottom: 1em;
+    }
+
+    #serverfilter {
+        border-radius: 4px;
+    }
+
+    .servername {
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    .server-id, .owner-id {
+        font-size: small;
+        padding-left: 1em;
+    }
+
     .usercount {
         color: #999;
     }
 
     .incidents {
         color: #999;
+    }
+
+    .bad-setup .usercount, .bad-setup .incidents {
+        color: white;
     }
 
     .selected .usercount, .selected .incidents {
@@ -377,15 +485,16 @@
         opacity: 0;
     }
 
-    .bad-setup {
-        background-color: lightcoral;
-    }
-
     .full {
         width: 100%;
     }
 
     #server-list :global(.mdc-segmented-button__segment--selected) {
         color: white;
+    }
+
+    :global(.frappe-chart .x.axis .line-vertical,
+.frappe-chart .x.axis text) {
+        display: none;
     }
 </style>

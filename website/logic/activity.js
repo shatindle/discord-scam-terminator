@@ -78,11 +78,10 @@ router.get("/activity/fails", (req, res) => {
     res.json(failed.filter(t => (testUsers || testUsers.indexOf(t.userId) === -1) && (adminUsers.indexOf(req.user.id) > -1 || guilds.indexOf(t.guildId) > -1)));
 });
 
-router.get("/activity/servers", async (req, res) => {
-    if (!req.user)
-        return res.json([]);
+const allPossibleGuilds = [];
+const allAdminGuilds = [];
 
-    const allGuilds = [];
+const fetchAllGuilds = async () => {
     const adminGuilds = [];
 
     await Promise.all(
@@ -92,7 +91,10 @@ router.get("/activity/servers", async (req, res) => {
          * @param {Guild} guild 
          */
         async guild => {
-            allGuilds.push(guild.id);
+            allPossibleGuilds.push(guild.id);
+
+            const guildOwner = await guild.fetchOwner();
+            const avatarUrl = guildOwner.user.avatarURL();
 
             adminGuilds.push({
                 id: guild.id,
@@ -103,12 +105,28 @@ router.get("/activity/servers", async (req, res) => {
                 verified: guild.verified,
                 owner: {
                     id: guild.ownerId,
-                    avatar: "https://cdn.discordapp.com/embed/avatars/0.png",
-                    username: guild.ownerId
+                    avatar: avatarUrl ?? "https://cdn.discordapp.com/embed/avatars/0.png",
+                    username: guildOwner.user.username
                 }
             });
         })
     );
+
+    allAdminGuilds.length = 0;
+    
+    adminGuilds.forEach(t => allAdminGuilds.push(t));
+}
+
+setTimeout(fetchAllGuilds, 1000 * 10);
+
+setInterval(fetchAllGuilds, 1000 * 60 * 60 * 24);
+
+router.get("/activity/servers", async (req, res) => {
+    if (!req.user)
+        return res.json([]);
+
+    const allGuilds = [...allPossibleGuilds];
+    const adminGuilds = [...allAdminGuilds];
         
     if (req.session && req.session.admin) {
         return res.json(adminGuilds);
