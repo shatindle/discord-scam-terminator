@@ -1,5 +1,34 @@
-const { EmbedBuilder, Client } = require("discord.js");
+const { EmbedBuilder, Client, Message } = require("discord.js");
 const { getLogChannel } = require("../DAL/databaseApi");
+
+/**
+ * 
+ * @param {Client} client 
+ * @param {string} guildId 
+ * @param {Message} message 
+ * @returns 
+ */
+async function forwardMessage(client, guildId, message) {
+    try {
+        const logChannel = getLogChannel(guildId);
+
+        if (!logChannel)
+            return true;
+            
+        let channel = client.channels.cache.get(logChannel);
+
+        if (!channel || !channel.send)
+            channel = await client.channels.fetch(logChannel);
+
+        await message.forward(channel);
+
+        return true;
+    } catch (err) {
+        console.log(`Error logging activity: ${err}`);
+
+        return false;
+    }
+}
 
 /**
  * 
@@ -125,5 +154,6 @@ module.exports = {
     logActivity,
     logWarning,
     logKick,
-    logInformation
+    logInformation,
+    forwardMessage
 };
