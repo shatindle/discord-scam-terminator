@@ -89,6 +89,8 @@ async function monitor(message) {
         const username = message.member.user.username + "#" + message.member.user.discriminator;
         const hasImages = message.attachments && message.attachments.size > 0;
 
+        const has4Images = hasImages && message.attachments.size >= 4;
+
         // if the message contains a URL, log it.  If the same message is being spammed, remove it
         // if the user keeps spamming, kick the user, and back-delete all prior messages
 
@@ -127,7 +129,8 @@ async function monitor(message) {
                 deleted: false
             });
 
-            const tooSoon = now - log.last < LESS_THAN_THIS_IS_SPAM;
+            // only be aggressive if this image count is 4 as that's the crypto scam
+            const tooSoon = now - log.last < LESS_THAN_THIS_IS_SPAM && has4Images;
 
             log.last = now;
 
