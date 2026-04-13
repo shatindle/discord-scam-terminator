@@ -9,7 +9,7 @@ module.exports = {
 		.setDescription("Override the bot's default behavior. All rules are enabled unless explicitly disabled.")
         .addBooleanOption(option =>
             option.setName("enable_everything")
-                .setDescription("Reset a channel to allow all rules. True ignores all other settings.")
+                .setDescription("Allow all rules. True ignores all other settings.")
                 .setRequired(false))
         .addBooleanOption(option => 
             option.setName("nitro_steam_spam")
@@ -47,7 +47,7 @@ module.exports = {
             const link_spam = interaction.options.getBoolean("link_spam") ?? true;
             const text_spam = interaction.options.getBoolean("text_spam") ?? true;
 
-            const currentPermissions = channel.permissionsFor(interaction.member.user.id);
+            const currentPermissions = interaction.member.permissionsFor(interaction.member.user.id);
 
             if (!currentPermissions.has(PermissionsBitField.Flags.ManageChannels)) {
                 await interaction.reply({ content: "You need the MANAGE_CHANNELS permission to run this command", ephemeral: true });
