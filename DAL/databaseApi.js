@@ -504,7 +504,8 @@ const callbacks = {
     verifieddomains: [],
     whitelist: [],
     contentreview: [],
-    maliciousinvites: []
+    maliciousinvites: [],
+    behavior: []
 }
 
 /**
@@ -541,6 +542,8 @@ async function monitor(type, callback) {
         case "maliciousinvites": 
             callbacks.maliciousinvites.push(callback);
             break;
+        case "behavior":
+            callbacks.behavior.push(callback);
         default:
             throw "Unknown observer";
     }
@@ -580,6 +583,9 @@ function setupObservers() {
 
     if (!observers.maliciousinvites && callbacks.maliciousinvites.length > 0)
         observers.maliciousinvites = configureObserver("maliciousinvites", callbacks.maliciousinvites);
+
+    if (!observers.behavior && callbacks.behavior.length > 0)
+        observers.behavior = configureObserver("behavior", callbacks.behavior);
 }
 
 /**

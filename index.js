@@ -93,21 +93,50 @@ client.on('interactionCreate', async interaction => {
 	}
 });
 
+let behavior = {};
+
+/**
+ * 
+ * @param {Object} changes 
+ * @param {Object} list 
+ */
+function behaviorChanges(changes, list) {
+    try {
+        changes.added.forEach(item => list[item.guildId] = item);
+        changes.modified.forEach(item => list[item.guildId] = item);
+        changes.removed.forEach(item => delete list[item.guildId]);
+        // don't care about changed yet
+    } catch (err) {
+        console.log(`Failed to address behavior changes: ${err.toString()}`);
+    }
+}
+
+monitor("behavior", async (changes) => behaviorChanges(changes, behavior));
+
 client.on('messageCreate', async (message) => {
-    if (await antiTextSpam(message)) // check this first because it's the fastest check
-		return; // it was addressed here
+    const behaviors = behavior[message.guildId] ?? {
+        enable_everything: true
+    };
 
-	if (await antiLinkSpam(message))
-		return; // it was addressed here
+    if (behaviors.enable_everything || behaviors.text_spam)
+        if (await antiTextSpam(message)) // check this first because it's the fastest check
+            return; // it was addressed here
 
-    if (await antiImageSpam(message))
-        return; // it was addressed here
+    if (behaviors.enable_everything || behaviors.link_spam)
+        if (await antiLinkSpam(message))
+            return; // it was addressed here
 
-    if (await nitroSteamScam(message))
-		return; // it was addressed here
+    if (behaviors.enable_everything || behaviors.image_spam)
+        if (await antiImageSpam(message))
+            return; // it was addressed here
 
-	if (await maliciousRedirect(message))
-		return; // it was addressed here
+    if (behaviors.enable_everything || behaviors.nitro_steam_spam)
+        if (await nitroSteamScam(message))
+            return; // it was addressed here
+
+    if (behaviors.enable_everything || behaviors.malicious_redirects)
+        if (await maliciousRedirect(message))
+            return; // it was addressed here
 });
 
 client.on('guildCreate', async (guild) => {
