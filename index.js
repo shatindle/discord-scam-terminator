@@ -123,7 +123,7 @@ client.on('messageCreate', async (message) => {
             return; // it was addressed here
 
     if (behaviors.enable_everything || behaviors.link_spam)
-        if (await antiLinkSpam(message))
+        if (await antiLinkSpam(message, behaviors.nitro_steam_spam === false))
             return; // it was addressed here
 
     if (behaviors.enable_everything || behaviors.image_spam)

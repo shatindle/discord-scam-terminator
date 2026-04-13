@@ -65,9 +65,10 @@ async function cleanup(client, messageList, guildId, userId) {
 /**
  * @description Looks for nitro/steam scams and removes them
  * @param {Message} message The message object
+ * @param {Boolean|null} ignoreSusText Ignore suspicious text as part of the rules
  * @returns {Promise<Boolean>} Whether or not the message was acted on in some way
  */
-async function monitor(message) {
+async function monitor(message, ignoreSusText) {
     // ignore posts from bots
     if (message.author.bot) return false;
 
@@ -89,7 +90,11 @@ async function monitor(message) {
     try {
         const username = message.member.user.username + "#" + message.member.user.discriminator;
         const urlsFound = extractUrlsFromContent(message.content, true);
-        const isTextSus = suspiciousDmRequests(message.content);
+        let isTextSus = false;
+
+        if (!ignoreSusText) {
+            isTextSus = suspiciousDmRequests(message.content);
+        }
 
         // if the message contains a URL, log it.  If the same message is being spammed, remove it
         // if the user keeps spamming, kick the user, and back-delete all prior messages
