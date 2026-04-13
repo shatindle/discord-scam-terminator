@@ -47,15 +47,6 @@ module.exports = {
             const link_spam = interaction.options.getBoolean("link_spam") ?? true;
             const text_spam = interaction.options.getBoolean("text_spam") ?? true;
 
-            if (target) {
-                const channel = await interaction.guild.channels.fetch(target.id);
-
-                if (!channel) {
-                    await interaction.reply({ content: 'I could not find the channel <#' + target.id + '>.', ephemeral: true });
-                    return;
-                }
-            }
-
             const currentPermissions = channel.permissionsFor(interaction.member.user.id);
 
             if (!currentPermissions.has(PermissionsBitField.Flags.ManageChannels)) {
