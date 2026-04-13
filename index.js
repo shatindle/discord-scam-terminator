@@ -12,7 +12,7 @@ process.on('uncaughtExceptionMonitor', (err, origin) => {
 
 const { Client, Collection, GatewayIntentBits, Partials, Guild } = require('discord.js');
 const fs = require('fs');
-const { loadAllLogChannels, background } = require("./DAL/databaseApi");
+const { loadAllLogChannels, background, monitor } = require("./DAL/databaseApi");
 const nitroSteamScam = require("./Monitors/nitroSteamScam");
 const antiLinkSpam = require("./Monitors/antiLinkSpam");
 const antiImageSpam = require("./Monitors/antiImageSpam");
