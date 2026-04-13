@@ -21,7 +21,7 @@ module.exports = {
                 .setRequired(false))
         .addBooleanOption(option => 
             option.setName("image_spam")
-                .setDescription("Enable or disable image spam detection across channels. May not work with some hosting providers.")
+                .setDescription("Enable or disable image spam detection across channels.")
                 .setRequired(false))
         .addBooleanOption(option => 
             option.setName("link_spam")
