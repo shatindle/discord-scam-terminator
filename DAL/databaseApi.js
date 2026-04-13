@@ -544,6 +544,7 @@ async function monitor(type, callback) {
             break;
         case "behavior":
             callbacks.behavior.push(callback);
+            break;
         default:
             throw "Unknown observer";
     }
