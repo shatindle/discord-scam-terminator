@@ -395,6 +395,78 @@ const LOGS_COLLECTION = "logchannels";
     };
 }
 
+const BEHAVIOR_COLLECTION = "behavior";
+
+async function registerBehaviorMonitor(
+        userId,
+        guildId,
+        enable_everything,
+        nitro_steam_spam,
+        malicious_redirects,
+        image_spam,
+        link_spam,
+        text_spam
+    ) {
+    const ref = db.collection(BEHAVIOR_COLLECTION).doc(guildId);
+    const docs = await ref.get();
+
+    const enableAll = 
+        enable_everything ||
+        (
+            nitro_steam_spam && 
+            malicious_redirects && 
+            image_spam && 
+            link_spam && 
+            text_spam
+        );
+
+    if (docs.exists) {
+        if (enableAll) {
+            await ref.delete();
+            return "All rules enabled";
+        } else {
+            await ref.update({
+                userId,
+                updatedOn: Firestore.Timestamp.now(),
+                nitro_steam_spam,
+                malicious_redirects,
+                image_spam,
+                link_spam,
+                text_spam
+            });
+            return `The bot will abide by these rules now for this server:
+- nitro_steam_spam: ${nitro_steam_spam}
+- malicious_redirects: ${malicious_redirects}
+- image_spam: ${image_spam}
+- link_spam: ${link_spam}
+- text_spam: ${text_spam}`;
+        }
+    } else {
+        if (enableAll) {
+            // do nothing
+            return "All rules enabled";
+        } else {
+            await ref.set({
+                userId,
+                updatedOn: Firestore.Timestamp.now(),
+                guildId: guildId,
+                nitro_steam_spam,
+                malicious_redirects,
+                image_spam,
+                link_spam,
+                text_spam,
+                createdOn: Firestore.Timestamp.now()
+            });
+            return `The bot will abide by these rules now for this server:
+- nitro_steam_spam: ${nitro_steam_spam}
+- malicious_redirects: ${malicious_redirects}
+- image_spam: ${image_spam}
+- link_spam: ${link_spam}
+- text_spam: ${text_spam}`;
+        }
+    }
+}
+
 /**
  * 
  */
@@ -667,5 +739,7 @@ module.exports = {
     totalActions,
 
     purgeUsers,
-    purgeRecords
+    purgeRecords,
+
+    registerBehaviorMonitor
 };
