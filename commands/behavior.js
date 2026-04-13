@@ -30,7 +30,8 @@ module.exports = {
         .addBooleanOption(option => 
             option.setName("text_spam")
                 .setDescription("Enable or disable text spam detection across channels. Uses text similarity detection.")
-                .setRequired(false)),
+                .setRequired(false))
+        .setDefaultMemberPermissions(PermissionsBitField.Flags.ManageChannels),
     /**
      * 
      * @param {Interaction} interaction 
@@ -47,9 +48,9 @@ module.exports = {
             const link_spam = interaction.options.getBoolean("link_spam") ?? true;
             const text_spam = interaction.options.getBoolean("text_spam") ?? true;
 
-            const currentPermissions = interaction.member.permissionsFor(interaction.member.user.id);
+            const hasManageChannel = interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels);
 
-            if (!currentPermissions.has(PermissionsBitField.Flags.ManageChannels)) {
+            if (!hasManageChannel) {
                 await interaction.reply({ content: "You need the MANAGE_CHANNELS permission to run this command", ephemeral: true });
                 return;
             }
