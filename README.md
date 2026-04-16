@@ -10,9 +10,9 @@ If you want to join the support server, you can do so [here](https://discord.gg/
 
 ## What the bot does
 
-The bot is specifically designed to look for key attributes common in scams.  It uses a combination of tools to de-obfuscate scam message attempts that contain text and a link.  If the message is identified as a scam and the user is not a Moderator, it creates a UUID for the message and the user, stores it in memory, makes a record of the event in Firestore, then deletes the message.  If the same message is encountered recently and identically from the same user, the user is also kicked from the server.
+The bot is specifically designed to look for key attributes common in scams.  It uses a combination of tools to de-obfuscate scam message attempts that contain text and a link.  If the message is identified as a scam and the user is not a Moderator, it creates a UUID for the message and the user, stores it in memory, makes a record of the event in Firestore, then deletes the message.  If the same message is encountered recently and identically from the same user, the user may also be actioned (kicked, banned, or timed out, depending on your server setup).
 
-If the message doesn't contain any scam attributes but has a link, the bot will visit the link, impersonating a user to investigate data about the site.  If the site seems to be pretending to be a service such as Discord, Steam, or a few others, the bot will flag the message as a scam and follow the protocol for deleting/kicking outlined above.
+If the message doesn't contain any scam attributes but has a link, the bot will visit the link, impersonating a user to investigate data about the site.  If the site seems to be pretending to be a service such as Discord, Steam, or a few others, the bot will flag the message as a scam and follow the protocol for deleting/actioning outlined above.
 
 The bot is not perfect, but since it's creation on December 25, 2021, the logic and sophistication of the bot has grown to the point that it no longer really needs supplementation from other anti-scam/anti-spam bots. Feel free to add backups, by all means, just know that the logic has grown quite a lot over the years.
 
@@ -26,13 +26,15 @@ Some server configurations that can cause the bot to be less effective:
 
 The bot needs the following permissions to function:
 - Kick Members
+- Moderate Members
+- Ban Members
 - Read Messages/View Channels
 - Send Messages
+- Send Embeds
 - Manage Messages
 - Read Message History
-- Ban Members (optional, used only for the clonex scams)
 
-Additionally, in order to kick users, the bot must have a role above all users you wish to kick.  **NOTE: the bot will only kick users that do not have the Manage Messages permission in the server.**  Moderators should not be kicked by the bot.
+Additionally, in order to action users (kick, ban, or time out, your choice on what you choose to grant), the bot must have a role above all users you wish to action.  **NOTE: the bot will only action users that do not have the Manage Messages permission in the server.**  Moderators should not be actioned by the bot.
 
 The bot was originally deployed without slash commands.  Some slash commands have been added such as the log command.  To enable it, you may need to re-invite the bot to update the scopes.  You should not need to kick the bot.
 

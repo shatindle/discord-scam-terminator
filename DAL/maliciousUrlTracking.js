@@ -1,6 +1,7 @@
 const { Message } = require("discord.js");
-const { shouldBanUser, recordKick, recordError, recordWarning, recordFail, recordContentReview } = require("./databaseApi");
-const { logWarning, logKick, forwardMessage } = require("./logApi");
+const { lookupGuildBehavior } = require("./behaviorApi");
+const { shouldActionUser, recordKick, recordTimeout, recordBan, recordError, recordWarning, recordFail, recordContentReview } = require("./databaseApi");
+const { logWarning, logKick, logTimeout, logBan, forwardMessage } = require("./logApi");
 const { getDomainCreationDate } = require("./domainLookup");
 const { getAllRedirects } = require("./redirectExtractor");
 const { extractHostname } = require("./urlTesterApi");
@@ -24,6 +25,9 @@ async function isDomainTooNew(domain) {
 
     return false;
 }
+
+const TIMEOUT_TIME = 1000 * 60 * 60 * 24 * 3;
+const BAN_DELETE_MESSAGE_SECONDS = 60 * 60 * 24;
 
 /**
  * 
@@ -76,10 +80,11 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
     }
 
     // should we ban the user? 
-    if (domainTooNew || shouldBanUser(message.member.id, content)) {
-        if (message.member.kickable) {
-            
-            await message.member.kick();
+    if (domainTooNew || shouldActionUser(message.member.id, content)) {
+        const behaviors = lookupGuildBehavior(message.guildId);
+
+        if (behaviors.removal_action === "kick" && message.member.kickable) {
+            await message.member.kick(reason);
             await recordKick(
                 guildId,
                 userId,
@@ -89,6 +94,28 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
             await logKick(client, guildId, userId, channelId, content, reason);
 
             action = "kick-success";
+        } else if (behaviors.removal_action === "timeout" && message.member.manageable) {
+            await message.member.timeout(TIMEOUT_TIME, reason);
+            await recordTimeout(
+                guildId,
+                userId,
+                username,
+                reason);
+
+            await logTimeout(client, guildId, userId, channelId, content, reason);
+
+            action = "timeout-success";
+        } else if (behaviors.removal_action === "ban" && message.member.bannable) {
+            await message.member.ban({ reason, deleteMessageSeconds: BAN_DELETE_MESSAGE_SECONDS });
+            await recordBan(
+                guildId,
+                userId,
+                username,
+                reason);
+
+            await logBan(client, guildId, userId, channelId, content, reason);
+
+            action = "ban-success";
         } else {
             await recordFail(
                 guildId,
@@ -98,7 +125,7 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
 
             await logWarning(client, guildId, userId, channelId, content, reason);
 
-            action = "kick-fail"
+            action = "action-fail";
         }
     } else {
         await recordWarning(
@@ -181,10 +208,11 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
         await logWarning(client, guildId, userId, channelId, content, reason);
 
         action = "warn";
-    } else if (perform === "kick") {
-        if (message.member.kickable) {
-            
-            await message.member.kick();
+    } else if (perform === "remove") {
+        const behaviors = lookupGuildBehavior(message.guildId);
+
+        if (behaviors.removal_action === "kick" && message.member.kickable) {
+            await message.member.kick(reason);
             await recordKick(
                 guildId,
                 userId,
@@ -194,6 +222,28 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
             await logKick(client, guildId, userId, channelId, content, reason);
 
             action = "kick-success";
+        } else if (behaviors.removal_action === "timeout" && message.member.manageable) {
+            await message.member.timeout(TIMEOUT_TIME, reason);
+            await recordTimeout(
+                guildId,
+                userId,
+                username,
+                reason);
+
+            await logTimeout(client, guildId, userId, channelId, content, reason);
+
+            action = "timeout-success";
+        } else if (behaviors.removal_action === "ban" && message.member.bannable) {
+            await message.member.ban({ reason, deleteMessageSeconds: BAN_DELETE_MESSAGE_SECONDS });
+            await recordBan(
+                guildId,
+                userId,
+                username,
+                reason);
+
+            await logBan(client, guildId, userId, channelId, content, reason);
+
+            action = "ban-success";
         } else {
             await recordFail(
                 guildId,
@@ -203,7 +253,7 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
 
             await logWarning(client, guildId, userId, channelId, content, reason);
 
-            action = "kick-fail"
+            action = "action-fail";
         }
     }
 

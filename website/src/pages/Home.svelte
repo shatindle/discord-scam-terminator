@@ -18,6 +18,6 @@
 
     <h3>What the bot does</h3>
     <p>
-        The bot is specifically designed to look for key attributes common in phishing attempts. It uses a combination of tools to de-obfuscate scam message attempts that contain text and a link. If the message is identified as a scam and the user is not a Moderator, it creates a UUID for the message and the user, stores it in memory, makes a record of the event in Firestore, then deletes the message. If the same message is encountered recently and identically from the same user, the user is also kicked from the server.
+        The bot is specifically designed to look for key attributes common in phishing attempts. It uses a combination of tools to de-obfuscate scam message attempts that contain text and a link. If the message is identified as a scam and the user is not a Moderator, it creates a UUID for the message and the user, stores it in memory, makes a record of the event in Firestore, then deletes the message. If the same message is encountered recently and identically from the same user, the user is also removed from the server or timed out (depending on your setup).
     </p>
 </div>

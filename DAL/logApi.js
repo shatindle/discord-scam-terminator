@@ -89,10 +89,10 @@ const logWarning = async (client, guildId, userId, channelId, message = "", reas
 \`${message.replace("`", "")}\``,
         WARNING_COLOR);
 
-const KICK_COLOR = "#dc3545";
-const KICK_NOACTION_COLOR = "#a64d79";
+const ACTION_COLOR = "#dc3545";
+const ACTION_NOACTION_COLOR = "#a64d79";
 
-const recentlyKickedUsers = [];
+const recentlyActionedUsers = [];
 
 /**
  * 
@@ -105,25 +105,89 @@ const recentlyKickedUsers = [];
  * @returns 
  */
 async function logKick(client, guildId, userId, channelId, message = "", reason = "unknown") {
-    let alreadyKicked = false;
+    let alreadyActioned = false;
     let id = `${guildId}-${userId}`
 
-    if (recentlyKickedUsers[id]) alreadyKicked = true;
+    if (recentlyActionedUsers[id]) alreadyActioned = true;
     else {
-        recentlyKickedUsers[id] = true;
+        recentlyActionedUsers[id] = true;
         setTimeout(() => {
-            delete recentlyKickedUsers[id];
+            delete recentlyActionedUsers[id];
         }, 10000);
     }
 
     await logActivity(
         client,
         guildId, 
-        `User${alreadyKicked ? " already " : " " }kicked. Reason: ${reason}`,
+        `User${alreadyActioned ? " already " : " " }kicked. Reason: ${reason}`,
 `**<@${userId}> sent this message in <#${channelId}>**:
 
 \`${message.replace("`", "")}\``,
-    alreadyKicked ? KICK_NOACTION_COLOR : KICK_COLOR);
+    alreadyActioned ? ACTION_NOACTION_COLOR : ACTION_COLOR);
+}
+
+/**
+ * 
+ * @param {Client} client 
+ * @param {String} guildId 
+ * @param {String} userId 
+ * @param {String} channelId 
+ * @param {String} message 
+ * @param {String} reason 
+ * @returns 
+ */
+async function logTimeout(client, guildId, userId, channelId, message = "", reason = "unknown") {
+    let alreadyActioned = false;
+    let id = `${guildId}-${userId}`
+
+    if (recentlyActionedUsers[id]) alreadyActioned = true;
+    else {
+        recentlyActionedUsers[id] = true;
+        setTimeout(() => {
+            delete recentlyActionedUsers[id];
+        }, 10000);
+    }
+
+    await logActivity(
+        client,
+        guildId, 
+        `User${alreadyActioned ? " already " : " " }timed out. Reason: ${reason}`,
+`**<@${userId}> sent this message in <#${channelId}>**:
+
+\`${message.replace("`", "")}\``,
+    alreadyActioned ? ACTION_NOACTION_COLOR : ACTION_COLOR);
+}
+
+/**
+ * 
+ * @param {Client} client 
+ * @param {String} guildId 
+ * @param {String} userId 
+ * @param {String} channelId 
+ * @param {String} message 
+ * @param {String} reason 
+ * @returns 
+ */
+async function logBan(client, guildId, userId, channelId, message = "", reason = "unknown") {
+    let alreadyActioned = false;
+    let id = `${guildId}-${userId}`
+
+    if (recentlyActionedUsers[id]) alreadyActioned = true;
+    else {
+        recentlyActionedUsers[id] = true;
+        setTimeout(() => {
+            delete recentlyActionedUsers[id];
+        }, 10000);
+    }
+
+    await logActivity(
+        client,
+        guildId, 
+        `User${alreadyActioned ? " already " : " " }banned. Reason: ${reason}`,
+`**<@${userId}> sent this message in <#${channelId}>**:
+
+\`${message.replace("`", "")}\``,
+    alreadyActioned ? ACTION_NOACTION_COLOR : ACTION_COLOR);
 }
 
 const INFORMATION_COLOR = "#cccccc";
@@ -154,6 +218,8 @@ module.exports = {
     logActivity,
     logWarning,
     logKick,
+    logTimeout,
+    logBan,
     logInformation,
     forwardMessage
 };

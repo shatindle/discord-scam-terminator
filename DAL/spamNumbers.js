@@ -41,7 +41,7 @@
         2026-01-18T13:53:25.238Z
         2026-01-18T13:53:30.537Z
 
-    roughly 5 seconds between messages.  Let's assume 10 for automatic kick/delete.
+    roughly 5 seconds between messages.  Let's assume 10 for automatic remove/delete.
 */
 const LESS_THAN_THIS_IS_SPAM = 10000;
 

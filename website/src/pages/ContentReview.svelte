@@ -217,7 +217,15 @@
         background-color: darkgreen;
     }
 
-    .kick-fail {
+    .ban-success {
+        background-color: darkgreen;
+    }
+
+    .timeout-success {
+        background-color: darkgreen;
+    }
+
+    .action-fail {
         background-color: darkred;
     }
 

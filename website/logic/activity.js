@@ -21,7 +21,7 @@ function adminAuth(req, res, next) {
     return next();
 }
 
-const warned = [], kicked = [], failed = [];
+const warned = [], kicked = [], failed = [], banned = [], timedout = [];
 
 monitor("warning", async (changes) => {
     changes.added.forEach(record => {
@@ -43,10 +43,29 @@ monitor("kick", async (changes) => {
     });
 });
 
-// ban is actually failed attempts to kick
-monitor("ban", async (changes) => {
+monitor("fail", async (changes) => {
     changes.added.forEach(record => {
         failed.push({
+            guildId: record.guildId,
+            date: record.timestamp.toDate(),
+            userId: record.userId
+        });
+    });
+});
+
+monitor("ban", async (changes) => {
+    changes.added.forEach(record => {
+        banned.push({
+            guildId: record.guildId,
+            date: record.timestamp.toDate(),
+            userId: record.userId
+        });
+    });
+});
+
+monitor("timeout", async (changes) => {
+    changes.added.forEach(record => {
+        timedout.push({
             guildId: record.guildId,
             date: record.timestamp.toDate(),
             userId: record.userId
@@ -76,6 +95,22 @@ router.get("/activity/fails", (req, res) => {
 
     const guilds = req.user.guilds.filter(guild => new PermissionsBitField(guild.permissions_new).has(PermissionsBitField.Flags.ManageMessages)).map(guild => guild.id);
     res.json(failed.filter(t => (testUsers || testUsers.indexOf(t.userId) === -1) && (adminUsers.indexOf(req.user.id) > -1 || guilds.indexOf(t.guildId) > -1)));
+});
+
+router.get("/activity/bans", (req, res) => {
+    if (!req.user)
+        return res.json([]);
+
+    const guilds = req.user.guilds.filter(guild => new PermissionsBitField(guild.permissions_new).has(PermissionsBitField.Flags.ManageMessages)).map(guild => guild.id);
+    res.json(banned.filter(t => (testUsers || testUsers.indexOf(t.userId) === -1) && (adminUsers.indexOf(req.user.id) > -1 || guilds.indexOf(t.guildId) > -1)));
+});
+
+router.get("/activity/timeouts", (req, res) => {
+    if (!req.user)
+        return res.json([]);
+
+    const guilds = req.user.guilds.filter(guild => new PermissionsBitField(guild.permissions_new).has(PermissionsBitField.Flags.ManageMessages)).map(guild => guild.id);
+    res.json(timedout.filter(t => (testUsers || testUsers.indexOf(t.userId) === -1) && (adminUsers.indexOf(req.user.id) > -1 || guilds.indexOf(t.guildId) > -1)));
 });
 
 const allPossibleGuilds = [];

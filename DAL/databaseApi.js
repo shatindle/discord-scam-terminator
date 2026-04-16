@@ -90,8 +90,19 @@ async function recordKick(guildId, userId, username, reason) {
  * @param {String} username 
  * @param {String} reason 
  */
+async function recordTimeout(guildId, userId, username, reason) {
+    await writeLog("timeout", guildId, userId, username, reason);
+}
+
+/**
+ * 
+ * @param {String} guildId 
+ * @param {String} userId 
+ * @param {String} username 
+ * @param {String} reason 
+ */
 async function recordFail(guildId, userId, username, reason) {
-    await writeLog("ban", guildId, userId, username, reason);
+    await writeLog("fail", guildId, userId, username, reason);
 }
 
 /**
@@ -176,7 +187,7 @@ function checkCache(itemKey, property, cache) {
  * @param {String} message The message the user sent
  * @returns Whether the user should be removed from the server (repeat phishing message)
  */
-function shouldBanUser(userId, message) {
+function shouldActionUser(userId, message) {
     const data = JSON.stringify({i: userId, m: message});
     
     const hash = getId(data);
@@ -400,30 +411,38 @@ const BEHAVIOR_COLLECTION = "behavior";
 async function registerBehaviorMonitor(
         userId,
         guildId,
-        enable_everything,
+        restore_defaults,
         nitro_steam_spam,
         malicious_redirects,
         image_spam,
         link_spam,
-        text_spam
+        text_spam,
+        removal_action
     ) {
     const ref = db.collection(BEHAVIOR_COLLECTION).doc(guildId);
     const docs = await ref.get();
 
     const enableAll = 
-        enable_everything ||
+        restore_defaults ||
         (
             nitro_steam_spam && 
             malicious_redirects && 
             image_spam && 
             link_spam && 
-            text_spam
+            text_spam &&
+            removal_action === "kick"
         );
 
     if (docs.exists) {
         if (enableAll) {
             await ref.delete();
-            return "All rules enabled";
+            return `Restored default bot settings:
+- nitro_steam_spam: true
+- malicious_redirects: true
+- image_spam: true
+- link_spam: true
+- text_spam: true
+- removal_action: kick`;
         } else {
             await ref.update({
                 userId,
@@ -432,19 +451,27 @@ async function registerBehaviorMonitor(
                 malicious_redirects,
                 image_spam,
                 link_spam,
-                text_spam
+                text_spam,
+                removal_action
             });
             return `The bot will abide by these rules now for this server:
 - nitro_steam_spam: ${nitro_steam_spam}
 - malicious_redirects: ${malicious_redirects}
 - image_spam: ${image_spam}
 - link_spam: ${link_spam}
-- text_spam: ${text_spam}`;
+- text_spam: ${text_spam}
+- removal_action: ${removal_action}`;
         }
     } else {
         if (enableAll) {
             // do nothing
-            return "All rules enabled";
+            return `Restored default bot settings:
+- nitro_steam_spam: true
+- malicious_redirects: true
+- image_spam: true
+- link_spam: true
+- text_spam: true
+- removal_action: kick`;
         } else {
             await ref.set({
                 userId,
@@ -455,6 +482,7 @@ async function registerBehaviorMonitor(
                 image_spam,
                 link_spam,
                 text_spam,
+                removal_action,
                 createdOn: Firestore.Timestamp.now()
             });
             return `The bot will abide by these rules now for this server:
@@ -462,7 +490,8 @@ async function registerBehaviorMonitor(
 - malicious_redirects: ${malicious_redirects}
 - image_spam: ${image_spam}
 - link_spam: ${link_spam}
-- text_spam: ${text_spam}`;
+- text_spam: ${text_spam}
+- removal_action: ${removal_action}`;
         }
     }
 }
@@ -498,6 +527,8 @@ function getLogChannel(guildId) {
 const callbacks = {
     warning: [],
     kick: [],
+    timeout: [],
+    fail: [],
     ban: [],
     graylist: [],
     blacklist: [],
@@ -520,6 +551,12 @@ async function monitor(type, callback) {
             break;
         case "kick":
             callbacks.kick.push(callback);
+            break;
+        case "timeout":
+            callbacks.timeout.push(callback);
+            break;
+        case "fail":
+            callbacks.fail.push(callback);
             break;
         case "ban":
             callbacks.ban.push(callback);
@@ -563,6 +600,12 @@ function setupObservers() {
 
     if (!observers.kick && callbacks.kick.length > 0) 
         observers.kick = configureObserver("kick", callbacks.kick);
+
+    if (!observers.timeout && callbacks.timeout.length > 0) 
+        observers.timeout = configureObserver("timeout", callbacks.timeout);
+
+    if (!observers.fail && callbacks.fail.length > 0) 
+        observers.fail = configureObserver("fail", callbacks.fail);
 
     if (!observers.ban && callbacks.ban.length > 0) 
         observers.ban = configureObserver("ban", callbacks.ban);
@@ -620,6 +663,8 @@ function configureObserver(type, callbackGroup) {
 const userTables = [
     "ban",
     "kick",
+    "timeout",
+    "fail",
     "warning"
 ];
 
@@ -661,12 +706,12 @@ async function purgeRecords() {
         const sixMonthsAgo = new Date(Date.now() - 6 * 31 * 24 * 60 * 60 * 1000);
     
         for (let table of userTables) {
-            let ref = await db.collection(table)
+            let ref = db.collection(table)
                 .where("timestamp", "<", Timestamp.fromDate(sixMonthsAgo));
             const { docs } = await ref.get();
     
             // save the count of records you're about to delete
-            let saveRef = await db.collection("history").doc(table);
+            let saveRef = db.collection("history").doc(table);
             await saveRef.update({
                 count: FieldValue.increment(docs.length)
             });
@@ -697,7 +742,7 @@ async function totalActions() {
         total += docs.size;
     }
 
-    let historyRef = await db.collection("history");
+    let historyRef = db.collection("history");
     let historyDocs = await historyRef.get();
     historyDocs.forEach(item => total += item.data().count);
 
@@ -716,10 +761,11 @@ function background() {
 
 
 module.exports = {
-    shouldBanUser,
+    shouldActionUser,
     recordWarning,
     recordBan,
     recordKick,
+    recordTimeout,
     recordFail,
     recordError,
     addUrlToBlacklist,

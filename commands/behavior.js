@@ -8,8 +8,8 @@ module.exports = {
 		.setName('behavior')
 		.setDescription("Override the bot's default behavior. All rules are enabled unless explicitly disabled.")
         .addBooleanOption(option =>
-            option.setName("enable_everything")
-                .setDescription("Allow all rules. True ignores all other settings.")
+            option.setName("restore_defaults")
+                .setDescription("Restore the bot to the default settings. True ignores all other settings.")
                 .setRequired(false))
         .addBooleanOption(option => 
             option.setName("nitro_steam_spam")
@@ -31,6 +31,15 @@ module.exports = {
             option.setName("text_spam")
                 .setDescription("Enable or disable text spam detection across channels. Uses text similarity detection.")
                 .setRequired(false))
+        .addStringOption(option => 
+            option.setName("removal_action")
+                .setDescription("Action to take when a user exhibits scam/spam behavior.")
+                .addChoices([
+                    { name: "Kick (default)", value: "kick" },
+                    { name: "Timeout ", value: "timeout" },
+                    { name: "Ban", value: "ban" }
+                ])
+                .setRequired(false))
         .setDefaultMemberPermissions(PermissionsBitField.Flags.ManageChannels),
     /**
      * 
@@ -41,12 +50,13 @@ module.exports = {
         try {
             const userId = interaction.user.id;
             const guildId = interaction.guild.id;
-            const enable_everything = interaction.options.getBoolean("enable_everything") ?? false;
+            const restore_defaults = interaction.options.getBoolean("restore_defaults") ?? false;
             const nitro_steam_spam = interaction.options.getBoolean("nitro_steam_spam") ?? true;
             const malicious_redirects = interaction.options.getBoolean("malicious_redirects") ?? true;
             const image_spam = interaction.options.getBoolean("image_spam") ?? true;
             const link_spam = interaction.options.getBoolean("link_spam") ?? true;
             const text_spam = interaction.options.getBoolean("text_spam") ?? true;
+            const removal_action = interaction.options.getString("removal_action");
 
             const hasManageChannel = interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels);
 
@@ -55,15 +65,27 @@ module.exports = {
                 return;
             }
 
+            if (removal_action === "kick" && interaction.guild.members.me.permissions.has(PermissionsBitField.Flags.KickMembers) !== true) {
+                await interaction.reply({ content: "I need the KICK_MEMBERS permission to function. Please grant that permission and then try this command again.", ephemeral: true });
+                return;
+            } else if (removal_action === "timeout" && interaction.guild.members.me.permissions.has(PermissionsBitField.Flags.ModerateMembers) !== true) {
+                await interaction.reply({ content: "I need the TIMEOUT_MEMBERS permission to function. Please grant that permission and then try this command again.", ephemeral: true });
+                return;
+            } else if (removal_action === "ban" && interaction.guild.members.me.permissions.has(PermissionsBitField.Flags.BanMembers) !== true) {
+                await interaction.reply({ content: "I need the BAN_MEMBERS permission to function. Please grant that permission and then try this command again.", ephemeral: true });
+                return;
+            }
+
             const ruleSettings = await registerBehaviorMonitor(
                 userId,
                 guildId,
-                enable_everything,
+                restore_defaults,
                 nitro_steam_spam,
                 malicious_redirects,
                 image_spam,
                 link_spam,
-                text_spam);
+                text_spam,
+                removal_action ?? "kick");
 
             await logActivity(
                 interaction.client, 

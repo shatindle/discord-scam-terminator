@@ -97,7 +97,7 @@ async function monitor(message, ignoreSusText) {
         }
 
         // if the message contains a URL, log it.  If the same message is being spammed, remove it
-        // if the user keeps spamming, kick the user, and back-delete all prior messages
+        // if the user keeps spamming, remove the user, and back-delete all prior messages
 
         if (urlsFound.length > 0 || isTextSus) {
             if (!isTextSus) {
@@ -170,10 +170,10 @@ async function monitor(message, ignoreSusText) {
                     await cleanup(client, priorMessages, guildId, userId);
                     return true;
                 } else {
-                    // delete all and kick
+                    // delete all and remove
                     log.messages[log.messages.length - 1].deleted = true;
                     const priorMessages = log.messages.filter(m => !m.deleted);
-                    await spamUrlDetected(message, guildId, userId, username, reason, "kick");
+                    await spamUrlDetected(message, guildId, userId, username, reason, "remove");
                     await cleanup(client, priorMessages, guildId, userId);
                     return true;
                 }
@@ -188,10 +188,10 @@ async function monitor(message, ignoreSusText) {
                     await spamUrlDetected(message, guildId, userId, username, reason, "warn");
                     return true;
                 } else {
-                    // delete all and kick
+                    // delete all and remove
                     log.messages[log.messages.length - 1].deleted = true;
                     const priorMessages = log.messages.filter(m => !m.deleted);
-                    await spamUrlDetected(message, guildId, userId, username, reason, "kick");
+                    await spamUrlDetected(message, guildId, userId, username, reason, "remove");
                     await cleanup(client, priorMessages, guildId, userId);
                     return true;
                 }

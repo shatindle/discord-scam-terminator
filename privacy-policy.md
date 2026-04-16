@@ -13,7 +13,7 @@ Use of the Application is considered an agreement to the terms of this Policy.
 
 Access to Data is only permitted to the Application's developers, and only in the scope required for the development, testing, and implementation of features for Application. Data is not sold, provided to, or shared with any third party, except where required by law or a Terms of Service agreement. You can view the data upon request from `shane#1353` on Discord.
 
-Warnings and kicks are recorded and summarized for the server owners on the [dashboard website](https://antiphish.info/) ("Website").  The Website will show moderators summaries of warnings and kicks issued on their servers.  Moderators do not have access to warning and kick information issued in servers they do not moderate.  The Application's developers may see the summaries across all servers for the purposes of debugging and tuning the Application.
+Actions (warnings, bans, timeouts, and kicks) are recorded and summarized for the server owners on the [dashboard website](https://antiphish.info/) ("Website").  The Website will show moderators summaries of actions issued on their servers.  Moderators do not have access to actions issued in servers they do not moderate.  The Application's developers may see the summaries across all servers for the purposes of debugging and tuning the Application.
 
 ## Storage of Data
 

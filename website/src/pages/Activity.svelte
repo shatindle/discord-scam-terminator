@@ -1,10 +1,10 @@
 <script>
 	import { onMount, afterUpdate, beforeUpdate, onDestroy } from 'svelte';
-    import { getWarnings, getKicks, getFails, getServers } from '../store/scamTerminatorApi';
+    import { getWarnings, getKicks, getFails, getTimeouts, getBans, getServers } from '../store/scamTerminatorApi';
     import SegmentedButton, { Segment } from '@smui/segmented-button';
     import { Label } from '@smui/common';
 
-    let xAxis, warningYAxis, kickYAxis, failYAxis, data, activityLineChart, activityLineChartElement, ownerChart, ownerChartElement, servers, warnings, kicks, fails;
+    let xAxis, warningYAxis, kickYAxis, failYAxis, banYAxis, timeoutYAxis, data, activityLineChart, activityLineChartElement, ownerChart, ownerChartElement, servers, warnings, kicks, fails, bans, timeouts;
 
     let selectedServer = "";
     let serverFilter = "";
@@ -21,6 +21,8 @@
     let includeWarnings = true;
     let includeKicks = true;
     let includeFails = true;
+    let includeTimeouts = true;
+    let includeBans = true;
 
     onMount(async () => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -36,6 +38,8 @@
         warnings = await getWarnings();
         kicks = await getKicks();
         fails = await getFails();
+        timeouts = await getTimeouts();
+        bans = await getBans();
         servers = await getServers();
 
         servers.forEach(server => {
@@ -43,15 +47,21 @@
             server.warnings = 0;
             server.kicks = 0;
             server.fails = 0;
+            server.bans = 0;
+            server.timeouts = 0;
 
             let warningCount = warnings.filter(item => item.guildId === server.id).length;
             let kickCount = kicks.filter(item => item.guildId === server.id).length;
             let failCount = fails.filter(item => item.guildId === server.id).length;
+            let banCount = bans.filter(item => item.guildId === server.id).length;
+            let timeoutCount = timeouts.filter(item => item.guildId === server.id).length;
 
-            server.count = warningCount + kickCount + failCount;
+            server.count = warningCount + kickCount + failCount + banCount + timeoutCount;
             server.warnings = warningCount;
             server.kicks = kickCount;
             server.fails = failCount;
+            server.bans = banCount;
+            server.timeouts = timeoutCount;
         });
 
         servers = servers.sort((a, b) => (a.count > b.count ? -1 : 1));
@@ -62,15 +72,21 @@
         let warningTemp = getY(warnings, selectedServer, groupSelected, xAxis);
         let kickTemp = getY(kicks, selectedServer, groupSelected, xAxis);
         let failTemp = getY(fails, selectedServer, groupSelected, xAxis);
+        let banTemp = getY(bans, selectedServer, groupSelected, xAxis);
+        let timeoutTemp = getY(timeouts, selectedServer, groupSelected, xAxis);
 
         warningYAxis = [];
         kickYAxis = [];
         failYAxis = [];
+        banYAxis = [];
+        timeoutYAxis = [];
 
         for (let xDate of xAxis) {
             warningYAxis.push(warningTemp[xDate] ?? 0);
             kickYAxis.push(kickTemp[xDate] ?? 0);
             failYAxis.push(failTemp[xDate] ?? 0);
+            banYAxis.push(banTemp[xDate] ?? 0);
+            timeoutYAxis.push(timeoutTemp[xDate] ?? 0);
         }
 
         const datasetstoshow = [];
@@ -92,6 +108,24 @@
                 chartType: 'line'
             });
             colors.push('#dc3545');
+        }
+
+        if (includeBans) {
+            datasetstoshow.push({
+                name: "Bans",
+                values: banYAxis,
+                chartType: 'line'
+            });
+            colors.push('#1d1f7a');
+        }
+
+        if (includeTimeouts) {
+            datasetstoshow.push({
+                name: "Timeouts",
+                values: timeoutYAxis,
+                chartType: 'line'
+            });
+            colors.push('#55d0d9');
         }
 
         if (includeFails) {
@@ -234,15 +268,21 @@
         let warningTemp = getY(warnings, selectedServer, groupSelected, xAxis);
         let kickTemp = getY(kicks, selectedServer, groupSelected, xAxis);
         let failTemp = getY(fails, selectedServer, groupSelected, xAxis);
+        let banTemp = getY(bans, selectedServer, groupSelected, xAxis);
+        let timeoutTemp = getY(timeouts, selectedServer, groupSelected, xAxis);
 
         warningYAxis = [];
         kickYAxis = [];
         failYAxis = [];
+        banYAxis = [];
+        timeoutYAxis = [];
 
         for (let xDate of xAxis) {
             warningYAxis.push(warningTemp[xDate] ?? 0);
             kickYAxis.push(kickTemp[xDate] ?? 0);
             failYAxis.push(failTemp[xDate] ?? 0);
+            banYAxis.push(banTemp[xDate] ?? 0);
+            timeoutYAxis.push(timeoutTemp[xDate] ?? 0);
         }
 
         const datasetstoshow = [];
@@ -264,6 +304,24 @@
                 chartType: 'line'
             });
             colors.push('#dc3545');
+        }
+
+        if (includeBans) {
+            datasetstoshow.push({
+                name: "Bans",
+                values: banYAxis,
+                chartType: 'line'
+            });
+            colors.push('#1d1f7a');
+        }
+
+        if (includeTimeouts) {
+            datasetstoshow.push({
+                name: "Timeouts",
+                values: timeoutYAxis,
+                chartType: 'line'
+            });
+            colors.push('#55d0d9');
         }
 
         if (includeFails) {
@@ -394,7 +452,10 @@
                         <div class="usercount">Users: {server.members}</div>
                         <div class="incidents">Total Scams: {server.count}</div>
                         <div class="incidents">Warnings: {server.warnings}</div>
-                        <div class="incidents">Kicks: {server.kicks} success, {server.fails} failed</div>
+                        <div class="incidents">Kicks: {server.kicks}</div>
+                        <div class="incidents">Timeouts: {server.timeouts}</div>
+                        <div class="incidents">Bans: {server.bans}</div>
+                        <div class="incidents">Fails: {server.fails}</div>
                     </div>
                 </div>
             </div>

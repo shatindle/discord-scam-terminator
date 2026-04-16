@@ -91,7 +91,7 @@ async function monitor(message) {
         const isTextLong = candidateForComparison(message.content);
 
         // if the message contains a URL, log it.  If the same message is being spammed, remove it
-        // if the user keeps spamming, kick the user, and back-delete all prior messages
+        // if the user keeps spamming, remove the user, and back-delete all prior messages
 
         if (isTextLong) {
             // get a key for the user + message + guild
@@ -139,10 +139,10 @@ async function monitor(message) {
                     await spamUrlDetected(message, guildId, userId, username, reason, "warn");
                     return true;
                 } else {
-                    // delete all and kick
+                    // delete all and remove
                     log.messages[log.messages.length - 1].deleted = true;
                     const priorMessages = log.messages.filter(m => !m.deleted);
-                    await spamUrlDetected(message, guildId, userId, username, reason, "kick");
+                    await spamUrlDetected(message, guildId, userId, username, reason, "remove");
                     await cleanup(client, priorMessages, guildId, userId);
                     return true;
                 }
