@@ -36,12 +36,50 @@ The bot needs the following permissions to function:
 
 Additionally, in order to action users (kick, ban, or time out, your choice on what you choose to grant), the bot must have a role above all users you wish to action.  **NOTE: the bot will only action users that do not have the Manage Messages permission in the server.**  Moderators should not be actioned by the bot.
 
-The bot was originally deployed without slash commands.  Some slash commands have been added such as the log command.  To enable it, you may need to re-invite the bot to update the scopes.  You should not need to kick the bot.
+The bot includes two slash commands to make diagnosing and controlling the bot's behavior easier.  
 
-To log all malicious detections, do 
+## Bot activity logging to a channel
+The bot has the ability to log actions it takes to a channel of your choosing. To enable the log command, you'll want to ensure the bot has the following permissions on the channel you wish to log to:
+- Read Messages/View Channels
+- Send Messages
+- Send Embeds
+
+To log all malicious detections, spam, errors, and messages that may be suspicious, do 
 ```
 /log to:CHANNEL
 ```
+
+Where "CHANNEL" is the channel you wish the bot to log actions to.
+
+## Bot behavior controls
+You have the control to enable and disable rulesets for your server as well as decide if the bot should kick, timeout, or ban a user found to be spammy (usually after a warning unless they're spamming 4 images across channels) or malicious.
+
+By default, the bot will have the following rules enabled:
+- **nitro_steam_spam**: Common Nitro/Steam phishing attempts involving both a link and suspicious text.
+- **malicious_redirects**: Contains URLs that upon inspection include terms commonly used to impersonate a handful of sites such as Discord or Steam logins.
+- **image_spam**: The user is spamming the same image(s) across channels (often containing requests that the user take some compromising action).
+- **link_spam**: The user is spamming links across channels. These often include Discord links that are intended to compromise the user's account by asking the user to "verify" their account in an external website.
+- **text_spam**: The user is spamming *approximately* the same text across channels. This is often to done to request the user engage in a compromising financial transaction via DM or a 3rd party service.
+- **removal_action** = kick: The default action the bot will take to remove a user from the community once they've been determined to be compromised or malicious.
+
+You can override any of these by running
+```
+/behavior [ruleset:False] [...]
+```
+
+To restore default functionality to the bot, simply run
+```
+/behavior restore_defaults:True
+```
+
+The supported removal_actions are:
+- Kick (default)
+- Timeout (3 days)
+- Ban
+
+I personally do not recommend ban as I have seen users recover their accounts in the past. It isn't super common, but it's common enough that ban instead of kick creates a burden on the mod team in the future to unban the user.
+
+Timeout is usually an acceptable option. The upside is it gives the moderation team time to evaluate the bot's behavior further before full removal from the server. The downside (and reason the bot defaults to kick) is if the user really is compromised, compromised accounts could move to DMs to users instead of messages in the server until the moderation team chooses what further action to take.
 
 ## System requirements
 
