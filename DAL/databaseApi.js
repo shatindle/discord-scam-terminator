@@ -69,7 +69,7 @@ async function recordWarning(guildId, userId, username, reason) {
  * @param {String} reason 
  */
 async function recordBan(guildId, userId, username, reason) {
-    await writeLog("ban", guildId, userId, username, reason);
+    await writeLog("real_ban", guildId, userId, username, reason);
 }
 
 /**
@@ -102,7 +102,7 @@ async function recordTimeout(guildId, userId, username, reason) {
  * @param {String} reason 
  */
 async function recordFail(guildId, userId, username, reason) {
-    await writeLog("fail", guildId, userId, username, reason);
+    await writeLog("ban", guildId, userId, username, reason); // actually fail, but can't change it
 }
 
 /**
@@ -605,10 +605,10 @@ function setupObservers() {
         observers.timeout = configureObserver("timeout", callbacks.timeout);
 
     if (!observers.fail && callbacks.fail.length > 0) 
-        observers.fail = configureObserver("fail", callbacks.fail);
+        observers.fail = configureObserver("ban", callbacks.fail);
 
     if (!observers.ban && callbacks.ban.length > 0) 
-        observers.ban = configureObserver("ban", callbacks.ban);
+        observers.ban = configureObserver("real_ban", callbacks.ban);
         
     if (!observers.whitelist && callbacks.whitelist.length > 0)
         observers.whitelist = configureObserver("whitelist", callbacks.whitelist);
@@ -661,10 +661,10 @@ function configureObserver(type, callbackGroup) {
 }
 
 const userTables = [
-    "ban",
+    "ban", // actually fails
     "kick",
     "timeout",
-    "fail",
+    "real_ban",
     "warning"
 ];
 
