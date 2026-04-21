@@ -145,11 +145,7 @@ function containsProfileRequest(message, removeUrl = true) {
         try {
             const urls = extractUrlsFromContent(message, false);
     
-            // no URLs means this isn't a scam link
-            if (urls.length === 0)
-                return 0;
-    
-            urls.forEach(url => message = message.replace(url, " "));
+            urls.forEach(url => message = message.replace(url, " [URL] "));
 
             message = message.replace(":", " ");
             message = message.replace(/\s\s+/g, " ");
@@ -161,7 +157,7 @@ function containsProfileRequest(message, removeUrl = true) {
     let indicators = 0;
 
     // only analyze very short messages for now
-    if (wordcount <= 16)
+    if (wordcount > 16)
         return indicators;
 
     let words = message.match(/\b(\w+)\b/g);
