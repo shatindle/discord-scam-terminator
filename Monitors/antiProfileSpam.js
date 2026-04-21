@@ -92,6 +92,8 @@ async function monitor(message) {
         const username = message.member.user.username + "#" + message.member.user.discriminator;
         const isProfileRequest = containsProfileRequest(message.content, true) > 1;
 
+        if (message.guildId === "951299886115090493") console.log(`isProfileRequest: ${isProfileRequest}`);
+
         // if the message contains a URL, log it.  If the same message is being spammed, remove it
         // if the user keeps spamming, remove the user, and back-delete all prior messages
 
