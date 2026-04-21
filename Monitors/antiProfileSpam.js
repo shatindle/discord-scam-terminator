@@ -6,10 +6,6 @@ const { textTooSimilar, candidateForComparison } = require("../DAL/textCompariso
 
 const reason = "Profile spam";
 
-function isCheckProfileRequest(message) {
-    
-}
-
 const messageLogs = {};
 const time = 1000 * 40;
 
