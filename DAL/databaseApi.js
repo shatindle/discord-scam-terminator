@@ -417,6 +417,7 @@ async function registerBehaviorMonitor(
         image_spam,
         link_spam,
         text_spam,
+        profile_spam,
         removal_action
     ) {
     const ref = db.collection(BEHAVIOR_COLLECTION).doc(guildId);
@@ -430,6 +431,7 @@ async function registerBehaviorMonitor(
             image_spam && 
             link_spam && 
             text_spam &&
+            profile_spam && 
             removal_action === "kick"
         );
 
@@ -442,6 +444,7 @@ async function registerBehaviorMonitor(
 - image_spam: true
 - link_spam: true
 - text_spam: true
+- profile_spam: true
 - removal_action: kick`;
         } else {
             await ref.update({
@@ -452,6 +455,7 @@ async function registerBehaviorMonitor(
                 image_spam,
                 link_spam,
                 text_spam,
+                profile_spam,
                 removal_action
             });
             return `The bot will abide by these rules now for this server:
@@ -460,6 +464,7 @@ async function registerBehaviorMonitor(
 - image_spam: ${image_spam}
 - link_spam: ${link_spam}
 - text_spam: ${text_spam}
+- profile_spam: ${profile_spam}
 - removal_action: ${removal_action}`;
         }
     } else {
@@ -471,6 +476,7 @@ async function registerBehaviorMonitor(
 - image_spam: true
 - link_spam: true
 - text_spam: true
+- profile_spam: true
 - removal_action: kick`;
         } else {
             await ref.set({
@@ -482,6 +488,7 @@ async function registerBehaviorMonitor(
                 image_spam,
                 link_spam,
                 text_spam,
+                profile_spam,
                 removal_action,
                 createdOn: Firestore.Timestamp.now()
             });
@@ -491,6 +498,7 @@ async function registerBehaviorMonitor(
 - image_spam: ${image_spam}
 - link_spam: ${link_spam}
 - text_spam: ${text_spam}
+- profile_spam: ${profile_spam}
 - removal_action: ${removal_action}`;
         }
     }

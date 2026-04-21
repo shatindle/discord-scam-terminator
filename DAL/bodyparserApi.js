@@ -138,6 +138,62 @@ function countWords(str) {
  * @param {Boolean} removeUrl 
  * @returns {Number}
  */
+function containsProfileRequest(message, removeUrl = true) {
+    message = cleanMessage(message);
+
+    if (removeUrl) {
+        try {
+            const urls = extractUrlsFromContent(message, false);
+    
+            // no URLs means this isn't a scam link
+            if (urls.length === 0)
+                return 0;
+    
+            urls.forEach(url => message = message.replace(url, " "));
+
+            message = message.replace(":", " ");
+            message = message.replace(/\s\s+/g, " ");
+        } catch { /* we don't really care if this fails */}
+    }
+
+    let wordcount = countWords(message);
+
+    let indicators = 0;
+
+    // only analyze very short messages for now
+    if (wordcount > 16)
+        return indicators;
+
+    let words = message.match(/\b(\w+)\b/g);
+    words = [...new Set(words)];
+
+    if (words && words.length)
+    for (let word of words) {
+        if (word === "check")
+            indicators += 1;
+
+        if (word === "look")
+            indicators += 1;
+
+        if (word === "bio")
+            indicators += 1;
+
+        if (word === "profile")
+            indicators += 1;
+
+        if (word === "about")
+            indicators += 1;
+    }
+
+    return indicators;
+}
+
+/**
+ * 
+ * @param {String} message 
+ * @param {Boolean} removeUrl 
+ * @returns {Number}
+ */
 function containsKeyIndicators(message, removeUrl = true) {
     message = cleanMessage(message);
 
@@ -402,6 +458,7 @@ async function isRedlineStealer(message, urls, user, server) {
 module.exports = {
     extractUrlsFromContent,
     containsKeyIndicators,
+    containsProfileRequest,
     cleanMessage,
     MINIMUM_INDICATORS: 1,
 

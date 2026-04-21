@@ -18,6 +18,7 @@ const nitroSteamScam = require("./Monitors/nitroSteamScam");
 const antiLinkSpam = require("./Monitors/antiLinkSpam");
 const antiImageSpam = require("./Monitors/antiImageSpam");
 const antiTextSpam = require("./Monitors/antiTextSpam");
+const antiProfileSpam = require("./Monitors/antiProfileSpam");
 const maliciousRedirect = require("./Monitors/maliciousRedirect");
 const publicIp = (...args) => import('public-ip').then(({publicIpv4}) => publicIpv4(...args));
 
@@ -100,6 +101,10 @@ client.on('messageCreate', async (message) => {
 
     if (behaviors.defaults || behaviors.text_spam)
         if (await antiTextSpam(message)) // check this first because it's the fastest check
+            return; // it was addressed here
+
+    if (behaviors.defaults || behaviors.profile_spam)
+        if (await antiProfileSpam(message))
             return; // it was addressed here
 
     if (behaviors.defaults || behaviors.link_spam)

@@ -31,6 +31,10 @@ module.exports = {
             option.setName("text_spam")
                 .setDescription("Enable or disable text spam detection across channels. Uses text similarity detection.")
                 .setRequired(false))
+        .addBooleanOption(option => 
+            option.setName("profile_spam")
+                .setDescription("Enable or disable profile spam detection across channels. Uses text similarity detection.")
+                .setRequired(false))
         .addStringOption(option => 
             option.setName("removal_action")
                 .setDescription("Action to take when a user exhibits scam/spam behavior.")
@@ -56,6 +60,7 @@ module.exports = {
             const image_spam = interaction.options.getBoolean("image_spam") ?? true;
             const link_spam = interaction.options.getBoolean("link_spam") ?? true;
             const text_spam = interaction.options.getBoolean("text_spam") ?? true;
+            const profile_spam = interaction.options.getBoolean("profile_spam") ?? true;
             const removal_action = interaction.options.getString("removal_action");
 
             const hasManageChannel = interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels);
@@ -85,6 +90,7 @@ module.exports = {
                 image_spam,
                 link_spam,
                 text_spam,
+                profile_spam,
                 removal_action ?? "kick");
 
             await logActivity(

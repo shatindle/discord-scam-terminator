@@ -20,11 +20,29 @@ function behaviorChanges(changes, list) {
 
 monitor("behavior", async (changes) => behaviorChanges(changes, behavior));
 
+const allPossibleKeys = [
+    "image_spam",
+    "link_spam",
+    "malicious_redirects",
+    "nitro_steam_spam",
+    "text_spam",
+    "profile_spam"
+];
+
 function lookupGuildBehavior(guildId) {
     const behaviors = behavior[guildId] ?? {
         defaults: true,
         removal_action: "kick"
     };
+
+    // hydrate all keys if a new key was added after the setup was made
+    if (!behaviors.defaults) {
+        const allKeys = Object.keys(behaviors);
+
+        for (const key of allPossibleKeys) {
+            if (allKeys.indexOf(key) === -1) behaviors[key] = true;
+        }
+    }
 
     return behaviors;
 }

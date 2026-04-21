@@ -61,10 +61,13 @@ function textSimilarity(s1, s2) {
  * @description Determines if text is too similar and should be considered the same
  * @param {string} s1 
  * @param {string} s2 
+ * @param {number | undefined} thresholdOverride
  * @returns {boolean}
  */
-function textTooSimilar(s1, s2) {
+function textTooSimilar(s1, s2, thresholdOverride) {
     const result = textSimilarity(s1, s2);
+
+    if (thresholdOverride) return result > thresholdOverride;
 
     return result > MINIMUM_THRESHOLD;
 }
