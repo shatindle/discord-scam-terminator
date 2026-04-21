@@ -99,9 +99,6 @@ client.on('interactionCreate', async interaction => {
 client.on('messageCreate', async (message) => {
     const behaviors = lookupGuildBehavior(message.guildId);
 
-    if (message.guildId === "951299886115090493")
-        console.log(JSON.stringify(behaviors));
-
     if (behaviors.defaults || behaviors.text_spam)
         if (await antiTextSpam(message)) // check this first because it's the fastest check
             return; // it was addressed here

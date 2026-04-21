@@ -161,7 +161,7 @@ function containsProfileRequest(message, removeUrl = true) {
     let indicators = 0;
 
     // only analyze very short messages for now
-    if (wordcount > 16)
+    if (wordcount <= 16)
         return indicators;
 
     let words = message.match(/\b(\w+)\b/g);
