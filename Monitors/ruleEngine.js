@@ -141,7 +141,7 @@ async function monitor(message) {
                 if (weight > 0.5) {
                     console.log(`Weight: ${weight}`);
                 }
-                
+
                 if (rules.note && weight >= rules.note) {
                     await forwardMessage(
                         client, 
@@ -159,6 +159,7 @@ async function monitor(message) {
 
         return false;
     } catch (err) {
+        console.log(`ERROR: ${err}`);
         // something went wrong when assessing the message content
         try {
             await recordError(guildId, userId, err.toString(), reason);
