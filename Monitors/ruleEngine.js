@@ -53,6 +53,7 @@ async function monitor(message) {
             const hasUrls = urlsFound.length > 0;
             let hasNonDiscordUrls = false;
             let hasDiscordUrls = false;
+            const containsPing = message.mentions.users.size > 0;
 
             if (hasUrls) {
                 // check if the link is an invite code.  If it is, get the server ID
