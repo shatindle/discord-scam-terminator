@@ -1,6 +1,6 @@
 const { Message, PermissionsBitField, Client } = require("discord.js");
 const { cleanMessage, extractUrlsFromContent } = require("../DAL/bodyparserApi");
-const { recordError } = require("../DAL/databaseApi");
+const { recordError, recordUnusualBehavior } = require("../DAL/databaseApi");
 const { getServerIdFromInvite } = require("../DAL/urlTesterApi");
 const { textTooSimilar } = require("../DAL/textComparisonTools");
 const { forwardMessage } = require("../DAL/logApi");
@@ -95,7 +95,6 @@ async function monitor(message) {
 
                                 if (tooSimilar) {
                                     weight += rule.weight;
-                                    console.log(JSON.stringify(rule));
                                     continue;
                                 }
                             }
@@ -115,35 +114,28 @@ async function monitor(message) {
 
                         if (flagCount >= rule.min) {
                             weight += rule.weight;
-                            console.log(JSON.stringify(rule));
                         }
                     } else if (rule.containsPing) {
                         // has ping
                         if (containsPing) {
                             weight += rule.weight;
-                            console.log(JSON.stringify(rule));
                         }
                     } else if (rule.hasDiscordLink) {
                         // has discord link
                         if (hasDiscordUrls) {
                             weight += rule.weight;
-                            console.log(JSON.stringify(rule));
                         }
                     } else if (rule.hasLink) {
                         // has link
                         if (hasNonDiscordUrls) {
                             weight += rule.weight;
-                            console.log(JSON.stringify(rule));
                         }
                     }
                 }
 
                 // do something with weight
-                if (weight > 0.5) {
-                    console.log(`Weight: ${weight}`);
-                }
-
                 if (rules.note && weight >= rules.note) {
+                    await recordUnusualBehavior(guildId, userId, username, message.content);
                     await forwardMessage(
                         client, 
                         guildId, 
@@ -152,7 +144,7 @@ async function monitor(message) {
                         rules.supplement ? 
                             rules.supplement
                                 .replace("{user}", `<@${userId}>`)
-                                .replace("{score}", weight) : 
+                                .replace("{score}", weight.toFixed(2)) : 
                             reason);
                 }
             }

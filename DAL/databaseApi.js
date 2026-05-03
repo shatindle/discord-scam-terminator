@@ -101,6 +101,17 @@ async function recordTimeout(guildId, userId, username, reason) {
  * @param {String} username 
  * @param {String} reason 
  */
+async function recordUnusualBehavior(guildId, userId, username, reason) {
+    await writeLog("unusual_behavior", guildId, userId, username, reason);
+}
+
+/**
+ * 
+ * @param {String} guildId 
+ * @param {String} userId 
+ * @param {String} username 
+ * @param {String} reason 
+ */
 async function recordFail(guildId, userId, username, reason) {
     await writeLog("ban", guildId, userId, username, reason); // actually fail, but can't change it
 }
@@ -774,6 +785,7 @@ module.exports = {
     recordBan,
     recordKick,
     recordTimeout,
+    recordUnusualBehavior,
     recordFail,
     recordError,
     addUrlToBlacklist,
