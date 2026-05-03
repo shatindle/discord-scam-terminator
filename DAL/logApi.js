@@ -6,11 +6,13 @@ const { getLogChannel } = require("../DAL/databaseApi");
  * @param {Client} client 
  * @param {string} guildId 
  * @param {Message} message 
+ * @param {string | undefined} override
+ * @param {string | undefined} supplement
  * @returns 
  */
-async function forwardMessage(client, guildId, message) {
+async function forwardMessage(client, guildId, message, override = undefined, supplement = undefined) {
     try {
-        const logChannel = getLogChannel(guildId);
+        const logChannel = override ?? getLogChannel(guildId);
 
         if (!logChannel)
             return true;
@@ -19,6 +21,20 @@ async function forwardMessage(client, guildId, message) {
 
         if (!channel || !channel.send)
             channel = await client.channels.fetch(logChannel);
+
+        if (supplement) {
+            try {
+                const supplementaryMessage = new EmbedBuilder()
+                    .setColor("#E03EC7")
+                    .setTitle("Unusual behavior")
+                    .setDescription(supplement)
+                    .setTimestamp();
+
+                await channel.send({ embeds: [supplementaryMessage] });
+            } catch (err) {
+                console.log(`Error adding supplementary message: ${err}`);
+            }
+        }
 
         await message.forward(channel);
 

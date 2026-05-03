@@ -118,6 +118,7 @@ function cleanMessage(message) {
     message = remove(message);
     message = message.replace(/\n/g, " ");
     message = message.replace(/\s\s+/g, " ");
+    message = message.toLowerCase();
 
     return message;
 }

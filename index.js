@@ -20,6 +20,7 @@ const antiImageSpam = require("./Monitors/antiImageSpam");
 const antiTextSpam = require("./Monitors/antiTextSpam");
 const antiProfileSpam = require("./Monitors/antiProfileSpam");
 const maliciousRedirect = require("./Monitors/maliciousRedirect");
+const advancedRules = require("./Monitors/ruleEngine");
 const publicIp = (...args) => import('public-ip').then(({publicIpv4}) => publicIpv4(...args));
 
 const client = new Client({ 
@@ -98,6 +99,9 @@ client.on('interactionCreate', async interaction => {
 
 client.on('messageCreate', async (message) => {
     const behaviors = lookupGuildBehavior(message.guildId);
+
+    if (await advancedRules(message)) // highly experimental 1 message detector
+        return; // it was addressed here
 
     if (behaviors.defaults || behaviors.text_spam)
         if (await antiTextSpam(message)) // check this first because it's the fastest check
