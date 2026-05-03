@@ -138,6 +138,10 @@ async function monitor(message) {
                 }
 
                 // do something with weight
+                if (weight > 0.5) {
+                    console.log(`Weight: ${weight}`);
+                }
+                
                 if (rules.note && weight >= rules.note) {
                     await forwardMessage(
                         client, 
