@@ -100,8 +100,9 @@ client.on('interactionCreate', async interaction => {
 client.on('messageCreate', async (message) => {
     const behaviors = lookupGuildBehavior(message.guildId);
 
-    if (await advancedRules(message)) // highly experimental 1 message detector
-        return; // it was addressed here
+    // disabling for now due to performance issues
+    // if (await advancedRules(message)) // highly experimental 1 message detector
+    //     return; // it was addressed here
 
     if (behaviors.defaults || behaviors.text_spam)
         if (await antiTextSpam(message)) // check this first because it's the fastest check
