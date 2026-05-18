@@ -93,7 +93,7 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
                 // TODO: remove this test ID
                 if (softbanUserId === "787002863716663306" && message.member.bannable) {
                     await message.member.ban({ reason: `Soft ban: ${reason}`, deleteMessageSeconds: BAN_DELETE_MESSAGE_SECONDS });
-                    await message.guild.members.unban(softbanUserId);
+                    await message.guild.members.unban(softbanUserId, `Soft ban: ${reason}`);
 
                     softbanSuccess = true;
                 }
@@ -237,7 +237,7 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
                 // TODO: remove this test ID
                 if (softbanUserId === "787002863716663306" && message.member.bannable) {
                     await message.member.ban({ reason: `Soft ban: ${reason}`, deleteMessageSeconds: BAN_DELETE_MESSAGE_SECONDS });
-                    await message.guild.members.unban(softbanUserId);
+                    await message.guild.members.unban(softbanUserId, `Soft ban: ${reason}`);
 
                     softbanSuccess = true;
                 }
