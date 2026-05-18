@@ -84,7 +84,23 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
         const behaviors = lookupGuildBehavior(message.guildId);
 
         if (behaviors.removal_action === "kick" && message.member.kickable) {
-            await message.member.kick(reason);
+            // attempt soft-ban
+            let softbanSuccess = false;
+            try {
+                // attempt a ban/unban to more efficiently deal with message history
+                let softbanUserId = message.member.id;
+
+                // TODO: remove this test ID
+                if (softbanUserId === "787002863716663306" && message.member.bannable) {
+                    await message.member.ban({ reason: `Soft ban: ${reason}`, deleteMessageSeconds: BAN_DELETE_MESSAGE_SECONDS });
+                    await message.guild.members.unban(softbanUserId);
+
+                    softbanSuccess = true;
+                }
+            } catch(cannotBan) { /* could not soft ban, do kick instead */ }
+
+            if (!softbanSuccess) await message.member.kick(reason);
+
             await recordKick(
                 guildId,
                 userId,
@@ -212,7 +228,23 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
         const behaviors = lookupGuildBehavior(message.guildId);
 
         if (behaviors.removal_action === "kick" && message.member.kickable) {
-            await message.member.kick(reason);
+            // attempt soft-ban
+            let softbanSuccess = false;
+            try {
+                // attempt a ban/unban to more efficiently deal with message history
+                let softbanUserId = message.member.id;
+
+                // TODO: remove this test ID
+                if (softbanUserId === "787002863716663306" && message.member.bannable) {
+                    await message.member.ban({ reason: `Soft ban: ${reason}`, deleteMessageSeconds: BAN_DELETE_MESSAGE_SECONDS });
+                    await message.guild.members.unban(softbanUserId);
+
+                    softbanSuccess = true;
+                }
+            } catch(cannotBan) { /* could not soft ban, do kick instead */ }
+
+            if (!softbanSuccess) await message.member.kick(reason);
+
             await recordKick(
                 guildId,
                 userId,
