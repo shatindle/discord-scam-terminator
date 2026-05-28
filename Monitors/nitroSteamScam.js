@@ -82,12 +82,14 @@ async function monitor(message) {
             }
         }
 
-        if (urlsFound.length === 0) {
-            // no URLs, look for key indicators
-            if (containsKeyIndicators(message.content, false) > MINIMUM_INDICATORS) {
-                await logInformation(message.client, guildId, userId, message.channelId, message.content, "Suspicious text", message.url);
-            }
-        }
+        // this check has effectively devolved to spam.  Don't send it anymore as it is no longer useful information.
+        // scams have evolved to where this check is no longer necessary
+        // if (urlsFound.length === 0) {
+        //     // no URLs, look for key indicators
+        //     if (containsKeyIndicators(message.content, false) > MINIMUM_INDICATORS) {
+        //         await logInformation(message.client, guildId, userId, message.channelId, message.content, "Suspicious text", message.url);
+        //     }
+        // }
 
         return messageRemoved;
     } catch (err) {
