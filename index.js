@@ -10,7 +10,7 @@ process.on('uncaughtExceptionMonitor', (err, origin) => {
     console.error("***QUITTING***");
 });
 
-const { Client, Collection, GatewayIntentBits, Partials, Guild } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, Partials, Guild, Events } = require('discord.js');
 const fs = require('fs');
 const { loadAllLogChannels, background } = require("./DAL/databaseApi");
 const { lookupGuildBehavior } = require("./DAL/behaviorApi");
@@ -53,7 +53,7 @@ for (const file of commandFiles) {
 	client.commands.set(command.data.name, command);
 }
 
-client.once('clientReady', async () => {
+client.once(Events.ClientReady, async () => {
     await loadAllLogChannels();
     background();
     
@@ -81,7 +81,7 @@ client.once('clientReady', async () => {
     console.log("ready!");
 });
 
-client.on('interactionCreate', async interaction => {
+client.on(Events.InteractionCreate, async interaction => {
 	if (!interaction.isCommand()) return;
 
 	const command = client.commands.get(interaction.commandName);
@@ -97,7 +97,7 @@ client.on('interactionCreate', async interaction => {
 });
 
 
-client.on('messageCreate', async (message) => {
+client.on(Events.MessageCreate, async (message) => {
     const behaviors = lookupGuildBehavior(message.guildId);
 
     // disabling for now due to performance issues
@@ -129,7 +129,7 @@ client.on('messageCreate', async (message) => {
             return; // it was addressed here
 });
 
-client.on('guildCreate', async (guild) => {
+client.on(Events.GuildCreate, async (guild) => {
     // check if this user is blocked by the bot
     try {
         if (blockedUsers.includes(guild.ownerId)) await guild.leave();
