@@ -100,9 +100,7 @@ const logError = async (client, guildId, userId, channelId, message = "", reason
         client,
         guildId, 
         `Server configuration error. Reason: ${reason}`,
-`**<@${userId}> sent this message in <#${channelId}>**:
-
-\`${message.replace("`", "")}\``,
+`**<@${userId}> sent a message we may or may not have been able to handle in <#${channelId}>** due to an error.`,
         ERROR_COLOR);
 
 const WARNING_COLOR = "#ffc107";
