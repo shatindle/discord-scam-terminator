@@ -44,12 +44,14 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
     const client = message.client;
     const channelId = message.channel.id;
 
-    // could be a malicious URL.  We need to delete the message.
-    if (message.deletable) {
-        await message.delete();
-    }
+    
 
     try {
+        // could be a malicious URL.  We need to delete the message.
+        if (message.deletable) {
+            await message.delete();
+        }
+
         const response = await message.channel.send(
             "Potentially dangerous URL or message pattern detected.  If this was in error, please let a Mod know.");
 
@@ -63,10 +65,8 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
             guildId,
             userId,
             channelId,
-            "*See forwarded message below.*",
+            "",
             `SEND_MESSAGE denied to the bot on <#${channelId}>. Unable to clean up spam behavior.`);
-
-        await forwardMessage(client, guildId, message);
 
         throw letErrorGoThrough;
     }
@@ -225,16 +225,16 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
     const channelId = message.channel.id;
 
     if (perform !== "no-action") {
-        // could be a malicious URL.  We need to delete the message.
-        if (message.deletable) {
-            if (reason === "Image spam") {
-                await forwardMessage(client, guildId, message);
+        try {
+            // could be a malicious URL.  We need to delete the message.
+            if (message.deletable) {
+                if (reason === "Image spam") {
+                    await forwardMessage(client, guildId, message);
+                }
+
+                await message.delete();
             }
 
-            await message.delete();
-        }
-
-        try {
             const response = await message.channel.send(
                 "Spam detected.  If this was in error, please let a Mod know.");
 
@@ -248,10 +248,8 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
                 guildId,
                 userId,
                 channelId,
-                "*See forwarded message below.*",
+                "",
                 `SEND_MESSAGE denied to the bot on <#${channelId}>. Unable to clean up spam behavior.`);
-
-            await forwardMessage(client, guildId, message);
 
             throw letErrorGoThrough;
         }
