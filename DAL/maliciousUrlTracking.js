@@ -1,7 +1,7 @@
 const { Message } = require("discord.js");
 const { lookupGuildBehavior } = require("./behaviorApi");
 const { shouldActionUser, recordKick, recordTimeout, recordBan, recordError, recordWarning, recordFail, recordContentReview } = require("./databaseApi");
-const { logWarning, logKick, logTimeout, logBan, forwardMessage } = require("./logApi");
+const { logWarning, logKick, logTimeout, logBan, logError, forwardMessage } = require("./logApi");
 const { getDomainCreationDate } = require("./domainLookup");
 const { getAllRedirects } = require("./redirectExtractor");
 const { extractHostname } = require("./urlTesterApi");
@@ -220,13 +220,28 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
             await message.delete();
         }
 
-        const response = await message.channel.send(
-            "Spam detected.  If this was in error, please let a Mod know.");
+        try {
+            const response = await message.channel.send(
+                "Spam detected.  If this was in error, please let a Mod know.");
 
-        setTimeout(async function() {
-            if (response.deletable)
-                await response.delete();
-        }, 5000);
+            setTimeout(async function() {
+                if (response.deletable)
+                    await response.delete();
+            }, 5000);
+        } catch (letErrorGoThrough) {
+            await logError(
+                client,
+                guildId,
+                userId,
+                channelId,
+                "*See forwarded message below.*",
+                `SEND_MESSAGE denied to the bot on <#${channelId}>. Unable to clean up spam behavior.`);
+
+            await forwardMessage(client, guildId, message);
+
+            throw letErrorGoThrough;
+        }
+        
     }
     
     let action = "no-action";

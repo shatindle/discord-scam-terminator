@@ -83,6 +83,28 @@ async function logActivity(client, guildId, action, activity, color = "#007bff",
     }
 }
 
+const ERROR_COLOR = "#ff00ff";
+
+/**
+ * 
+ * @param {Client} client 
+ * @param {String} guildId 
+ * @param {String} userId 
+ * @param {String} channelId 
+ * @param {String} message 
+ * @param {String} reason 
+ * @returns {Promise}
+ */
+const logError = async (client, guildId, userId, channelId, message = "", reason = "unknown") =>
+    await logActivity(
+        client,
+        guildId, 
+        `Server configuration error. Reason: ${reason}`,
+`**<@${userId}> sent this message in <#${channelId}>**:
+
+\`${message.replace("`", "")}\``,
+        ERROR_COLOR);
+
 const WARNING_COLOR = "#ffc107";
 
 /**
@@ -233,6 +255,7 @@ const logInformation = async (client, guildId, userId, channelId, message = "", 
 module.exports = {
     logActivity,
     logWarning,
+    logError,
     logKick,
     logTimeout,
     logBan,
