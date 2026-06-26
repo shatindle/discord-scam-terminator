@@ -49,13 +49,27 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
         await message.delete();
     }
 
-    const response = await message.channel.send(
-        "Potentially dangerous URL or message pattern detected.  If this was in error, please let a Mod know.");
+    try {
+        const response = await message.channel.send(
+            "Potentially dangerous URL or message pattern detected.  If this was in error, please let a Mod know.");
 
-    setTimeout(async function() {
-        if (response.deletable)
-            await response.delete();
-    }, 5000);
+        setTimeout(async function() {
+            if (response.deletable)
+                await response.delete();
+        }, 5000);
+    } catch (letErrorGoThrough) {
+        await logError(
+            client,
+            guildId,
+            userId,
+            channelId,
+            "*See forwarded message below.*",
+            `SEND_MESSAGE denied to the bot on <#${channelId}>. Unable to clean up spam behavior.`);
+
+        await forwardMessage(client, guildId, message);
+
+        throw letErrorGoThrough;
+    }
 
     let action = null;
     let domainTooNew = false;
