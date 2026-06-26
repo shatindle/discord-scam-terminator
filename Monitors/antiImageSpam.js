@@ -53,7 +53,7 @@ async function cleanup(client, messageList, guildId, userId) {
             }
         } catch (err) {
             try {
-                await recordError(guildId, userId, err.toString(), reason);
+                await recordError(guildId, userId, "Line 56 of antiImageSpam.js: " + JSON.stringify(err), reason);
             } catch (err2) {
                 await recordError("", "", err2.toString(), reason);
             }
@@ -171,7 +171,7 @@ async function monitor(message) {
     } catch (err) {
         // something went wrong when assessing the message content
         try {
-            await recordError(guildId, userId, err.toString(), reason);
+            await recordError(guildId, userId, "Line 174 of antiImageSpam.js: " + JSON.stringify(err), reason);
         } catch (err2) {
             await recordError("", "", err2.toString(), reason);
         }
