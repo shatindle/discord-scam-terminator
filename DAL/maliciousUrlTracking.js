@@ -83,65 +83,83 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
     if (domainTooNew || shouldActionUser(message.member.id, content)) {
         const behaviors = lookupGuildBehavior(message.guildId);
 
-        if (behaviors.removal_action === "kick" && message.member.kickable) {
-            // attempt soft-ban
-            let softbanSuccess = false;
+        try {
+            if (behaviors.removal_action === "kick" && message.member.kickable) {
+                // attempt soft-ban
+                let softbanSuccess = false;
+                try {
+                    // attempt a ban/unban to more efficiently deal with message history
+                    let softbanUserId = message.member.id;
+
+                    // TODO: if this causes problems, we'll have to make a new flag for soft-ban
+                    if (message.member.bannable) {
+                        await message.member.ban({ reason: `Soft ban: ${reason}`, deleteMessageSeconds: BAN_DELETE_MESSAGE_SECONDS });
+                        await message.guild.members.unban(softbanUserId, `Soft ban: ${reason}`);
+
+                        softbanSuccess = true;
+                    }
+                } catch(cannotBan) { /* could not soft ban, do kick instead */ }
+
+                if (!softbanSuccess) await message.member.kick(reason);
+
+                await recordKick(
+                    guildId,
+                    userId,
+                    username,
+                    reason);
+
+                await logKick(client, guildId, userId, channelId, content, reason);
+
+                action = "kick-success";
+            } else if (behaviors.removal_action === "timeout" && message.member.manageable) {
+                await message.member.timeout(TIMEOUT_TIME, reason);
+                await recordTimeout(
+                    guildId,
+                    userId,
+                    username,
+                    reason);
+
+                await logTimeout(client, guildId, userId, channelId, content, reason);
+
+                action = "timeout-success";
+            } else if (behaviors.removal_action === "ban" && message.member.bannable) {
+                await message.member.ban({ reason, deleteMessageSeconds: BAN_DELETE_MESSAGE_SECONDS });
+                await recordBan(
+                    guildId,
+                    userId,
+                    username,
+                    reason);
+
+                await logBan(client, guildId, userId, channelId, content, reason);
+
+                action = "ban-success";
+            } else {
+                await recordFail(
+                    guildId,
+                    userId,
+                    username,
+                    reason);
+
+                await logWarning(client, guildId, userId, channelId, content, reason);
+
+                action = "action-fail";
+            }
+        } catch (err) {
+            // something went wrong when assessing the message content
             try {
-                // attempt a ban/unban to more efficiently deal with message history
-                let softbanUserId = message.member.id;
+                await recordError(guildId, userId, `User removal tried: ${behaviors.removal_action}. Error: ${err.toString()}`, reason);
+                await recordFail(
+                    guildId,
+                    userId,
+                    username,
+                    `Error: Bot could not action user due to server configuration. Message cleanup will be attempted. ${reason}`);
 
-                // TODO: if this causes problems, we'll have to make a new flag for soft-ban
-                if (message.member.bannable) {
-                    await message.member.ban({ reason: `Soft ban: ${reason}`, deleteMessageSeconds: BAN_DELETE_MESSAGE_SECONDS });
-                    await message.guild.members.unban(softbanUserId, `Soft ban: ${reason}`);
+                await logWarning(client, guildId, userId, channelId, content, `Error: Bot could not action user due to server settings. Message cleanup will be attempted. ${reason}`);
 
-                    softbanSuccess = true;
-                }
-            } catch(cannotBan) { /* could not soft ban, do kick instead */ }
-
-            if (!softbanSuccess) await message.member.kick(reason);
-
-            await recordKick(
-                guildId,
-                userId,
-                username,
-                reason);
-
-            await logKick(client, guildId, userId, channelId, content, reason);
-
-            action = "kick-success";
-        } else if (behaviors.removal_action === "timeout" && message.member.manageable) {
-            await message.member.timeout(TIMEOUT_TIME, reason);
-            await recordTimeout(
-                guildId,
-                userId,
-                username,
-                reason);
-
-            await logTimeout(client, guildId, userId, channelId, content, reason);
-
-            action = "timeout-success";
-        } else if (behaviors.removal_action === "ban" && message.member.bannable) {
-            await message.member.ban({ reason, deleteMessageSeconds: BAN_DELETE_MESSAGE_SECONDS });
-            await recordBan(
-                guildId,
-                userId,
-                username,
-                reason);
-
-            await logBan(client, guildId, userId, channelId, content, reason);
-
-            action = "ban-success";
-        } else {
-            await recordFail(
-                guildId,
-                userId,
-                username,
-                reason);
-
-            await logWarning(client, guildId, userId, channelId, content, reason);
-
-            action = "action-fail";
+                action = "action-fail";
+            } catch (err2) {
+                await recordError("", "", err2.toString(), reason);
+            }
         }
     } else {
         await recordWarning(
@@ -227,65 +245,83 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
     } else if (perform === "remove") {
         const behaviors = lookupGuildBehavior(message.guildId);
 
-        if (behaviors.removal_action === "kick" && message.member.kickable) {
-            // attempt soft-ban
-            let softbanSuccess = false;
+        try {
+            if (behaviors.removal_action === "kick" && message.member.kickable) {
+                // attempt soft-ban
+                let softbanSuccess = false;
+                try {
+                    // attempt a ban/unban to more efficiently deal with message history
+                    let softbanUserId = message.member.id;
+
+                    // TODO: if this causes problems, we'll have to make a new flag for soft-ban
+                    if (message.member.bannable) {
+                        await message.member.ban({ reason: `Soft ban: ${reason}`, deleteMessageSeconds: BAN_DELETE_MESSAGE_SECONDS });
+                        await message.guild.members.unban(softbanUserId, `Soft ban: ${reason}`);
+
+                        softbanSuccess = true;
+                    }
+                } catch(cannotBan) { /* could not soft ban, do kick instead */ }
+
+                if (!softbanSuccess) await message.member.kick(reason);
+
+                await recordKick(
+                    guildId,
+                    userId,
+                    username,
+                    reason);
+
+                await logKick(client, guildId, userId, channelId, content, reason);
+
+                action = "kick-success";
+            } else if (behaviors.removal_action === "timeout" && message.member.manageable) {
+                await message.member.timeout(TIMEOUT_TIME, reason);
+                await recordTimeout(
+                    guildId,
+                    userId,
+                    username,
+                    reason);
+
+                await logTimeout(client, guildId, userId, channelId, content, reason);
+
+                action = "timeout-success";
+            } else if (behaviors.removal_action === "ban" && message.member.bannable) {
+                await message.member.ban({ reason, deleteMessageSeconds: BAN_DELETE_MESSAGE_SECONDS });
+                await recordBan(
+                    guildId,
+                    userId,
+                    username,
+                    reason);
+
+                await logBan(client, guildId, userId, channelId, content, reason);
+
+                action = "ban-success";
+            } else {
+                await recordFail(
+                    guildId,
+                    userId,
+                    username,
+                    reason);
+
+                await logWarning(client, guildId, userId, channelId, content, reason);
+
+                action = "action-fail";
+            }
+        } catch (err) {
+            // something went wrong when assessing the message content
             try {
-                // attempt a ban/unban to more efficiently deal with message history
-                let softbanUserId = message.member.id;
+                await recordError(guildId, userId, `User removal tried: ${behaviors.removal_action}. Error: ${err.toString()}`, reason);
+                await recordFail(
+                    guildId,
+                    userId,
+                    username,
+                    `Error: Bot could not action user due to server configuration. Message cleanup will be attempted. ${reason}`);
 
-                // TODO: if this causes problems, we'll have to make a new flag for soft-ban
-                if (message.member.bannable) {
-                    await message.member.ban({ reason: `Soft ban: ${reason}`, deleteMessageSeconds: BAN_DELETE_MESSAGE_SECONDS });
-                    await message.guild.members.unban(softbanUserId, `Soft ban: ${reason}`);
+                await logWarning(client, guildId, userId, channelId, content, `Error: Bot could not action user due to server settings. Message cleanup will be attempted. ${reason}`);
 
-                    softbanSuccess = true;
-                }
-            } catch(cannotBan) { /* could not soft ban, do kick instead */ }
-
-            if (!softbanSuccess) await message.member.kick(reason);
-
-            await recordKick(
-                guildId,
-                userId,
-                username,
-                reason);
-
-            await logKick(client, guildId, userId, channelId, content, reason);
-
-            action = "kick-success";
-        } else if (behaviors.removal_action === "timeout" && message.member.manageable) {
-            await message.member.timeout(TIMEOUT_TIME, reason);
-            await recordTimeout(
-                guildId,
-                userId,
-                username,
-                reason);
-
-            await logTimeout(client, guildId, userId, channelId, content, reason);
-
-            action = "timeout-success";
-        } else if (behaviors.removal_action === "ban" && message.member.bannable) {
-            await message.member.ban({ reason, deleteMessageSeconds: BAN_DELETE_MESSAGE_SECONDS });
-            await recordBan(
-                guildId,
-                userId,
-                username,
-                reason);
-
-            await logBan(client, guildId, userId, channelId, content, reason);
-
-            action = "ban-success";
-        } else {
-            await recordFail(
-                guildId,
-                userId,
-                username,
-                reason);
-
-            await logWarning(client, guildId, userId, channelId, content, reason);
-
-            action = "action-fail";
+                action = "action-fail";
+            } catch (err2) {
+                await recordError("", "", err2.toString(), reason);
+            }
         }
     }
 
