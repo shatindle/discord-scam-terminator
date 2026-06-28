@@ -13,7 +13,7 @@
         Want to see how it works?  You can review <a href="https://github.com/shatindle/discord-scam-terminator" target="_blank">the source code</a>.
     </p>
     <p>
-        Have ideas or feedback?  <a href="https://discord.gg/8ykjyQ8wJw" target="_blank">Join the support server</a>!
+        Have ideas or feedback?  <a href="https://discord.gg/8ykjyQ8wJw" target="_blank">Get Help</a>!
     </p>
 
     <h3>What the bot does</h3>
