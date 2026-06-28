@@ -44,7 +44,7 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
     const client = message.client;
     const channelId = message.channel.id;
 
-    
+    let messageNeededHandling = false;
 
     try {
         // could be a malicious URL.  We need to delete the message.
@@ -52,23 +52,32 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
             await message.delete();
         }
 
-        const response = await message.channel.send(
-            "Potentially dangerous URL or message pattern detected.  If this was in error, please let a Mod know.");
+        messageNeededHandling = true;
+    } catch {
+        // if we're here, the message could not be deleted, likely because we already deleted it via ban
+    }
 
-        setTimeout(async function() {
-            if (response.deletable)
-                await response.delete();
-        }, 5000);
-    } catch (letErrorGoThrough) {
-        await logError(
-            client,
-            guildId,
-            userId,
-            channelId,
-            "",
-            `SEND_MESSAGE denied to the bot on <#${channelId}>. Unable to clean up spam behavior.`);
+    if (messageNeededHandling) {
+        // if we're here, the message did need to be deleted, so make other users aware of the potential danger
+        try {
+            const response = await message.channel.send(
+                "Potentially dangerous URL or message pattern detected.  If this was in error, please let a Mod know.");
 
-        throw letErrorGoThrough;
+            setTimeout(async function() {
+                if (response.deletable)
+                    await response.delete();
+            }, 5000);
+        } catch (letErrorGoThrough) {
+            await logError(
+                client,
+                guildId,
+                userId,
+                channelId,
+                "",
+                `SEND_MESSAGE denied to the bot on <#${channelId}>. Unable to clean up spam behavior.`);
+
+            throw letErrorGoThrough;
+        }
     }
 
     let action = null;
@@ -225,6 +234,8 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
     const channelId = message.channel.id;
 
     if (perform !== "no-action") {
+        let messageNeededHandling = false;
+
         try {
             // could be a malicious URL.  We need to delete the message.
             if (message.deletable) {
@@ -235,25 +246,33 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
                 await message.delete();
             }
 
-            const response = await message.channel.send(
-                "Spam detected.  If this was in error, please let a Mod know.");
-
-            setTimeout(async function() {
-                if (response.deletable)
-                    await response.delete();
-            }, 5000);
-        } catch (letErrorGoThrough) {
-            await logError(
-                client,
-                guildId,
-                userId,
-                channelId,
-                "",
-                `SEND_MESSAGE denied to the bot on <#${channelId}>. Unable to clean up spam behavior.`);
-
-            throw letErrorGoThrough;
+            messageNeededHandling = true;
+        } catch {
+            // if we're here, the message could not be deleted, likely because we already deleted it via ban
         }
-        
+
+        if (messageNeededHandling) {
+            // if we're here, the message did need to be deleted, so make other users aware of the potential danger
+            try {
+                const response = await message.channel.send(
+                    "Spam detected.  If this was in error, please let a Mod know.");
+
+                setTimeout(async function() {
+                    if (response.deletable)
+                        await response.delete();
+                }, 5000);
+            } catch (letErrorGoThrough) {
+                await logError(
+                    client,
+                    guildId,
+                    userId,
+                    channelId,
+                    "",
+                    `SEND_MESSAGE denied to the bot on <#${channelId}>. Unable to clean up spam behavior.`);
+
+                throw letErrorGoThrough;
+            }
+        }
     }
     
     let action = "no-action";
