@@ -13,7 +13,7 @@ FROM node:24-alpine AS runner
 
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
-ENV PORT=80
+ENV PORT=3001
 
 WORKDIR /app
 
@@ -23,6 +23,6 @@ RUN { npm audit fix || true; }
 
 COPY --from=builder /app/build ./build
 
-EXPOSE 80
+EXPOSE 3001
 
 CMD ["node", "build"]
