@@ -1,5 +1,5 @@
 import { getDiscordClient, fetchAllGuildRefs } from './discordBot';
-import { database } from './db';
+import { database } from '$lib/server/db';
 
 /** @type {{ expiresAt: number; data: Array<{id:string,name:string,avatarUrl:string,memberCount:number,totalActions:number,owner:{id:string,username:string,avatarUrl:string}}> } | undefined} */
 let cachedDirectory;

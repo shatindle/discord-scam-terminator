@@ -6,13 +6,14 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
+		"start": "node build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json --watch"
 	},
 	"devDependencies": {
-		"@sveltejs/adapter-auto": "^7.0.1",
+		"@sveltejs/adapter-node": "^5.5.7",
 		"@sveltejs/kit": "^2.63.0",
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
 		"svelte": "^5.56.1",
@@ -21,6 +22,7 @@
 		"vite": "^8.0.16"
 	},
 	"dependencies": {
-		"@google-cloud/firestore": "^8.6.0"
+		"@google-cloud/firestore": "^8.6.0",
+		"discord.js": "^14.26.4"
 	}
 }

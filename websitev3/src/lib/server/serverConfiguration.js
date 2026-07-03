@@ -1,4 +1,4 @@
-import { database, registerBehaviorMonitor } from './db';
+import { database } from '$lib/server/db';
 
 export const serverConfig = (/** @type {string} */ guildId) => {
     const config = database._getItem("behavior", guildId);

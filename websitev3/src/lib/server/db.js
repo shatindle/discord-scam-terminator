@@ -4,6 +4,28 @@ import { Firestore, Timestamp } from '@google-cloud/firestore';
 /** @type {Firestore | undefined} */
 let firestoreClient;
 
+function hasFirestoreConfig() {
+    return Boolean(env.FIREBASE_PROJECT_ID && env.FIREBASE_KEY_FILE);
+}
+
+function warnMissingFirestoreConfig() {
+    const missing = [];
+
+    if (!env.FIREBASE_PROJECT_ID) {
+        missing.push('FIREBASE_PROJECT_ID');
+    }
+
+    if (!env.FIREBASE_KEY_FILE) {
+        missing.push('FIREBASE_KEY_FILE');
+    }
+
+    if (missing.length > 0) {
+        console.warn(
+            `[db] Firestore observers disabled; missing env vars: ${missing.join(', ')}`
+        );
+    }
+}
+
 export function getFirestoreClient() {
     if (firestoreClient) {
         return firestoreClient;
@@ -97,9 +119,14 @@ function configureObserver(type, list) {
     });
 }
 
-for (const table of Object.keys(database).filter(t => !t.startsWith("_"))) 
-    // @ts-ignore
-    configureObserver(table, database[table]);
+if (hasFirestoreConfig()) {
+    for (const table of Object.keys(database).filter((t) => !t.startsWith('_'))) {
+        // @ts-ignore
+        configureObserver(table, database[table]);
+    }
+} else {
+    warnMissingFirestoreConfig();
+}
 
 const BEHAVIOR_COLLECTION = "behavior";
 

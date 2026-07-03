@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { getFirestoreClient } from './db';
+import { getFirestoreClient } from '$lib/server/db';
 
 const COLLECTION = 'loginsessions';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7;

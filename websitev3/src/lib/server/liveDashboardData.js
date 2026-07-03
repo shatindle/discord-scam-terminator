@@ -1,5 +1,5 @@
 import { Firestore, Timestamp } from '@google-cloud/firestore';
-import { database } from './db';
+import { database } from '$lib/server/db';
 
 /** @type {Firestore | undefined} */
 let cachedDb;

@@ -1,6 +1,6 @@
 import { env } from '$env/dynamic/private';
 import { Client, EmbedBuilder, GatewayIntentBits, PermissionsBitField } from "discord.js";
-import { database } from "./db";
+import { database } from "$lib/server/db";
 
 /** @type {Client | undefined} */
 let discordClient;
