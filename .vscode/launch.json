@@ -23,19 +23,18 @@
             "program": "${workspaceFolder}/actionsTest.js"
         },
         {
-            "name": "Website Only",
-            "type": "node",
-            "request": "launch",
-            "cwd": "${workspaceFolder}",
-            "runtimeExecutable": "npm",
-            "runtimeArgs": ["run", "dev"]
+            "command": "npm run dev",
+			"name": "Website Only",
+			"request": "launch",
+			"type": "node-terminal",
+            "cwd": "${workspaceFolder}/websitev3"
         },
         {
             "type": "pwa-chrome",
             "request": "launch",
             "name": "Browser",
-            "url": "http://localhost",
-            "webRoot": "${workspaceFolder}/src"
+            "url": "http://localhost:5173/",
+            "webRoot": "${workspaceFolder}/websitev3/src"
         }
     ],
     "compounds": [

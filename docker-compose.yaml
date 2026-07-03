@@ -57,10 +57,32 @@ services:
     restart: unless-stopped
     volumes:
       - shared-volume:/shared_data
+  scamhunter-xyz-v2:
+    build:
+      context: ./websitev3
+      dockerfile: Dockerfile
+    container_name: scamhunter-xyz-v2
+    restart: unless-stopped
+    networks:
+      - scamhunter-xyz-v2
+    volumes:
+      - ./firebase.json:/app/firebase.json:ro
+  scamhunter-xyz-tunnel-v2:
+    image: cloudflare/cloudflared
+    container_name: scamhunter-xyz-tunnel-v2
+    restart: unless-stopped
+    command: tunnel run
+    networks:
+      - scamhunter-xyz-v2
+    env_file:
+      - sitev2.env
+    depends_on:
+      - scam-hunter-site-v2
 
 networks:
   scam-hunter-bot-network:
   scam-hunter-site:
+  scamhunter-xyz-v2:
 
 volumes:
   shared-volume:

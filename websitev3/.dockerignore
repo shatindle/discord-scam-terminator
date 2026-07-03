@@ -1,0 +1,8 @@
+node_modules
+build
+.svelte-kit
+.vscode
+.git
+.gitignore
+npm-debug.log*
+.env
