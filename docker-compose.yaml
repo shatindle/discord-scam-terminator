@@ -77,7 +77,7 @@ services:
     env_file:
       - sitev2.env
     depends_on:
-      - scam-hunter-site-v2
+      - scamhunter-site-v2
 
 networks:
   scam-hunter-bot-network:
