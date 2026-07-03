@@ -139,3 +139,6 @@ export async function getServerDirectory() {
 
 	return cachedDirectory?.data ?? [];
 }
+
+// invoke this once on site startup
+setTimeout(getServerDirectory, 10000);

@@ -108,10 +108,11 @@ function actionTitle(type) {
 function getRecentCollectionEvents(collectionName, sinceDate) {
 	const snap = database
 		._getTable(collectionName)
-		.filter(t => t.timestamp.toDate() >= sinceDate)
-		.sort((a, b) => a.timestamp < b.timestamp);
+		.filter((/** @type {{ timestamp: { toDate: () => Date; }; }} */ t) => t.timestamp.toDate() >= sinceDate)
+		.sort((/** @type {{ timestamp: { toDate: () => number; }; }} */ a, /** @type {{ timestamp: { toDate: () => number; }; }} */ b) => 
+			a.timestamp.toDate() < b.timestamp.toDate());
 
-	return snap.map((row) => {
+	return snap.map((/** @type {{ timestamp: { toDate: () => any; }; guildId: any; userId: any; username: any; reason: any; }} */ row) => {
 		const when = row.timestamp?.toDate ? row.timestamp.toDate() : new Date();
 
 		return {
@@ -135,7 +136,7 @@ function getRecentCollectionEvents(collectionName, sinceDate) {
 const getCollectionCountSince = (collectionName, sinceDate) =>
 	database
 		._getTable(collectionName)
-		.filter((/** @type {{ timestamp: number; }} */ t) => 
+		.filter((/** @type {{ timestamp: Timestamp; }} */ t) => 
 			t.timestamp.toDate() >= sinceDate
 		).length;
 
@@ -149,7 +150,7 @@ function getFilteredCountSince(collectionName, sinceDate, guildId) {
 		return getCollectionCountSince(collectionName, sinceDate);
 	}
 
-	const snap = database._getTable(collectionName).filter(t => t.timestamp.toDate() >= sinceDate);
+	const snap = database._getTable(collectionName).filter((/** @type {{ timestamp: { toDate: () => Date; }; }} */ t) => t.timestamp.toDate() >= sinceDate);
 
 	let count = 0;
 
@@ -277,8 +278,8 @@ async function getRecentActionTimeline(graphRange, guildId) {
 	const queries = actionCollections.map(({ collection, key }) => {
 			const snap = database
 				._getTable(collection)
-				.filter(t => t.timestamp.toDate() >= fromDate)
-				.sort((a, b) => a.timestamp.toDate() < b.timestamp.toDate());
+				.filter((/** @type {{ timestamp: { toDate: () => Date; }; }} */ t) => t.timestamp.toDate() >= fromDate)
+				.sort((/** @type {{ timestamp: { toDate: () => Date; }; }} */ a, /** @type {{ timestamp: { toDate: () => Date; }; }} */ b) => a.timestamp.toDate() < b.timestamp.toDate());
 
 			return { key: /** @type {ActionKey} */ (key), snap };
 		});
