@@ -1,139 +1,37 @@
-import { env } from '$env/dynamic/private';
-import { Client, GatewayIntentBits, Guild } from 'discord.js';
-import { Firestore } from '@google-cloud/firestore';
+import { getDiscordClient, fetchAllGuildRefs } from './discordBot';
+import { database } from './db';
 
 /** @type {{ expiresAt: number; data: Array<{id:string,name:string,avatarUrl:string,memberCount:number,totalActions:number,owner:{id:string,username:string,avatarUrl:string}}> } | undefined} */
 let cachedDirectory;
 /** @type {Promise<void> | undefined} */
 let refreshPromise;
 let refreshTimerStarted = false;
-/** @type {Client | undefined} */
-let discordClient;
-/** @type {Promise<Client> | undefined} */
-let discordClientPromise;
-/** @type {Firestore | undefined} */
-let firestoreClient;
-/** @type {Promise<Record<string, any>> | undefined} */
-let settingsPromise;
 
 const REFRESH_INTERVAL_MS = 1000 * 60 * 60 * 6;
 const ACTION_COLLECTIONS = ['warning', 'kick', 'timeout', 'real_ban', 'ban'];
 
-/** @param {Client} client */
-async function fetchAllGuildRefs(client) {
-	/** @type {Map<string, import('discord.js').Guild>} */
-	const guildMap = new Map();
-
-    await Promise.all(
-        client.guilds.cache.map(
-            /** @param {import('discord.js').Guild} guild  */
-            async guild => {
-                guildMap.set(guild.id, guild);
-            }));
-
-	return guildMap;
-}
-
-const getBotToken = () => env.DISCORD_BOT_TOKEN;
-
-async function getDiscordClient() {
-	if (discordClient) {
-		return discordClient;
-	}
-
-	if (discordClientPromise) {
-		return await discordClientPromise;
-	}
-
-	discordClientPromise = (async () => {
-		const token = getBotToken();
-
-		if (!token) {
-			throw new Error('Missing Discord bot token for server directory.');
-		}
-
-		const client = new Client({
-			intents: [GatewayIntentBits.Guilds]
-		});
-
-		await client.login(token);
-		discordClient = client;
-
-		return client;
-	})();
-
-	try {
-		return await discordClientPromise;
-	} finally {
-		discordClientPromise = undefined;
-	}
-}
-
-async function getFirestoreClient() {
-	if (firestoreClient) {
-		return firestoreClient;
-	}
-
-	const projectId = env.FIREBASE_PROJECT_ID;
-
-	if (!projectId) {
-		throw new Error('Missing Firebase project id for server totals.');
-	}
-
-	const keyFilename = env.FIREBASE_KEY_FILE;
-
-	if (!keyFilename) {
-		throw new Error('Missing Firebase key file name.');
-	}
-
-	firestoreClient = new Firestore({
-		projectId,
-		keyFilename
-	});
-
-	return firestoreClient;
-}
-
 /**
- * @param {import('@google-cloud/firestore').Firestore} db
  * @param {string} collectionName
  * @param {string} guildId
  */
-async function countGuildActions(db, collectionName, guildId) {
-	const query = db.collection(collectionName).where('guildId', '==', guildId);
-
-	try {
-		const aggregate = await query.count().get();
-		return Number(aggregate.data().count ?? 0);
-	} catch {
-		const snapshot = await query.get();
-		return snapshot.size;
-	}
+function countGuildActions(collectionName, guildId) {
+	const query = database._getTable(collectionName).filter((/** @type {{ guildId: string; }} */ t) => t.guildId === guildId);
+	
+	const aggregate = query.length;
+	return Number(aggregate ?? 0);
 }
 
 /** @param {string[]} guildIds */
-async function getGuildActionTotals(guildIds) {
+function getGuildActionTotals(guildIds) {
 	if (guildIds.length === 0) {
 		return new Map();
 	}
 
-	let db;
+	const totals = guildIds.map((guildId) => {
+		const counts = ACTION_COLLECTIONS.map((collectionName) => countGuildActions(collectionName, guildId));
 
-	try {
-		db = await getFirestoreClient();
-	} catch {
-		return new Map(guildIds.map((guildId) => [guildId, 0]));
-	}
-
-	const totals = await Promise.all(
-		guildIds.map(async (guildId) => {
-			const counts = await Promise.all(
-				ACTION_COLLECTIONS.map((collectionName) => countGuildActions(db, collectionName, guildId))
-			);
-
-			return /** @type {[string, number]} */ ([guildId, counts.reduce((sum, count) => sum + count, 0)]);
-		})
-	);
+		return /** @type {[string, number]} */ ([guildId, counts.reduce((sum, count) => sum + count, 0)]);
+	});
 
 	return new Map(totals);
 }
@@ -150,7 +48,7 @@ async function refreshServerDirectory() {
 		const client = await getDiscordClient();
 		const guildMap = await fetchAllGuildRefs(client);
 		const guildIds = Array.from(guildMap.keys());
-		const actionTotals = await getGuildActionTotals(guildIds);
+		const actionTotals = getGuildActionTotals(guildIds);
 
 		const directory = await Promise.all(
 			guildIds.map(async (guildId) => {

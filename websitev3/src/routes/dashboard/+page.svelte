@@ -1,4 +1,6 @@
 <script>
+	import { invalidateAll } from '$app/navigation';
+
 	let { data } = $props();
 	const servers = $derived(
 		/** @type {Array<{ id: string; name: string; avatarUrl: string; memberCount: number; totalActions: number; owner: { id: string; username: string; avatarUrl: string } }>} */
@@ -18,16 +20,19 @@
 	const selectedServer = $derived(
 		servers.find((server) => server.id === data.selectedServerId) ?? null
 	);
+	const selectedServerConfig = $derived(data.selectedServerConfig ?? null);
+
+	let nitroSteamScamEnabled = $derived(data.selectedServerConfig?.nitro_steam_spam);
+	let maliciousRedirectsEnabled = $derived(data.selectedServerConfig?.malicious_redirects);
+	let imageSpamEnabled = $derived(data.selectedServerConfig?.image_spam);
+	let linkSpamEnabled = $derived(data.selectedServerConfig?.link_spam);
+	let textSpamEnabled = $derived(data.selectedServerConfig?.text_spam);
+	let profileSpamEnabled = $derived(data.selectedServerConfig?.profile_spam);
+	let removalActionSelected = $derived(data.selectedServerConfig?.removal_action);
+
 	const guildNameMap = $derived(new Map(servers.map((server) => [server.id, server.name])));
 	const streamPageSize = 3;
 	let visibleEventCount = $state(streamPageSize);
-	let nitroSteamScamsEnabled = $state(true);
-	let maliciousRedirectsEnabled = $state(true);
-	let imageSpamEnabled = $state(true);
-	let linkSpamEnabled = $state(true);
-	let textSpamEnabled = $state(true);
-	let profileSpamEnabled = $state(true);
-	let removalAction = $state('kick');
 	let viewportWidth = $state(0);
 	const visibleEvents = $derived((data.events ?? []).slice(0, visibleEventCount));
 	const hasMoreEvents = $derived((data.events ?? []).length > visibleEventCount);
@@ -234,6 +239,29 @@
 
 	function showMoreEvents() {
 		visibleEventCount += streamPageSize;
+	}
+
+	async function saveServerConfig() {
+		if (!selectedServer) return;
+
+		const result = await fetch('/dashboard/update_config', {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify({
+				guildId: selectedServer.id,
+				image_spam: imageSpamEnabled,
+				link_spam: linkSpamEnabled,
+				malicious_redirects: maliciousRedirectsEnabled,
+				nitro_steam_spam: nitroSteamScamEnabled,
+				profile_spam: profileSpamEnabled,
+				removal_action: removalActionSelected,
+				text_spam: textSpamEnabled
+			})
+		});
+
+		const { success, error } = await result.json();
 	}
 </script>
 
@@ -504,7 +532,7 @@
 
 		<div class="dashboard-card server-config-card">
 			<h2>Server Configuration</h2>
-			{#if selectedServer}
+			{#if selectedServer && selectedServerConfig}
 			<p class="clean-lead">Adjust which rules are enabled for your server</p>
 			<br/>
 			<summary>
@@ -532,11 +560,11 @@
 					<div class="rule-toggle-row">
 						<span class="rule-name">Nitro/Steam Scams</span>
 						<label class="rule-toggle" aria-label="Toggle Nitro and Steam scam protection">
-							<input type="checkbox" bind:checked={nitroSteamScamsEnabled} />
+							<input type="checkbox" bind:checked={nitroSteamScamEnabled} />
 							<span class="rule-toggle-track">
 								<span class="rule-toggle-thumb"></span>
 							</span>
-							<span class="rule-toggle-text">{nitroSteamScamsEnabled ? 'Enabled' : 'Disabled'}</span>
+							<span class="rule-toggle-text">{nitroSteamScamEnabled ? 'Enabled' : 'Disabled'}</span>
 						</label>
 					</div>
 
@@ -598,7 +626,7 @@
 
 				<div class="removal-action-row">
 					<label class="removal-action-label" for="removal-action">Removal Actions</label>
-					<select id="removal-action" class="removal-action-select" bind:value={removalAction}>
+					<select id="removal-action" class="removal-action-select" bind:value={removalActionSelected}>
 						<option value="kick">Kick</option>
 						<option value="timeout">Timeout</option>
 						<option value="ban">Ban</option>
@@ -608,8 +636,8 @@
 				<hr class="rule-divider action-divider" />
 
 				<div class="config-action-row">
-					<button type="button" class="config-action-button cancel">Cancel</button>
-					<button type="button" class="config-action-button save">Save</button>
+					<button type="button" class="config-action-button cancel" onclick={invalidateAll}>Cancel</button>
+					<button type="button" class="config-action-button save" onclick={saveServerConfig}>Save</button>
 				</div>
 			</article>
 			{:else}

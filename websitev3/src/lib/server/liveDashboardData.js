@@ -1,5 +1,5 @@
 import { Firestore, Timestamp } from '@google-cloud/firestore';
-import { env } from '$env/dynamic/private';
+import { database } from './db';
 
 /** @type {Firestore | undefined} */
 let cachedDb;
@@ -83,30 +83,6 @@ function cadenceUnit(graphRange) {
 	return 'month';
 }
 
-async function getDb() {
-	if (cachedDb) {
-		return cachedDb;
-	}
-
-	const keyFilename = env.FIREBASE_KEY_FILE;
-	const projectId = env.FIREBASE_PROJECT_ID;
-
-	if (!projectId) {
-		throw new Error('Missing Firebase project id for dashboard data.');
-	}
-
-	if (!keyFilename) {
-		throw new Error('Missing Firebase key file name for dashboard data.');
-	}
-
-	cachedDb = new Firestore({
-		projectId,
-		keyFilename
-	});
-
-	return cachedDb;
-}
-
 /** @param {string} type */
 function actionTitle(type) {
 	switch (type) {
@@ -126,19 +102,19 @@ function actionTitle(type) {
 }
 
 /**
- * @param {Firestore} db
  * @param {string} collectionName
  * @param {Date} sinceDate
  */
-async function getRecentCollectionEvents(db, collectionName, sinceDate) {
-	const snap = await db
-		.collection(collectionName)
-		.where('timestamp', '>=', Timestamp.fromDate(sinceDate))
-		.orderBy('timestamp', 'desc')
-		.get();
+function getRecentCollectionEvents(collectionName, sinceDate) {
+	console.dir(database
+		._getTable(collectionName))
 
-	return snap.docs.map((/** @type {import('@google-cloud/firestore').QueryDocumentSnapshot} */ doc) => {
-		const row = doc.data();
+	const snap = database
+		._getTable(collectionName)
+		.filter(t => t.timestamp.toDate() >= sinceDate)
+		.sort((a, b) => a.timestamp < b.timestamp);
+
+	return snap.map((row) => {
 		const when = row.timestamp?.toDate ? row.timestamp.toDate() : new Date();
 
 		return {
@@ -156,39 +132,31 @@ async function getRecentCollectionEvents(db, collectionName, sinceDate) {
 }
 
 /**
- * @param {Firestore} db
  * @param {string} collectionName
  * @param {Date} sinceDate
  */
-async function getCollectionCountSince(db, collectionName, sinceDate) {
-	const snap = await db
-		.collection(collectionName)
-		.where('timestamp', '>=', Timestamp.fromDate(sinceDate))
-		.get();
-
-	return snap.size;
-}
+const getCollectionCountSince = (collectionName, sinceDate) =>
+	database
+		._getTable(collectionName)
+		.filter((/** @type {{ timestamp: number; }} */ t) => 
+			t.timestamp.toDate() >= sinceDate
+		).length;
 
 /**
- * @param {Firestore} db
  * @param {string} collectionName
  * @param {Date} sinceDate
  * @param {string | undefined} guildId
  */
-async function getFilteredCountSince(db, collectionName, sinceDate, guildId) {
+function getFilteredCountSince(collectionName, sinceDate, guildId) {
 	if (!guildId) {
-		return await getCollectionCountSince(db, collectionName, sinceDate);
+		return getCollectionCountSince(collectionName, sinceDate);
 	}
 
-	const snap = await db
-		.collection(collectionName)
-		.where('timestamp', '>=', Timestamp.fromDate(sinceDate))
-		.get();
+	const snap = database._getTable(collectionName).filter(t => t.timestamp.toDate() >= sinceDate);
 
 	let count = 0;
 
-	for (const doc of snap.docs) {
-		const row = doc.data();
+	for (const row of snap) {
 		if (row.guildId === guildId) {
 			count += 1;
 		}
@@ -272,11 +240,10 @@ function monthOffsetFromFirstBucket(when, firstBucket) {
 }
 
 /**
- * @param {Firestore} db
  * @param {GraphRange} graphRange
  * @param {string | undefined} guildId
  */
-async function getRecentActionTimeline(db, graphRange, guildId) {
+async function getRecentActionTimeline(graphRange, guildId) {
 	const config = graphRangeConfigs[graphRange] ?? graphRangeConfigs['24h'];
 	const bucketStarts = graphRange === '6m' ? buildMonthlyBucketStarts() : [];
 	const labels =
@@ -310,22 +277,17 @@ async function getRecentActionTimeline(db, graphRange, guildId) {
 
 	const fromDate = bucketStarts[0];
 
-	const queries = await Promise.all(
-		actionCollections.map(async ({ collection, key }) => {
-			const snap = await db
-				.collection(collection)
-				.where('timestamp', '>=', Timestamp.fromDate(fromDate))
-				.orderBy('timestamp', 'asc')
-				.get();
+	const queries = actionCollections.map(({ collection, key }) => {
+			const snap = database
+				._getTable(collection)
+				.filter(t => t.timestamp.toDate() >= fromDate)
+				.sort((a, b) => a.timestamp.toDate() < b.timestamp.toDate());
 
 			return { key: /** @type {ActionKey} */ (key), snap };
-		})
-	);
+		});
 
 	for (const { key, snap } of queries) {
-		for (const doc of snap.docs) {
-			const row = doc.data();
-
+		for (const row of snap) {
 			if (guildId && row.guildId !== guildId) {
 				continue;
 			}
@@ -355,30 +317,29 @@ export async function getLiveDashboardData(options = {}) {
 	const guildId = options.guildId;
 	const graphRange = options.graphRange ?? '24h';
 	const config = graphRangeConfigs[graphRange] ?? graphRangeConfigs['24h'];
-	const db = await getDb();
 	const selectedRangeStart = rangeStartDate(graphRange);
 	const sevenDaysAgo = new Date(Date.now() - 7 * DAY_MS);
 
-	const [warnings, kicks, timeouts, fails, bans] = await Promise.all([
-		getFilteredCountSince(db, 'warning', selectedRangeStart, guildId),
-		getFilteredCountSince(db, 'kick', selectedRangeStart, guildId),
-		getFilteredCountSince(db, 'timeout', selectedRangeStart, guildId),
-		getFilteredCountSince(db, 'ban', selectedRangeStart, guildId),
-		getFilteredCountSince(db, 'real_ban', selectedRangeStart, guildId)
-	]);
+	const [warnings, kicks, timeouts, fails, bans] = [
+		getFilteredCountSince('warning', selectedRangeStart, guildId),
+		getFilteredCountSince('kick', selectedRangeStart, guildId),
+		getFilteredCountSince('timeout', selectedRangeStart, guildId),
+		getFilteredCountSince('ban', selectedRangeStart, guildId),
+		getFilteredCountSince('real_ban', selectedRangeStart, guildId)
+	];
 
 	const totalInRange = warnings + kicks + timeouts + fails + bans;
 	const averagePerBucket = Math.max(1, Math.round(totalInRange / config.bucketCount));
 	const currentRangeLabel = rangeLabel(graphRange);
 	const currentCadenceUnit = cadenceUnit(graphRange);
 
-	const [recentWarnings, recentKicks, recentTimeouts, recentFails, recentBans] = await Promise.all([
-		getRecentCollectionEvents(db, 'warning', sevenDaysAgo),
-		getRecentCollectionEvents(db, 'kick', sevenDaysAgo),
-		getRecentCollectionEvents(db, 'timeout', sevenDaysAgo),
-		getRecentCollectionEvents(db, 'ban', sevenDaysAgo),
-		getRecentCollectionEvents(db, 'real_ban', sevenDaysAgo)
-	]);
+	const [recentWarnings, recentKicks, recentTimeouts, recentFails, recentBans] = [
+		getRecentCollectionEvents('warning', sevenDaysAgo),
+		getRecentCollectionEvents('kick', sevenDaysAgo),
+		getRecentCollectionEvents('timeout', sevenDaysAgo),
+		getRecentCollectionEvents('ban', sevenDaysAgo),
+		getRecentCollectionEvents('real_ban', sevenDaysAgo)
+	];
 
 	const events = [...recentWarnings, ...recentKicks, ...recentTimeouts, ...recentFails, ...recentBans]
 		.filter((event) => !guildId || event.guildId === guildId)
@@ -393,7 +354,7 @@ export async function getLiveDashboardData(options = {}) {
 			copy: null
 		}));
 
-	const timeline = await getRecentActionTimeline(db, graphRange, guildId);
+	const timeline = await getRecentActionTimeline(graphRange, guildId);
 
 	return {
 		isLive: true,

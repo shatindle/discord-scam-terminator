@@ -1,8 +1,10 @@
+import { env } from '$env/dynamic/private';
 import { redirect } from '@sveltejs/kit';
 import { getLiveDashboardData } from '$lib/server/liveDashboardData';
 import { getServerDirectory } from '$lib/server/discordServerDirectory';
+import { serverConfig } from '$lib/server/serverConfiguration';
 
-const BOT_ADMIN_ID = '460125773005848586';
+const BOT_ADMIN_IDS = env.ADMIN_USER_IDS ? env.ADMIN_USER_IDS.split(",").map(t => t.trim()) : [];
 const ADMINISTRATOR = 8n;
 const MANAGE_MESSAGES = 8192n;
 const SERVER_SORTS = ['name', 'members', 'actions'];
@@ -133,6 +135,7 @@ async function getData(user, servers, serverFilter, selectedSort, selectedGraphR
 			selectedServerId: serverFilter ?? null,
 			selectedSort,
 			selectedGraphRange,
+			selectedServerConfig: serverFilter ? serverConfig(serverFilter) : null,
 			...liveData
 		};
 	} catch {
@@ -238,7 +241,7 @@ function filterServersForUser(servers, user) {
 		return [];
 	}
 
-	if (user.id === BOT_ADMIN_ID) {
+	if (BOT_ADMIN_IDS && BOT_ADMIN_IDS.indexOf(user.id) > -1) {
 		return servers;
 	}
 

@@ -1,37 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import { Firestore } from '@google-cloud/firestore';
-import { env } from '$env/dynamic/private';
+import { getFirestoreClient } from './db';
 
 const COLLECTION = 'loginsessions';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
-
-/** @type {Firestore | undefined} */
-let db;
-
-async function getDb() {
-	if (db) {
-		return db;
-	}
-
-	const projectId = env.FIREBASE_PROJECT_ID;
-
-	if (!projectId) {
-		throw new Error('Missing Firebase project id for login sessions.');
-	}
-
-	const keyFilename = env.FIREBASE_KEY_FILE;
-
-	if (!keyFilename) {
-		throw new Error('Missing Firebase key file name for login sessions.');
-	}
-
-	db = new Firestore({
-		projectId,
-		keyFilename
-	});
-
-	return db;
-}
 
 /**
  * @param {{
@@ -42,7 +13,7 @@ export async function createLoginSession(sessionData) {
 	const sessionId = randomUUID();
 	const now = Date.now();
 	const expiresAt = now + SESSION_TTL_MS;
-	const firestore = await getDb();
+	const firestore = await getFirestoreClient();
 
 	await firestore
 		.collection(COLLECTION)
@@ -58,7 +29,7 @@ export async function createLoginSession(sessionData) {
 
 /** @param {string} sessionId */
 export async function getLoginSession(sessionId) {
-	const firestore = await getDb();
+	const firestore = await getFirestoreClient();
 	const doc = await firestore.collection(COLLECTION).doc(sessionId).get();
 
 	if (!doc.exists) {
@@ -109,6 +80,6 @@ export async function getLoginSession(sessionId) {
 
 /** @param {string} sessionId */
 export async function deleteLoginSession(sessionId) {
-	const firestore = await getDb();
+	const firestore = await getFirestoreClient();
 	await firestore.collection(COLLECTION).doc(sessionId).delete();
 }
