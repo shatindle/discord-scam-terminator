@@ -65,6 +65,8 @@ services:
     restart: unless-stopped
     networks:
       - scamhunter-xyz-v2
+    env_file:
+      - ./websitev3/.env
     volumes:
       - ./firebase.json:/app/firebase.json:ro
   scamhunter-xyz-tunnel-v2:
