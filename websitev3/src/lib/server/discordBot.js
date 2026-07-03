@@ -124,9 +124,7 @@ export async function confirmBehaviorManagement(client, guildId, userId, removal
 
     try {
         guild = await client.guilds.fetch(guildId);
-    } catch (err) { 
-        console.dir(err);
-    }
+    } catch (err) { }
 
     if (!guild) 
         return { success: false, error: "Cannot locate guild" };
@@ -135,9 +133,7 @@ export async function confirmBehaviorManagement(client, guildId, userId, removal
 
     try {
         member = await guild.members.fetch(userId);
-    } catch (err) { 
-        console.dir(err);
-    }
+    } catch (err) { }
 
     if (!member) 
         return { success: false, error: "User not member of guild" };

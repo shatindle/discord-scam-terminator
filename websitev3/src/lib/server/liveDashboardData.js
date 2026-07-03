@@ -106,9 +106,6 @@ function actionTitle(type) {
  * @param {Date} sinceDate
  */
 function getRecentCollectionEvents(collectionName, sinceDate) {
-	console.dir(database
-		._getTable(collectionName))
-
 	const snap = database
 		._getTable(collectionName)
 		.filter(t => t.timestamp.toDate() >= sinceDate)

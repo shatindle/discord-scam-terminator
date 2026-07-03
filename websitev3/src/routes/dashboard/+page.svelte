@@ -39,6 +39,13 @@
 	let isGraphLoading = $state(false);
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
 	let graphLoadingTimeout;
+	let toastVisible = $state(false);
+	let toastMessage = $state('');
+	/** @type {'success' | 'error'} */
+	let toastType = $state('success');
+	let toastId = $state(0);
+	/** @type {ReturnType<typeof setTimeout> | undefined} */
+	let toastTimeout;
 	const timeline = $derived(
 		data.timeline ?? {
 			labels: [],
@@ -241,27 +248,58 @@
 		visibleEventCount += streamPageSize;
 	}
 
+	/**
+	 * @param {string} message
+	 * @param {'success' | 'error'} type
+	 */
+	function showToast(message, type) {
+		toastMessage = message;
+		toastType = type;
+		toastId += 1;
+		toastVisible = true;
+
+		if (toastTimeout) {
+			clearTimeout(toastTimeout);
+		}
+
+		toastTimeout = setTimeout(() => {
+			toastVisible = false;
+			toastTimeout = undefined;
+		}, 5000);
+	}
+
 	async function saveServerConfig() {
 		if (!selectedServer) return;
 
-		const result = await fetch('/dashboard/update_config', {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json"
-			},
-			body: JSON.stringify({
-				guildId: selectedServer.id,
-				image_spam: imageSpamEnabled,
-				link_spam: linkSpamEnabled,
-				malicious_redirects: maliciousRedirectsEnabled,
-				nitro_steam_spam: nitroSteamScamEnabled,
-				profile_spam: profileSpamEnabled,
-				removal_action: removalActionSelected,
-				text_spam: textSpamEnabled
-			})
-		});
+		try {
+			const result = await fetch('/dashboard/update_config', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					guildId: selectedServer.id,
+					image_spam: imageSpamEnabled,
+					link_spam: linkSpamEnabled,
+					malicious_redirects: maliciousRedirectsEnabled,
+					nitro_steam_spam: nitroSteamScamEnabled,
+					profile_spam: profileSpamEnabled,
+					removal_action: removalActionSelected,
+					text_spam: textSpamEnabled
+				})
+			});
 
-		const { success, error } = await result.json();
+			const { success, error } = await result.json();
+
+			if (success) {
+				showToast('Server configuration saved successfully', 'success');
+				return;
+			}
+
+			showToast(error ?? 'Unable to save server configuration', 'error');
+		} catch {
+			showToast('Unable to save server configuration', 'error');
+		}
 	}
 </script>
 
@@ -646,3 +684,71 @@
 		</div>
 	</section>
 </main>
+
+{#if toastVisible}
+	{#key toastId}
+		<div class={`save-toast ${toastType}`} role="status" aria-live="polite">
+			<span>{toastMessage}</span>
+			<span class="save-toast-progress" aria-hidden="true"></span>
+		</div>
+	{/key}
+{/if}
+
+<style>
+	.save-toast {
+		position: relative;
+		position: fixed;
+		right: 1rem;
+		bottom: 1rem;
+		z-index: 90;
+		max-width: min(24rem, calc(100vw - 2rem));
+		padding: 0.85rem 1rem;
+		border-radius: 0.65rem;
+		overflow: hidden;
+		color: #ffffff;
+		font-weight: 600;
+		line-height: 1.35;
+		box-shadow: 0 12px 30px rgba(15, 23, 42, 0.35);
+		animation: toast-in 0.2s ease-out;
+	}
+
+	.save-toast-progress {
+		position: absolute;
+		left: 0;
+		bottom: 0;
+		height: 3px;
+		width: 0;
+		background: rgba(255, 255, 255, 0.8);
+		animation: toast-progress 5s linear forwards;
+	}
+
+	.save-toast.success {
+		background: #166534;
+	}
+
+	.save-toast.error {
+		background: #b91c1c;
+	}
+
+	@keyframes toast-in {
+		from {
+			opacity: 0;
+			transform: translateY(8px);
+		}
+
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes toast-progress {
+		from {
+			width: 0;
+		}
+
+		to {
+			width: 100%;
+		}
+	}
+</style>
