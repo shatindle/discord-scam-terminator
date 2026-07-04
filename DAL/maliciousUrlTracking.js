@@ -1,7 +1,7 @@
-const { Message } = require("discord.js");
+const { Message, PermissionFlagsBits } = require("discord.js");
 const { lookupGuildBehavior } = require("./behaviorApi");
 const { shouldActionUser, recordKick, recordTimeout, recordBan, recordError, recordWarning, recordFail, recordContentReview } = require("./databaseApi");
-const { logWarning, logKick, logTimeout, logBan, logError, forwardMessage } = require("./logApi");
+const { logWarning, logKick, logTimeout, logBan, forwardMessage } = require("./logApi");
 const { getDomainCreationDate } = require("./domainLookup");
 const { getAllRedirects } = require("./redirectExtractor");
 const { extractHostname } = require("./urlTesterApi");
@@ -43,41 +43,22 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
     const content = message.content;
     const client = message.client;
     const channelId = message.channel.id;
+    const channel = message.channel;
+    const guild = message.guild;
 
-    let messageNeededHandling = false;
-
-    try {
-        // could be a malicious URL.  We need to delete the message.
-        if (message.deletable) {
-            await message.delete();
-        }
-
-        messageNeededHandling = true;
-    } catch {
-        // if we're here, the message could not be deleted, likely because we already deleted it via ban
+     // could be a malicious URL.  We need to delete the message.
+    if (message.deletable) {
+        await message.delete();
     }
 
-    if (messageNeededHandling) {
-        // if we're here, the message did need to be deleted, so make other users aware of the potential danger
-        try {
-            const response = await message.channel.send(
-                "Potentially dangerous URL or message pattern detected.  If this was in error, please let a Mod know.");
+    if (channel && guild && channel.permissionsFor(guild.members.me).has(PermissionFlagsBits.SendMessages)) {
+        const response = await channel.send(
+            "Potentially dangerous URL or message pattern detected.  If this was in error, please let a Mod know.");
 
-            setTimeout(async function() {
-                if (response.deletable)
-                    await response.delete();
-            }, 5000);
-        } catch (letErrorGoThrough) {
-            await logError(
-                client,
-                guildId,
-                userId,
-                channelId,
-                "",
-                `SEND_MESSAGE denied to the bot on <#${channelId}>. Unable to clean up spam behavior.`);
-
-            throw letErrorGoThrough;
-        }
+        setTimeout(async function() {
+            if (response.deletable)
+                await response.delete();
+        }, 5000);
     }
 
     let action = null;
@@ -106,83 +87,65 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
     if (domainTooNew || shouldActionUser(message.member.id, content)) {
         const behaviors = lookupGuildBehavior(message.guildId);
 
-        try {
-            if (behaviors.removal_action === "kick" && message.member.kickable) {
-                // attempt soft-ban
-                let softbanSuccess = false;
-                try {
-                    // attempt a ban/unban to more efficiently deal with message history
-                    let softbanUserId = message.member.id;
-
-                    // TODO: if this causes problems, we'll have to make a new flag for soft-ban
-                    if (message.member.bannable) {
-                        await message.member.ban({ reason: `Soft ban: ${reason}`, deleteMessageSeconds: BAN_DELETE_MESSAGE_SECONDS });
-                        await message.guild.members.unban(softbanUserId, `Soft ban: ${reason}`);
-
-                        softbanSuccess = true;
-                    }
-                } catch(cannotBan) { /* could not soft ban, do kick instead */ }
-
-                if (!softbanSuccess) await message.member.kick(reason);
-
-                await recordKick(
-                    guildId,
-                    userId,
-                    username,
-                    reason);
-
-                await logKick(client, guildId, userId, channelId, content, reason);
-
-                action = "kick-success";
-            } else if (behaviors.removal_action === "timeout" && message.member.manageable) {
-                await message.member.timeout(TIMEOUT_TIME, reason);
-                await recordTimeout(
-                    guildId,
-                    userId,
-                    username,
-                    reason);
-
-                await logTimeout(client, guildId, userId, channelId, content, reason);
-
-                action = "timeout-success";
-            } else if (behaviors.removal_action === "ban" && message.member.bannable) {
-                await message.member.ban({ reason, deleteMessageSeconds: BAN_DELETE_MESSAGE_SECONDS });
-                await recordBan(
-                    guildId,
-                    userId,
-                    username,
-                    reason);
-
-                await logBan(client, guildId, userId, channelId, content, reason);
-
-                action = "ban-success";
-            } else {
-                await recordFail(
-                    guildId,
-                    userId,
-                    username,
-                    reason);
-
-                await logWarning(client, guildId, userId, channelId, content, reason);
-
-                action = "action-fail";
-            }
-        } catch (err) {
-            // something went wrong when assessing the message content
+        if (behaviors.removal_action === "kick" && message.member.kickable) {
+            // attempt soft-ban
+            let softbanSuccess = false;
             try {
-                await recordError(guildId, userId, `User removal tried: ${behaviors.removal_action}. Error: ${err.toString()}`, reason);
-                await recordFail(
-                    guildId,
-                    userId,
-                    username,
-                    `Error: Bot could not action user due to server configuration. Message cleanup will be attempted. ${reason}`);
+                // attempt a ban/unban to more efficiently deal with message history
+                let softbanUserId = message.member.id;
 
-                await logWarning(client, guildId, userId, channelId, content, `Error: Bot could not action user due to server settings. Message cleanup will be attempted. ${reason}`);
+                // TODO: if this causes problems, we'll have to make a new flag for soft-ban
+                if (message.member.bannable) {
+                    await message.member.ban({ reason: `Soft ban: ${reason}`, deleteMessageSeconds: BAN_DELETE_MESSAGE_SECONDS });
+                    await message.guild.members.unban(softbanUserId, `Soft ban: ${reason}`);
 
-                action = "action-fail";
-            } catch (err2) {
-                await recordError("", "", err2.toString(), reason);
-            }
+                    softbanSuccess = true;
+                }
+            } catch(cannotBan) { /* could not soft ban, do kick instead */ }
+
+            if (!softbanSuccess) await message.member.kick(reason);
+
+            await recordKick(
+                guildId,
+                userId,
+                username,
+                reason);
+
+            await logKick(client, guildId, userId, channelId, content, reason);
+
+            action = "kick-success";
+        } else if (behaviors.removal_action === "timeout" && message.member.manageable) {
+            await message.member.timeout(TIMEOUT_TIME, reason);
+            await recordTimeout(
+                guildId,
+                userId,
+                username,
+                reason);
+
+            await logTimeout(client, guildId, userId, channelId, content, reason);
+
+            action = "timeout-success";
+        } else if (behaviors.removal_action === "ban" && message.member.bannable) {
+            await message.member.ban({ reason, deleteMessageSeconds: BAN_DELETE_MESSAGE_SECONDS });
+            await recordBan(
+                guildId,
+                userId,
+                username,
+                reason);
+
+            await logBan(client, guildId, userId, channelId, content, reason);
+
+            action = "ban-success";
+        } else {
+            await recordFail(
+                guildId,
+                userId,
+                username,
+                reason);
+
+            await logWarning(client, guildId, userId, channelId, content, reason);
+
+            action = "action-fail";
         }
     } else {
         await recordWarning(
@@ -232,46 +195,27 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
 
     const client = message.client;
     const channelId = message.channel.id;
+    const channel = message.channel;
+    const guild = message.guild;
 
     if (perform !== "no-action") {
-        let messageNeededHandling = false;
-
-        try {
-            // could be a malicious URL.  We need to delete the message.
-            if (message.deletable) {
-                if (reason === "Image spam") {
-                    await forwardMessage(client, guildId, message);
-                }
-
-                await message.delete();
+        // could be a malicious URL.  We need to delete the message.
+        if (message.deletable) {
+            if (reason === "Image spam") {
+                await forwardMessage(client, guildId, message);
             }
 
-            messageNeededHandling = true;
-        } catch {
-            // if we're here, the message could not be deleted, likely because we already deleted it via ban
+            await message.delete();
         }
 
-        if (messageNeededHandling) {
-            // if we're here, the message did need to be deleted, so make other users aware of the potential danger
-            try {
-                const response = await message.channel.send(
-                    "Spam detected.  If this was in error, please let a Mod know.");
+        if (channel && guild && channel.permissionsFor(guild.members.me).has(PermissionFlagsBits.SendMessages)) {
+            const response = await channel.send(
+                "Spam detected.  If this was in error, please let a Mod know.");
 
-                setTimeout(async function() {
-                    if (response.deletable)
-                        await response.delete();
-                }, 5000);
-            } catch (letErrorGoThrough) {
-                await logError(
-                    client,
-                    guildId,
-                    userId,
-                    channelId,
-                    "",
-                    `SEND_MESSAGE denied to the bot on <#${channelId}>. Unable to clean up spam behavior.`);
-
-                throw letErrorGoThrough;
-            }
+            setTimeout(async function() {
+                if (response.deletable)
+                    await response.delete();
+            }, 5000);
         }
     }
     
@@ -291,83 +235,65 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
     } else if (perform === "remove") {
         const behaviors = lookupGuildBehavior(message.guildId);
 
-        try {
-            if (behaviors.removal_action === "kick" && message.member.kickable) {
-                // attempt soft-ban
-                let softbanSuccess = false;
-                try {
-                    // attempt a ban/unban to more efficiently deal with message history
-                    let softbanUserId = message.member.id;
-
-                    // TODO: if this causes problems, we'll have to make a new flag for soft-ban
-                    if (message.member.bannable) {
-                        await message.member.ban({ reason: `Soft ban: ${reason}`, deleteMessageSeconds: BAN_DELETE_MESSAGE_SECONDS });
-                        await message.guild.members.unban(softbanUserId, `Soft ban: ${reason}`);
-
-                        softbanSuccess = true;
-                    }
-                } catch(cannotBan) { /* could not soft ban, do kick instead */ }
-
-                if (!softbanSuccess) await message.member.kick(reason);
-
-                await recordKick(
-                    guildId,
-                    userId,
-                    username,
-                    reason);
-
-                await logKick(client, guildId, userId, channelId, content, reason);
-
-                action = "kick-success";
-            } else if (behaviors.removal_action === "timeout" && message.member.manageable) {
-                await message.member.timeout(TIMEOUT_TIME, reason);
-                await recordTimeout(
-                    guildId,
-                    userId,
-                    username,
-                    reason);
-
-                await logTimeout(client, guildId, userId, channelId, content, reason);
-
-                action = "timeout-success";
-            } else if (behaviors.removal_action === "ban" && message.member.bannable) {
-                await message.member.ban({ reason, deleteMessageSeconds: BAN_DELETE_MESSAGE_SECONDS });
-                await recordBan(
-                    guildId,
-                    userId,
-                    username,
-                    reason);
-
-                await logBan(client, guildId, userId, channelId, content, reason);
-
-                action = "ban-success";
-            } else {
-                await recordFail(
-                    guildId,
-                    userId,
-                    username,
-                    reason);
-
-                await logWarning(client, guildId, userId, channelId, content, reason);
-
-                action = "action-fail";
-            }
-        } catch (err) {
-            // something went wrong when assessing the message content
+        if (behaviors.removal_action === "kick" && message.member.kickable) {
+            // attempt soft-ban
+            let softbanSuccess = false;
             try {
-                await recordError(guildId, userId, `User removal tried: ${behaviors.removal_action}. Error: ${err.toString()}`, reason);
-                await recordFail(
-                    guildId,
-                    userId,
-                    username,
-                    `Error: Bot could not action user due to server configuration. Message cleanup will be attempted. ${reason}`);
+                // attempt a ban/unban to more efficiently deal with message history
+                let softbanUserId = message.member.id;
 
-                await logWarning(client, guildId, userId, channelId, content, `Error: Bot could not action user due to server settings. Message cleanup will be attempted. ${reason}`);
+                // TODO: if this causes problems, we'll have to make a new flag for soft-ban
+                if (message.member.bannable) {
+                    await message.member.ban({ reason: `Soft ban: ${reason}`, deleteMessageSeconds: BAN_DELETE_MESSAGE_SECONDS });
+                    await message.guild.members.unban(softbanUserId, `Soft ban: ${reason}`);
 
-                action = "action-fail";
-            } catch (err2) {
-                await recordError("", "", err2.toString(), reason);
-            }
+                    softbanSuccess = true;
+                }
+            } catch(cannotBan) { /* could not soft ban, do kick instead */ }
+
+            if (!softbanSuccess) await message.member.kick(reason);
+
+            await recordKick(
+                guildId,
+                userId,
+                username,
+                reason);
+
+            await logKick(client, guildId, userId, channelId, content, reason);
+
+            action = "kick-success";
+        } else if (behaviors.removal_action === "timeout" && message.member.manageable) {
+            await message.member.timeout(TIMEOUT_TIME, reason);
+            await recordTimeout(
+                guildId,
+                userId,
+                username,
+                reason);
+
+            await logTimeout(client, guildId, userId, channelId, content, reason);
+
+            action = "timeout-success";
+        } else if (behaviors.removal_action === "ban" && message.member.bannable) {
+            await message.member.ban({ reason, deleteMessageSeconds: BAN_DELETE_MESSAGE_SECONDS });
+            await recordBan(
+                guildId,
+                userId,
+                username,
+                reason);
+
+            await logBan(client, guildId, userId, channelId, content, reason);
+
+            action = "ban-success";
+        } else {
+            await recordFail(
+                guildId,
+                userId,
+                username,
+                reason);
+
+            await logWarning(client, guildId, userId, channelId, content, reason);
+
+            action = "action-fail";
         }
     }
 

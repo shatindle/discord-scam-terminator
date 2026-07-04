@@ -138,5 +138,18 @@ client.on(Events.GuildCreate, async (guild) => {
     }
 });
 
+client.rest.on("rateLimited", async (rateLimitData) => {
+    try {
+        console.warn(`[RATE LIMIT HIT]`);
+        console.warn(`- Scope: ${rateLimitData.scope}`); // 'global', 'shared', or 'user'
+        console.warn(`- Method/URL: ${rateLimitData.method} ${rateLimitData.url}`);
+        console.warn(`- Time to Reset: ${rateLimitData.timeToReset}ms`);
+        console.warn(`- Limit Config: Max ${rateLimitData.limit} requests`);
+    } catch (err) {
+        // nothing we can do about this...
+        console.warn("Rate limited, but cannot gather more info");
+    }
+})
+
 // login to client - we should auto reconnect automatically
 client.login(token);
