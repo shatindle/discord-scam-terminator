@@ -145,8 +145,9 @@ async function monitor(message) {
                     // delete all and remove
                     log.messages[log.messages.length - 1].deleted = true;
                     const priorMessages = log.messages.filter(m => !m.deleted);
-                    await spamUrlDetected(message, guildId, userId, username, reason, "remove");
-                    await cleanup(client, priorMessages, guildId, userId);
+                    if (await spamUrlDetected(message, guildId, userId, username, reason, "remove")) {
+                        await cleanup(client, priorMessages, guildId, userId);
+                    }
                     return true;
                 }
             } else {

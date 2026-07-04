@@ -40,6 +40,8 @@ const BAN_DELETE_MESSAGE_SECONDS = 60 * 60 * 24;
  * @param {String} maliciousUrl 
  */
 async function maliciousUrlDetected(message, guildId, userId, username, reason, domain, maliciousUrl) {
+    let cleanupNecessary = true;
+
     const content = message.content;
     const client = message.client;
     const channelId = message.channel.id;
@@ -100,6 +102,7 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
                     await message.guild.members.unban(softbanUserId, `Soft ban: ${reason}`);
 
                     softbanSuccess = true;
+                    cleanupNecessary = false;
                 }
             } catch(cannotBan) { /* could not soft ban, do kick instead */ }
 
@@ -136,6 +139,7 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
             await logBan(client, guildId, userId, channelId, content, reason);
 
             action = "ban-success";
+            cleanupNecessary = false;
         } else {
             await recordFail(
                 guildId,
@@ -169,6 +173,8 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
     } catch (err) {
         await recordError(guildId, userId, err.toString(), "failed to record content review message");
     }
+
+    return cleanupNecessary;
 }
 
 /**
@@ -179,8 +185,11 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
  * @param {String} username 
  * @param {String} reason 
  * @param {String} perform 
+ * @returns {Promise<boolean>} Whether or not cleanup is necessary
  */
 async function spamUrlDetected(message, guildId, userId, username, reason, perform) {
+    let cleanupNecessary = true;
+
     let content;
 
     if (reason === "Image spam") {
@@ -248,6 +257,7 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
                     await message.guild.members.unban(softbanUserId, `Soft ban: ${reason}`);
 
                     softbanSuccess = true;
+                    cleanupNecessary = false;
                 }
             } catch(cannotBan) { /* could not soft ban, do kick instead */ }
 
@@ -284,6 +294,7 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
             await logBan(client, guildId, userId, channelId, content, reason);
 
             action = "ban-success";
+            cleanupNecessary = false;
         } else {
             await recordFail(
                 guildId,
@@ -309,6 +320,8 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
     } catch (err) {
         await recordError(guildId, userId, err.toString(), "failed to record content review message");
     }
+
+    return cleanupNecessary;
 }
 
 module.exports = {

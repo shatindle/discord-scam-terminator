@@ -166,15 +166,17 @@ async function monitor(message, ignoreSusText) {
                     // delete all and warn
                     log.messages[log.messages.length - 1].deleted = true;
                     const priorMessages = log.messages.filter(m => !m.deleted);
-                    await spamUrlDetected(message, guildId, userId, username, reason, "warn");
-                    await cleanup(client, priorMessages, guildId, userId);
+                    if (await spamUrlDetected(message, guildId, userId, username, reason, "warn")) {
+                        await cleanup(client, priorMessages, guildId, userId);
+                    }
                     return true;
                 } else {
                     // delete all and remove
                     log.messages[log.messages.length - 1].deleted = true;
                     const priorMessages = log.messages.filter(m => !m.deleted);
-                    await spamUrlDetected(message, guildId, userId, username, reason, "remove");
-                    await cleanup(client, priorMessages, guildId, userId);
+                    if (await spamUrlDetected(message, guildId, userId, username, reason, "remove")) {
+                        await cleanup(client, priorMessages, guildId, userId);
+                    }
                     return true;
                 }
             } else {
@@ -191,8 +193,9 @@ async function monitor(message, ignoreSusText) {
                     // delete all and remove
                     log.messages[log.messages.length - 1].deleted = true;
                     const priorMessages = log.messages.filter(m => !m.deleted);
-                    await spamUrlDetected(message, guildId, userId, username, reason, "remove");
-                    await cleanup(client, priorMessages, guildId, userId);
+                    if (await spamUrlDetected(message, guildId, userId, username, reason, "remove")) {
+                        await cleanup(client, priorMessages, guildId, userId);
+                    }
                     return true;
                 }
             }
