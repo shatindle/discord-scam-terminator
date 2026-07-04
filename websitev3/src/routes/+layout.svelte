@@ -1,18 +1,74 @@
 <script>
+	import { page } from '$app/state';
 	import favicon from '$lib/assets/favicon.ico';
 	import '../app.css';
 
 	let { children, data } = $props();
 	let profileMenuOpen = $state(false);
+
+	const defaultTitle = 'Scam Hunter | Discord Scam Protection Bot';
+	const defaultDescription =
+		'Eliminating scams and spam in Discord communities since 2021 so moderators can focus on people.';
+
+	/**
+     * @param {string} pathname
+     */
+	function isDashboardPath(pathname) {
+		return pathname === '/dashboard' || pathname.startsWith('/dashboard/');
+	}
+
+	/**
+     * @param {string} pathname
+     */
+	function pageTitle(pathname) {
+		if (isDashboardPath(pathname)) {
+			return 'Scam Hunter | Dashboard';
+		}
+
+		return defaultTitle;
+	}
+
+	/**
+     * @param {string} pathname
+     */
+	function pageDescription(pathname) {
+		if (isDashboardPath(pathname)) {
+			return 'Review server activity, bot moderation actions, and anti-scam rule configuration for your Discord communities.';
+		}
+
+		return defaultDescription;
+	}
 </script>
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-	<title>Scam Hunter</title>
+	<title>{pageTitle(page.url.pathname)}</title>
+	<link rel="canonical" href={page.url.href} />
+	<meta name="description" content={pageDescription(page.url.pathname)} />
 	<meta
-		name="description"
-		content="Scam Hunter helps Discord communities detect scams, manage moderation responses, and review activity in one calm dashboard."
+		name="robots"
+		content={
+			isDashboardPath(page.url.pathname) ||
+			page.url.pathname.startsWith('/auth/') ||
+			page.url.pathname === '/logout'
+				? 'noindex, nofollow'
+				: 'index, follow'
+		}
 	/>
+	<meta name="author" content="Scam Hunter" />
+	<meta name="theme-color" content="#0f172a" />
+
+	<meta property="og:type" content="website" />
+	<meta property="og:site_name" content="Scam Hunter" />
+	<meta property="og:title" content={pageTitle(page.url.pathname)} />
+	<meta property="og:description" content={pageDescription(page.url.pathname)} />
+	<meta property="og:url" content={page.url.href} />
+	<meta property="og:image" content={`${page.url.origin}/img/scamhunter-banner.png`} />
+
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content={pageTitle(page.url.pathname)} />
+	<meta name="twitter:description" content={pageDescription(page.url.pathname)} />
+	<meta name="twitter:image" content={`${page.url.origin}/img/scamhunter-banner.png`} />
 </svelte:head>
 
 
