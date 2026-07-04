@@ -109,33 +109,33 @@ export async function load({ locals, url }) {
 
 	const serverFilter =
 		selectedServerId && filteredServers.some((server) => server.id === selectedServerId)
-			? selectedServerId
-			: undefined;
+			? [selectedServerId]
+			: filteredServers.map(t => t.id);
 
 	return await getData(locals.user, filteredServers, serverFilter, selectedSort, selectedGraphRange);
 }
 
 /**
  * @param {App.Locals['user']} user
-	* @param {Array<{ id: string; name: string; avatarUrl: string; memberCount: number; totalActions: number; owner: { id: string; username: string; avatarUrl: string } }>} servers
- * @param {string | undefined} serverFilter
-	* @param {'name' | 'members' | 'actions'} selectedSort
-	* @param {'24h' | '1w' | '1m' | '6m'} selectedGraphRange
+ * @param {Array<{ id: string; name: string; avatarUrl: string; memberCount: number; totalActions: number; owner: { id: string; username: string; avatarUrl: string } }>} servers
+ * @param {Array<string>} serverFilter
+ * @param {'name' | 'members' | 'actions'} selectedSort
+ * @param {'24h' | '1w' | '1m' | '6m'} selectedGraphRange
  */
 async function getData(user, servers, serverFilter, selectedSort, selectedGraphRange) {
 	try {
 		const liveData = await getLiveDashboardData({
-			guildId: serverFilter,
+			guildIds: serverFilter,
 			graphRange: selectedGraphRange
 		});
 
 		return {
 			user,
 			servers,
-			selectedServerId: serverFilter ?? null,
+			selectedServerId: serverFilter.length === 1 ? serverFilter[0] : null,
 			selectedSort,
 			selectedGraphRange,
-			selectedServerConfig: serverFilter ? serverConfig(serverFilter) : null,
+			selectedServerConfig: serverFilter.length === 1 ? serverConfig(serverFilter[0]) : null,
 			...liveData
 		};
 	} catch {
@@ -246,7 +246,7 @@ function filterServersForUser(servers, user) {
 	}
 
 	if (!user.guildPermissions || user.guildPermissions.length === 0) {
-		return servers;
+		return [];
 	}
 
 	const permissionMap = new Map(user.guildPermissions.map((entry) => [entry.guildId, entry.permissions]));

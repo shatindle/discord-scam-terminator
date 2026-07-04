@@ -104,11 +104,14 @@ function actionTitle(type) {
 /**
  * @param {string} collectionName
  * @param {Date} sinceDate
+ * @param {Array<string>} guildIds
  */
-function getRecentCollectionEvents(collectionName, sinceDate) {
+function getRecentCollectionEvents(collectionName, sinceDate, guildIds) {
 	const snap = database
 		._getTable(collectionName)
-		.filter((/** @type {{ timestamp: { toDate: () => Date; }; }} */ t) => t.timestamp.toDate() >= sinceDate)
+		.filter((/** @type {{ timestamp: { toDate: () => Date; }, guildId: string }} */ t) => 
+			guildIds.includes(t.guildId) &&
+			t.timestamp.toDate() >= sinceDate)
 		.sort((/** @type {{ timestamp: { toDate: () => number; }; }} */ a, /** @type {{ timestamp: { toDate: () => number; }; }} */ b) => 
 			a.timestamp.toDate() < b.timestamp.toDate());
 
@@ -132,35 +135,16 @@ function getRecentCollectionEvents(collectionName, sinceDate) {
 /**
  * @param {string} collectionName
  * @param {Date} sinceDate
+ * @param {Array<string>} guildIds
  */
-const getCollectionCountSince = (collectionName, sinceDate) =>
-	database
+function getFilteredCountSince(collectionName, sinceDate, guildIds) {
+	const snap = database
 		._getTable(collectionName)
-		.filter((/** @type {{ timestamp: Timestamp; }} */ t) => 
-			t.timestamp.toDate() >= sinceDate
-		).length;
+		.filter((/** @type {{ timestamp: { toDate: () => Date; }, guildId: string }} */ t) => 
+			guildIds.includes(t.guildId) && 
+			t.timestamp.toDate() >= sinceDate);
 
-/**
- * @param {string} collectionName
- * @param {Date} sinceDate
- * @param {string | undefined} guildId
- */
-function getFilteredCountSince(collectionName, sinceDate, guildId) {
-	if (!guildId) {
-		return getCollectionCountSince(collectionName, sinceDate);
-	}
-
-	const snap = database._getTable(collectionName).filter((/** @type {{ timestamp: { toDate: () => Date; }; }} */ t) => t.timestamp.toDate() >= sinceDate);
-
-	let count = 0;
-
-	for (const row of snap) {
-		if (row.guildId === guildId) {
-			count += 1;
-		}
-	}
-
-	return count;
+	return snap.length;
 }
 
 /** @param {Date} date */
@@ -239,9 +223,9 @@ function monthOffsetFromFirstBucket(when, firstBucket) {
 
 /**
  * @param {GraphRange} graphRange
- * @param {string | undefined} guildId
+ * @param {Array<string>} guildIds
  */
-async function getRecentActionTimeline(graphRange, guildId) {
+async function getRecentActionTimeline(graphRange, guildIds) {
 	const config = graphRangeConfigs[graphRange] ?? graphRangeConfigs['24h'];
 	const bucketStarts = graphRange === '6m' ? buildMonthlyBucketStarts() : [];
 	const labels =
@@ -278,7 +262,9 @@ async function getRecentActionTimeline(graphRange, guildId) {
 	const queries = actionCollections.map(({ collection, key }) => {
 			const snap = database
 				._getTable(collection)
-				.filter((/** @type {{ timestamp: { toDate: () => Date; }; }} */ t) => t.timestamp.toDate() >= fromDate)
+				.filter((/** @type {{ timestamp: { toDate: () => Date; }, guildId: string }} */ t) => 
+					guildIds.includes(t.guildId) &&
+					t.timestamp.toDate() >= fromDate)
 				.sort((/** @type {{ timestamp: { toDate: () => Date; }; }} */ a, /** @type {{ timestamp: { toDate: () => Date; }; }} */ b) => a.timestamp.toDate() < b.timestamp.toDate());
 
 			return { key: /** @type {ActionKey} */ (key), snap };
@@ -286,10 +272,6 @@ async function getRecentActionTimeline(graphRange, guildId) {
 
 	for (const { key, snap } of queries) {
 		for (const row of snap) {
-			if (guildId && row.guildId !== guildId) {
-				continue;
-			}
-
 			const when = row.timestamp?.toDate ? row.timestamp.toDate() : null;
 
 			if (!when) {
@@ -310,20 +292,20 @@ async function getRecentActionTimeline(graphRange, guildId) {
 	return timeline;
 }
 
-/** @param {{ guildId?: string; graphRange?: GraphRange }} [options] */
+/** @param {{ guildIds?: Array<string>; graphRange?: GraphRange }} [options] */
 export async function getLiveDashboardData(options = {}) {
-	const guildId = options.guildId;
+	const guildIds = options.guildIds ?? [];
 	const graphRange = options.graphRange ?? '24h';
 	const config = graphRangeConfigs[graphRange] ?? graphRangeConfigs['24h'];
 	const selectedRangeStart = rangeStartDate(graphRange);
 	const sevenDaysAgo = new Date(Date.now() - 7 * DAY_MS);
 
 	const [warnings, kicks, timeouts, fails, bans] = [
-		getFilteredCountSince('warning', selectedRangeStart, guildId),
-		getFilteredCountSince('kick', selectedRangeStart, guildId),
-		getFilteredCountSince('timeout', selectedRangeStart, guildId),
-		getFilteredCountSince('ban', selectedRangeStart, guildId),
-		getFilteredCountSince('real_ban', selectedRangeStart, guildId)
+		getFilteredCountSince('warning', selectedRangeStart, guildIds),
+		getFilteredCountSince('kick', selectedRangeStart, guildIds),
+		getFilteredCountSince('timeout', selectedRangeStart, guildIds),
+		getFilteredCountSince('ban', selectedRangeStart, guildIds),
+		getFilteredCountSince('real_ban', selectedRangeStart, guildIds)
 	];
 
 	const totalInRange = warnings + kicks + timeouts + fails + bans;
@@ -332,15 +314,14 @@ export async function getLiveDashboardData(options = {}) {
 	const currentCadenceUnit = cadenceUnit(graphRange);
 
 	const [recentWarnings, recentKicks, recentTimeouts, recentFails, recentBans] = [
-		getRecentCollectionEvents('warning', sevenDaysAgo),
-		getRecentCollectionEvents('kick', sevenDaysAgo),
-		getRecentCollectionEvents('timeout', sevenDaysAgo),
-		getRecentCollectionEvents('ban', sevenDaysAgo),
-		getRecentCollectionEvents('real_ban', sevenDaysAgo)
+		getRecentCollectionEvents('warning', sevenDaysAgo, guildIds),
+		getRecentCollectionEvents('kick', sevenDaysAgo, guildIds),
+		getRecentCollectionEvents('timeout', sevenDaysAgo, guildIds),
+		getRecentCollectionEvents('ban', sevenDaysAgo, guildIds),
+		getRecentCollectionEvents('real_ban', sevenDaysAgo, guildIds)
 	];
 
 	const events = [...recentWarnings, ...recentKicks, ...recentTimeouts, ...recentFails, ...recentBans]
-		.filter((event) => !guildId || event.guildId === guildId)
 		.sort((a, b) => b.date.valueOf() - a.date.valueOf())
 		.map((event) => ({
 			title: event.title,
@@ -352,7 +333,7 @@ export async function getLiveDashboardData(options = {}) {
 			copy: null
 		}));
 
-	const timeline = await getRecentActionTimeline(graphRange, guildId);
+	const timeline = await getRecentActionTimeline(graphRange, guildIds);
 
 	return {
 		isLive: true,

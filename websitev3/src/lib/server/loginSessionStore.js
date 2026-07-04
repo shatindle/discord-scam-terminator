@@ -29,7 +29,7 @@ export async function createLoginSession(sessionData) {
 
 /** @param {string} sessionId */
 export async function getLoginSession(sessionId) {
-	const firestore = await getFirestoreClient();
+	const firestore = getFirestoreClient();
 	const doc = await firestore.collection(COLLECTION).doc(sessionId).get();
 
 	if (!doc.exists) {

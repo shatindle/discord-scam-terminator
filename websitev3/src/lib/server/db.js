@@ -119,11 +119,34 @@ function configureObserver(type, list) {
     });
 }
 
+async function clearOldSessions() {
+    try {
+        const db = getFirestoreClient();
+        const table = "loginsessions";
+
+        const sessions = database["loginsessions"];
+
+        for (const key of Object.keys(sessions)) {
+            // @ts-ignore
+            const session = sessions[key];
+            const expiresAt = session.expiresAt;
+            if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+                await db.collection(table).doc(key).delete();
+            }
+        }
+    } catch (err) {
+        console.error("Session cleanup errored for some reason");
+        console.dir(err);
+    }
+}
+
 if (hasFirestoreConfig()) {
     for (const table of Object.keys(database).filter((t) => !t.startsWith('_'))) {
         // @ts-ignore
         configureObserver(table, database[table]);
     }
+
+    setInterval(clearOldSessions, 1000 * 60 * 60);
 } else {
     warnMissingFirestoreConfig();
 }

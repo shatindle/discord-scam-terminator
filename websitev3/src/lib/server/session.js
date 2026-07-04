@@ -4,7 +4,10 @@ import { env } from '$env/dynamic/private';
 export const SESSION_COOKIE_NAME = 'dsh_session';
 export const OAUTH_STATE_COOKIE_NAME = 'dsh_oauth_state';
 
-const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
+// because we're storing the user's guild permissions, only let the session stay alive for a day
+// this will allow them to see actions already taken
+// changes to the server will still have to go through a permission check
+const SESSION_TTL_SECONDS = 60 * 60 * 24;
 
 /** @typedef {{ sessionId: string }} SessionReference */
 
