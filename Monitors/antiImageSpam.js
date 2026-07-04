@@ -49,7 +49,11 @@ async function cleanup(client, messageList, guildId, userId) {
                 if (ids.deleted) continue;
 
                 ids.deleted = true;
-                await message.delete();
+                message.delete().catch((delErr) => {
+                    try {
+                        await recordError(guildId, userId, "Line 54 of antiImageSpam.js: " + JSON.stringify(delErr), reason);
+                    } catch { console.log(`Line 55 of antiImageSpam.js: Unable to delete message in ${guildId} for user ${userId}`); }
+                });
             }
         } catch (err) {
             try {

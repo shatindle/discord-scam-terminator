@@ -50,7 +50,11 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
 
      // could be a malicious URL.  We need to delete the message.
     if (message.deletable) {
-        await message.delete();
+        message.delete().catch((delErr) => {
+            try {
+                await recordError(guildId, userId, "Line 55 of maliciousUrlTracking.js: " + JSON.stringify(delErr), reason);
+            } catch { console.log(`Line 56 of maliciousUrlTracking.js: Unable to delete message in ${guildId} for user ${userId}`); }
+        });
     }
 
     if (channel && guild && channel.permissionsFor(guild.members.me).has(PermissionFlagsBits.SendMessages)) {
@@ -214,7 +218,11 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
                 await forwardMessage(client, guildId, message);
             }
 
-            await message.delete();
+            message.delete().catch((delErr) => {
+                try {
+                    await recordError(guildId, userId, "Line 223 of maliciousUrlTracking.js: " + JSON.stringify(delErr), reason);
+                } catch { console.log(`Line 224 of maliciousUrlTracking.js: Unable to delete message in ${guildId} for user ${userId}`); }
+            });
         }
 
         if (channel && guild && channel.permissionsFor(guild.members.me).has(PermissionFlagsBits.SendMessages)) {
