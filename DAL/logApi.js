@@ -1,4 +1,4 @@
-const { EmbedBuilder, Client, Message } = require("discord.js");
+const { EmbedBuilder, Client, Message, PermissionFlagsBits } = require("discord.js");
 const { getLogChannel } = require("../DAL/databaseApi");
 
 /**
@@ -30,7 +30,9 @@ async function forwardMessage(client, guildId, message, override = undefined, su
                     .setDescription(supplement)
                     .setTimestamp();
 
-                await channel.send({ embeds: [supplementaryMessage] });
+                if (channel && channel.send && channel.permissionsFor && channel.permissionsFor(channel.guild.members.me).has(PermissionFlagsBits.SendMessages)) {
+                    await channel.send({ embeds: [supplementaryMessage] });
+                }
             } catch (err) {
                 console.log(`Error adding supplementary message: ${err}`);
             }
@@ -73,7 +75,9 @@ async function logActivity(client, guildId, action, activity, color = "#007bff",
             .setDescription(activity)
             .setTimestamp();
 
-        await channel.send({ embeds: [message], content: messageLink });
+        if (channel && channel.send && channel.permissionsFor && channel.permissionsFor(channel.guild.members.me).has(PermissionFlagsBits.SendMessages)) {
+            await channel.send({ embeds: [message], content: messageLink });
+        }
 
         return true;
     } catch (err) {
