@@ -50,7 +50,7 @@ async function cleanup(client, messageList, guildId, userId) {
                 if (ids.deleted) continue;
 
                 ids.deleted = true;
-                message.delete().catch((delErr) => {
+                message.delete().catch(async (delErr) => {
                     try {
                         await recordError(guildId, userId, "Line 55 of antiLinkSpam.js: " + JSON.stringify(delErr), reason);
                     } catch { console.log(`Line 56 of antiLinkSpam.js: Unable to delete message in ${guildId} for user ${userId}`); }
