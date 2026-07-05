@@ -2,10 +2,13 @@ FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
+RUN chown -R node:node /app
+USER node
+
+COPY --chown=node:node package*.json ./
 RUN npm i
 
-COPY . .
+COPY --chown=node:node . .
 RUN npm run build
 RUN { npm audit fix || true; }
 
@@ -17,7 +20,10 @@ ENV PORT=3001
 
 WORKDIR /app
 
-COPY package*.json ./
+RUN chown -R node:node /app
+USER node
+
+COPY --chown=node:node package*.json ./
 RUN npm i --omit=dev
 RUN { npm audit fix || true; }
 
