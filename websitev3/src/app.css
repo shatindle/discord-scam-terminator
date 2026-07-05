@@ -583,6 +583,119 @@ a {
 	text-decoration-color: rgba(49, 240, 162, 0.78);
 }
 
+.clean-inline-link {
+	color: var(--green-strong);
+	text-decoration: underline;
+	text-decoration-color: rgba(49, 240, 162, 0.42);
+	text-underline-offset: 0.17em;
+}
+
+.clean-inline-link:hover {
+	text-decoration-color: rgba(49, 240, 162, 0.78);
+}
+
+.setup-section {
+	gap: 1.35rem;
+}
+
+.setup-intro {
+	font-size: 1.02rem;
+	line-height: 1.7;
+}
+
+.setup-step {
+	padding: 1.35rem 0;
+	display: grid;
+	gap: 0.7rem;
+}
+
+.setup-step h2 {
+	text-transform: none;
+	letter-spacing: 0.01em;
+	line-height: 1.25;
+	font-size: clamp(1.12rem, 2vw, 1.35rem);
+	margin: 0;
+}
+
+.setup-step p,
+.setup-step li {
+	line-height: 1.75;
+}
+
+.setup-detail-block {
+	padding: 0.7rem 0.85rem;
+	border: 1px dashed rgba(148, 160, 255, 0.28);
+	border-radius: 0.55rem;
+	background: rgba(18, 23, 54, 0.28);
+}
+
+.setup-detail-block p,
+.setup-detail-block li,
+.setup-detail-block .setup-list-title,
+.setup-detail-block .clean-note {
+	color: rgba(244, 247, 255, 0.72);
+}
+
+.setup-list-title {
+	margin: 0.35rem 0 0;
+	font-size: 0.95rem;
+	color: rgba(244, 247, 255, 0.9);
+	font-weight: 600;
+}
+
+.setup-list {
+	margin: 0;
+	padding-left: 1.2rem;
+	display: grid;
+	gap: 0.45rem;
+}
+
+.setup-page code {
+	padding: 0.14rem 0.35rem;
+	border-radius: 0.2rem;
+	border: 1px solid #d6d9dc;
+	background: #eff0f1;
+	color: #2f3337;
+	font-family: Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+	font-size: 0.9em;
+	letter-spacing: 0;
+}
+
+.setup-page pre {
+	width: 100%;
+	margin: 0;
+	padding: 0.8rem 0.9rem;
+	border-radius: 0.35rem;
+	border: 1px solid #d6d9dc;
+	background: #eff0f1;
+	overflow-x: auto;
+}
+
+.setup-page pre code {
+	display: block;
+	width: 100%;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	border-radius: 0;
+	color: #2f3337;
+	white-space: pre;
+}
+
+@media (max-width: 640px) {
+	.setup-section {
+		gap: 1.1rem;
+	}
+
+	.setup-step {
+		padding: 1.05rem 0;
+	}
+
+	.setup-detail-block {
+		padding: 0.62rem 0.72rem;
+	}
+}
+
 @keyframes planeFloatA {
 	0%,
 	100% {

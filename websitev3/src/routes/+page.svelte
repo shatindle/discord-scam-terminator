@@ -90,11 +90,9 @@
 			<div class="clean-actions">
 				<a
 					class="clean-button primary"
-					href="https://discord.com/api/oauth2/authorize?client_id=924388372854767646&permissions=1099511704578&scope=bot%20applications.commands"
-					target="_blank"
-					rel="noreferrer"
+					href="/setup"
 				>
-					Invite the Bot
+					Protect your server
 				</a>
 				<a
 					class="clean-button secondary support-server-button"
