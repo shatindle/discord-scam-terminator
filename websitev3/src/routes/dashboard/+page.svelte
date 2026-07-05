@@ -13,8 +13,12 @@
 			? 'Last 24h'
 			: selectedGraphRange === '1w'
 				? 'Last Week'
+				: selectedGraphRange === '2w'
+					? 'Last 2 Weeks'
 				: selectedGraphRange === '1m'
 					? 'Last Month (Weekly)'
+					: selectedGraphRange === '2m'
+						? 'Last 2 Months (Weekly)'
 					: 'Last 6 Months (Monthly)'
 	);
 	const selectedServer = $derived(
@@ -125,12 +129,13 @@
 	/** @type {HTMLDetailsElement | undefined} */
 	let serverFilterDetails = $state(undefined);
 
-	/** @param {string | null | undefined} serverId */
+	/** @param {string | string[] | null | undefined} serverId */
 	function dashboardUrl(serverId, sortBy = selectedSort, graphRange = selectedGraphRange) {
 		const params = new URLSearchParams();
+		const normalizedServerId = Array.isArray(serverId) ? serverId[0] : serverId;
 
-		if (serverId) {
-			params.set('server', serverId);
+		if (normalizedServerId) {
+			params.set('server', normalizedServerId);
 		}
 
 		if (sortBy && sortBy !== 'members') {
@@ -339,18 +344,21 @@
 							<div class="server-sort-options">
 								<a
 									href={dashboardUrl(data.selectedServerId, 'members')}
+									data-sveltekit-noscroll
 									class={`server-sort-pill ${selectedSort === 'members' ? 'active' : ''}`}
 								>
 									User Count
 								</a>
 								<a
 									href={dashboardUrl(data.selectedServerId, 'actions')}
+									data-sveltekit-noscroll
 									class={`server-sort-pill ${selectedSort === 'actions' ? 'active' : ''}`}
 								>
 									Actions Taken
 								</a>
 								<a
 									href={dashboardUrl(data.selectedServerId, 'name')}
+									data-sveltekit-noscroll
 									class={`server-sort-pill ${selectedSort === 'name' ? 'active' : ''}`}
 								>
 									Name
@@ -358,7 +366,7 @@
 							</div>
 						</div>
 
-						<a href={dashboardUrl(null)} class="server-item" onclick={onServerSelected}>
+						<a href={dashboardUrl(null)} data-sveltekit-noscroll class="server-item" onclick={onServerSelected}>
 							<img
 								src="https://cdn.discordapp.com/embed/avatars/0.png"
 								alt="all servers"
@@ -371,7 +379,7 @@
 						</a>
 
 						{#each servers as server}
-							<a href={dashboardUrl(server.id)} class="server-item" onclick={onServerSelected}>
+							<a href={dashboardUrl(server.id)} data-sveltekit-noscroll class="server-item" onclick={onServerSelected}>
 								<img src={server.avatarUrl} alt={`${server.name} avatar`} class="server-avatar" />
 								<div class="server-meta">
 									<p class="choice-title">{server.name}</p>
@@ -405,24 +413,35 @@
 			<div class="graph-range-row">
 				<a
 					href={dashboardUrl(data.selectedServerId, selectedSort, '24h')}
+					data-sveltekit-noscroll
 					class={`server-sort-pill ${selectedGraphRange === '24h' ? 'active' : ''}`}
 				>
 					24 Hours
 				</a>
 				<a
-					href={dashboardUrl(data.selectedServerId, selectedSort, '1w')}
-					class={`server-sort-pill ${selectedGraphRange === '1w' ? 'active' : ''}`}
+					href={dashboardUrl(data.selectedServerId, selectedSort, '2w')}
+					data-sveltekit-noscroll
+					class={`server-sort-pill ${selectedGraphRange === '2w' ? 'active' : ''}`}
 				>
-					Week
+					2 Weeks
 				</a>
 				<a
 					href={dashboardUrl(data.selectedServerId, selectedSort, '1m')}
+					data-sveltekit-noscroll
 					class={`server-sort-pill ${selectedGraphRange === '1m' ? 'active' : ''}`}
 				>
-					Month
+					1 Month
+				</a>
+				<a
+					href={dashboardUrl(data.selectedServerId, selectedSort, '2m')}
+					data-sveltekit-noscroll
+					class={`server-sort-pill ${selectedGraphRange === '2m' ? 'active' : ''}`}
+				>
+					2 Months
 				</a>
 				<a
 					href={dashboardUrl(data.selectedServerId, selectedSort, '6m')}
+					data-sveltekit-noscroll
 					class={`server-sort-pill ${selectedGraphRange === '6m' ? 'active' : ''}`}
 				>
 					6 Months

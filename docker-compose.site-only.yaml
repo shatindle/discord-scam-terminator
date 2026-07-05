@@ -1,0 +1,27 @@
+services:
+  scamhunter-xyz-v2:
+    build:
+      context: ./websitev3
+      dockerfile: Dockerfile
+    container_name: scamhunter-xyz-v2
+    restart: unless-stopped
+    networks:
+      - scamhunter-xyz-v2
+    env_file:
+      - ./websitev3/.env
+    volumes:
+      - ./firebase.json:/app/firebase.json:ro
+  scamhunter-xyz-tunnel-v2:
+    image: cloudflare/cloudflared
+    container_name: scamhunter-xyz-tunnel-v2
+    restart: unless-stopped
+    command: tunnel run
+    networks:
+      - scamhunter-xyz-v2
+    env_file:
+      - sitev2.env
+    depends_on:
+      - scamhunter-xyz-v2
+
+networks:
+  scamhunter-xyz-v2:

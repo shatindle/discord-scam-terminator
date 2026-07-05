@@ -21,12 +21,14 @@ const actionCollections = [
 ];
 
 /** @typedef {'warn' | 'kick' | 'timeout' | 'ban' | 'fail'} ActionKey */
-/** @typedef {'24h' | '1w' | '1m' | '6m'} GraphRange */
+/** @typedef {'24h' | '1w' | '2w' | '1m' | '2m' | '6m'} GraphRange */
 
 const graphRangeConfigs = /** @type {Record<GraphRange, { bucketCount: number; bucketMs: number; align: 'hour' | 'day' | 'week' }>} */ ({
 	'24h': { bucketCount: 24, bucketMs: HOUR_MS, align: 'hour' },
 	'1w': { bucketCount: 7, bucketMs: DAY_MS, align: 'day' },
+	'2w': { bucketCount: 14, bucketMs: DAY_MS, align: 'day' },
 	'1m': { bucketCount: 5, bucketMs: WEEK_MS, align: 'week' },
+	'2m': { bucketCount: 8, bucketMs: WEEK_MS, align: 'week' },
 	'6m': { bucketCount: 6, bucketMs: WEEK_MS * 4, align: 'week' }
 });
 
@@ -42,8 +44,16 @@ function rangeStartDate(graphRange) {
 		return new Date(now.valueOf() - WEEK_MS);
 	}
 
+	if (graphRange === '2w') {
+		return new Date(now.valueOf() - 2 * WEEK_MS);
+	}
+
 	if (graphRange === '1m') {
 		return new Date(now.valueOf() - 30 * DAY_MS);
+	}
+
+	if (graphRange === '2m') {
+		return new Date(now.valueOf() - 8 * WEEK_MS);
 	}
 
 	return new Date(now.getFullYear(), now.getMonth() - 5, 1);
@@ -59,8 +69,16 @@ function rangeLabel(graphRange) {
 		return 'last week';
 	}
 
+	if (graphRange === '2w') {
+		return 'last 2 weeks';
+	}
+
 	if (graphRange === '1m') {
 		return 'last month';
+	}
+
+	if (graphRange === '2m') {
+		return 'last 2 months';
 	}
 
 	return 'last 6 months';
@@ -76,7 +94,15 @@ function cadenceUnit(graphRange) {
 		return 'day';
 	}
 
+	if (graphRange === '2w') {
+		return 'day';
+	}
+
 	if (graphRange === '1m') {
+		return 'week';
+	}
+
+	if (graphRange === '2m') {
 		return 'week';
 	}
 
@@ -158,6 +184,11 @@ function dayLabel(date) {
 }
 
 /** @param {Date} date */
+function dayOfMonthLabel(date) {
+	return `${date.getDate()}`;
+}
+
+/** @param {Date} date */
 function monthLabel(date) {
 	return MONTH_NAMES[date.getMonth()];
 }
@@ -196,6 +227,10 @@ function bucketLabel(date, graphRange) {
 
 	if (graphRange === '6m') {
 		return monthLabel(date);
+	}
+
+	if (graphRange === '2w') {
+		return dayOfMonthLabel(date);
 	}
 
 	return dayLabel(date);

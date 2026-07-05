@@ -8,10 +8,10 @@ const BOT_ADMIN_IDS = env.ADMIN_USER_IDS ? env.ADMIN_USER_IDS.split(",").map(t =
 const ADMINISTRATOR = 8n;
 const MANAGE_MESSAGES = 8192n;
 const SERVER_SORTS = ['name', 'members', 'actions'];
-const GRAPH_RANGES = ['24h', '1w', '1m', '6m'];
+const GRAPH_RANGES = ['24h', '1w', '2w', '1m', '2m', '6m'];
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-/** @param {'24h' | '1w' | '1m' | '6m'} graphRange */
+/** @param {'24h' | '1w' | '2w' | '1m' | '2m' | '6m'} graphRange */
 function metricLabelSet(graphRange) {
 	if (graphRange === '24h') {
 		return {
@@ -27,9 +27,23 @@ function metricLabelSet(graphRange) {
 		};
 	}
 
+	if (graphRange === '2w') {
+		return {
+			rangeText: 'last 2 weeks',
+			cadenceText: 'day'
+		};
+	}
+
 	if (graphRange === '1m') {
 		return {
 			rangeText: 'last month',
+			cadenceText: 'week'
+		};
+	}
+
+	if (graphRange === '2m') {
+		return {
+			rangeText: 'last 2 months',
 			cadenceText: 'week'
 		};
 	}
@@ -41,7 +55,7 @@ function metricLabelSet(graphRange) {
 }
 
 
-/** @param {'24h' | '1w' | '1m' | '6m'} graphRange */
+/** @param {'24h' | '1w' | '2w' | '1m' | '2m' | '6m'} graphRange */
 function fallbackTimeline(graphRange) {
 	const labels = [];
 	let count = 24;
@@ -52,8 +66,18 @@ function fallbackTimeline(graphRange) {
 		stepHours = 24;
 	}
 
+	if (graphRange === '2w') {
+		count = 14;
+		stepHours = 24;
+	}
+
 	if (graphRange === '1m') {
 		count = 5;
+		stepHours = 24 * 7;
+	}
+
+	if (graphRange === '2m') {
+		count = 8;
 		stepHours = 24 * 7;
 	}
 
@@ -77,6 +101,8 @@ function fallbackTimeline(graphRange) {
 
 			if (graphRange === '24h') {
 				labels.push(`${String(date.getHours()).padStart(2, '0')}:00`);
+			} else if (graphRange === '2w') {
+				labels.push(`${date.getDate()}`);
 			} else {
 				labels.push(`${date.getMonth() + 1}/${date.getDate()}`);
 			}
@@ -120,7 +146,7 @@ export async function load({ locals, url }) {
  * @param {Array<{ id: string; name: string; avatarUrl: string; memberCount: number; totalActions: number; owner: { id: string; username: string; avatarUrl: string } }>} servers
  * @param {Array<string>} serverFilter
  * @param {'name' | 'members' | 'actions'} selectedSort
- * @param {'24h' | '1w' | '1m' | '6m'} selectedGraphRange
+ * @param {'24h' | '1w' | '2w' | '1m' | '2m' | '6m'} selectedGraphRange
  */
 async function getData(user, servers, serverFilter, selectedSort, selectedGraphRange) {
 	try {
@@ -181,7 +207,7 @@ function parseGraphRange(value) {
 	}
 
 	if (value && GRAPH_RANGES.includes(value)) {
-		return /** @type {'24h' | '1w' | '1m' | '6m'} */ (value);
+		return /** @type {'24h' | '1w' | '2w' | '1m' | '2m' | '6m'} */ (value);
 	}
 
 	return '24h';
