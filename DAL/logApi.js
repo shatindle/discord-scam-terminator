@@ -38,15 +38,12 @@ async function forwardMessage(client, guildId, message, override = undefined, su
             }
         }
 
-        message.forward(channel).catch((forErr) => {
-            try {
-                console.log(`Error forwarding message in ${guildId}: ${forErr}`);
-            } catch { }
-        })
+        // TODO: if forward message becomes blocking, we'll want to make it a setting
+        await message.forward(channel);
 
         return true;
     } catch (err) {
-        console.log(`Error logging activity: ${err}`);
+        console.log(`Error logging activity when forwarding a message: ${err}`);
 
         return false;
     }
