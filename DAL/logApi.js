@@ -22,6 +22,16 @@ async function forwardMessage(client, guildId, message, override = undefined, su
         if (!channel || !channel.send)
             channel = await client.channels.fetch(logChannel);
 
+        if (!channel ||
+            !channel.send ||
+            !channel.permissionsFor || 
+            !channel.permissionsFor(channel.guild.members.me).has(PermissionFlagsBits.SendMessages) ||
+            !channel.permissionsFor(channel.guild.members.me).has(PermissionFlagsBits.ViewChannel) ||
+            !channel.permissionsFor(channel.guild.members.me).has(PermissionFlagsBits.EmbedLinks)) {
+            // log channel is not setup right
+            return true;
+        }
+
         if (supplement) {
             try {
                 const supplementaryMessage = new EmbedBuilder()
@@ -30,15 +40,12 @@ async function forwardMessage(client, guildId, message, override = undefined, su
                     .setDescription(supplement)
                     .setTimestamp();
 
-                if (channel && channel.send && channel.permissionsFor && channel.permissionsFor(channel.guild.members.me).has(PermissionFlagsBits.SendMessages)) {
-                    await channel.send({ embeds: [supplementaryMessage] });
-                }
+                await channel.send({ embeds: [supplementaryMessage] });
             } catch (err) {
                 console.log(`Error adding supplementary message: ${err}`);
             }
         }
 
-        // TODO: if forward message becomes blocking, we'll want to make it a setting
         await message.forward(channel);
 
         return true;
@@ -70,15 +77,23 @@ async function logActivity(client, guildId, action, activity, color = "#007bff",
         if (!channel || !channel.send)
             channel = await client.channels.fetch(logChannel);
 
+        if (!channel ||
+            !channel.send ||
+            !channel.permissionsFor || 
+            !channel.permissionsFor(channel.guild.members.me).has(PermissionFlagsBits.SendMessages) ||
+            !channel.permissionsFor(channel.guild.members.me).has(PermissionFlagsBits.ViewChannel) ||
+            !channel.permissionsFor(channel.guild.members.me).has(PermissionFlagsBits.EmbedLinks)) {
+            // log channel is not setup right
+            return true;
+        }
+
         const message = new EmbedBuilder()
             .setColor(color)
             .setTitle(action)
             .setDescription(activity)
             .setTimestamp();
 
-        if (channel && channel.send && channel.permissionsFor && channel.permissionsFor(channel.guild.members.me).has(PermissionFlagsBits.SendMessages)) {
-            await channel.send({ embeds: [message], content: messageLink });
-        }
+        await channel.send({ embeds: [message], content: messageLink });
 
         return true;
     } catch (err) {
