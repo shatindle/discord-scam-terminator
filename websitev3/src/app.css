@@ -1431,6 +1431,23 @@ h2 {
 	margin-top: 0.65rem;
 }
 
+.graph-window-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+	margin-top: 0.4rem;
+}
+
+.graph-window-nav {
+	min-width: 6.9rem;
+}
+
+.server-sort-pill.disabled {
+	opacity: 0.55;
+	pointer-events: none;
+	cursor: default;
+}
+
 .graph-legend {
 	display: flex;
 	gap: 0.8rem;

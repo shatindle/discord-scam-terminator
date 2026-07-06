@@ -237,12 +237,18 @@ function bucketLabel(date, graphRange) {
 }
 
 function buildMonthlyBucketStarts() {
+	return buildMonthlyBucketStartsForWindow(0);
+}
+
+/** @param {number} graphWindowOffset */
+function buildMonthlyBucketStartsForWindow(graphWindowOffset) {
 	const starts = [];
 	const now = new Date();
 	const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+	const monthShift = graphWindowOffset * 6;
 
 	for (let i = 5; i >= 0; i -= 1) {
-		starts.push(new Date(monthStart.getFullYear(), monthStart.getMonth() - i, 1));
+		starts.push(new Date(monthStart.getFullYear(), monthStart.getMonth() - i - monthShift, 1));
 	}
 
 	return starts;
@@ -259,10 +265,11 @@ function monthOffsetFromFirstBucket(when, firstBucket) {
 /**
  * @param {GraphRange} graphRange
  * @param {Array<string>} guildIds
+ * @param {number} graphWindowOffset
  */
-async function getRecentActionTimeline(graphRange, guildIds) {
+async function getRecentActionTimeline(graphRange, guildIds, graphWindowOffset = 0) {
 	const config = graphRangeConfigs[graphRange] ?? graphRangeConfigs['24h'];
-	const bucketStarts = graphRange === '6m' ? buildMonthlyBucketStarts() : [];
+	const bucketStarts = graphRange === '6m' ? buildMonthlyBucketStartsForWindow(graphWindowOffset) : [];
 	const labels =
 		graphRange === '6m'
 			? bucketStarts.map((start) => bucketLabel(start, graphRange))
@@ -270,9 +277,12 @@ async function getRecentActionTimeline(graphRange, guildIds) {
 
 	if (graphRange !== '6m') {
 		const now = alignDate(new Date(), config.align);
+		const windowShift = graphWindowOffset * config.bucketCount * config.bucketMs;
+		const currentWindowStart = new Date(now.valueOf() - (config.bucketCount - 1) * config.bucketMs);
+		const windowStart = new Date(currentWindowStart.valueOf() - windowShift);
 
 		for (let i = config.bucketCount - 1; i >= 0; i -= 1) {
-			const start = new Date(now.valueOf() - i * config.bucketMs);
+			const start = new Date(windowStart.valueOf() + (config.bucketCount - 1 - i) * config.bucketMs);
 			bucketStarts.push(start);
 			labels.push(bucketLabel(start, graphRange));
 		}
@@ -293,13 +303,22 @@ async function getRecentActionTimeline(graphRange, guildIds) {
 	const series = timeline.series;
 
 	const fromDate = bucketStarts[0];
+	const toDateExclusive =
+		graphRange === '6m'
+			? new Date(
+					bucketStarts[bucketStarts.length - 1].getFullYear(),
+					bucketStarts[bucketStarts.length - 1].getMonth() + 1,
+					1
+				)
+			: new Date(fromDate.valueOf() + config.bucketCount * config.bucketMs);
 
 	const queries = actionCollections.map(({ collection, key }) => {
 			const snap = database
 				._getTable(collection)
 				.filter((/** @type {{ timestamp: { toDate: () => Date; }, guildId: string }} */ t) => 
 					guildIds.includes(t.guildId) &&
-					t.timestamp.toDate() >= fromDate)
+					t.timestamp.toDate() >= fromDate &&
+					t.timestamp.toDate() < toDateExclusive)
 				.sort((/** @type {{ timestamp: { toDate: () => Date; }; }} */ a, /** @type {{ timestamp: { toDate: () => Date; }; }} */ b) => a.timestamp.toDate() < b.timestamp.toDate());
 
 			return { key: /** @type {ActionKey} */ (key), snap };
@@ -327,20 +346,67 @@ async function getRecentActionTimeline(graphRange, guildIds) {
 	return timeline;
 }
 
-/** @param {{ guildIds?: Array<string>; graphRange?: GraphRange }} [options] */
+/**
+ * @param {GraphRange} graphRange
+ * @param {number} graphWindowOffset
+ */
+function rangeWindow(graphRange, graphWindowOffset = 0) {
+	const config = graphRangeConfigs[graphRange] ?? graphRangeConfigs['24h'];
+
+	if (graphRange === '6m') {
+		const bucketStarts = buildMonthlyBucketStartsForWindow(graphWindowOffset);
+		const start = bucketStarts[0];
+		const endExclusive = new Date(
+			bucketStarts[bucketStarts.length - 1].getFullYear(),
+			bucketStarts[bucketStarts.length - 1].getMonth() + 1,
+			1
+		);
+
+		return { start, endExclusive };
+	}
+
+	const alignedNow = alignDate(new Date(), config.align);
+	const currentWindowStart = new Date(alignedNow.valueOf() - (config.bucketCount - 1) * config.bucketMs);
+	const windowShift = graphWindowOffset * config.bucketCount * config.bucketMs;
+	const start = new Date(currentWindowStart.valueOf() - windowShift);
+	const endExclusive = new Date(start.valueOf() + config.bucketCount * config.bucketMs);
+
+	return { start, endExclusive };
+}
+
+/**
+ * @param {string} collectionName
+ * @param {Date} startDate
+ * @param {Date} endDateExclusive
+ * @param {Array<string>} guildIds
+ */
+function getFilteredCountInRange(collectionName, startDate, endDateExclusive, guildIds) {
+	const snap = database
+		._getTable(collectionName)
+		.filter((/** @type {{ timestamp: { toDate: () => Date; }, guildId: string }} */ t) =>
+			guildIds.includes(t.guildId) &&
+			t.timestamp.toDate() >= startDate &&
+			t.timestamp.toDate() < endDateExclusive
+		);
+
+	return snap.length;
+}
+
+/** @param {{ guildIds?: Array<string>; graphRange?: GraphRange; graphWindowOffset?: number }} [options] */
 export async function getLiveDashboardData(options = {}) {
 	const guildIds = options.guildIds ?? [];
 	const graphRange = options.graphRange ?? '24h';
+	const graphWindowOffset = Math.max(0, options.graphWindowOffset ?? 0);
 	const config = graphRangeConfigs[graphRange] ?? graphRangeConfigs['24h'];
-	const selectedRangeStart = rangeStartDate(graphRange);
+	const selectedWindow = rangeWindow(graphRange, graphWindowOffset);
 	const sevenDaysAgo = new Date(Date.now() - 7 * DAY_MS);
 
 	const [warnings, kicks, timeouts, fails, bans] = [
-		getFilteredCountSince('warning', selectedRangeStart, guildIds),
-		getFilteredCountSince('kick', selectedRangeStart, guildIds),
-		getFilteredCountSince('timeout', selectedRangeStart, guildIds),
-		getFilteredCountSince('ban', selectedRangeStart, guildIds),
-		getFilteredCountSince('real_ban', selectedRangeStart, guildIds)
+		getFilteredCountInRange('warning', selectedWindow.start, selectedWindow.endExclusive, guildIds),
+		getFilteredCountInRange('kick', selectedWindow.start, selectedWindow.endExclusive, guildIds),
+		getFilteredCountInRange('timeout', selectedWindow.start, selectedWindow.endExclusive, guildIds),
+		getFilteredCountInRange('ban', selectedWindow.start, selectedWindow.endExclusive, guildIds),
+		getFilteredCountInRange('real_ban', selectedWindow.start, selectedWindow.endExclusive, guildIds)
 	];
 
 	const totalInRange = warnings + kicks + timeouts + fails + bans;
@@ -368,10 +434,11 @@ export async function getLiveDashboardData(options = {}) {
 			copy: null
 		}));
 
-	const timeline = await getRecentActionTimeline(graphRange, guildIds);
+	const timeline = await getRecentActionTimeline(graphRange, guildIds, graphWindowOffset);
 
 	return {
 		isLive: true,
+		selectedGraphWindowOffset: graphWindowOffset,
 		metrics: [
 			{ value: String(totalInRange), label: `blocked or flagged in ${currentRangeLabel}` },
 			{ value: String(averagePerBucket), label: `avg defense actions per ${currentCadenceUnit}` },

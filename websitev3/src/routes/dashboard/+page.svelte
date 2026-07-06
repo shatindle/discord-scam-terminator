@@ -8,6 +8,10 @@
 	);
 	const selectedSort = $derived(data.selectedSort ?? 'members');
 	const selectedGraphRange = $derived(data.selectedGraphRange ?? '24h');
+	const selectedGraphWindowOffset = $derived(Math.max(0, data.selectedGraphWindowOffset ?? 0));
+	const maxGraphWindowOffset = $derived(maxGraphWindowOffsetForRange(selectedGraphRange));
+	const canGoBackWindow = $derived(selectedGraphWindowOffset < maxGraphWindowOffset);
+	const canGoForwardWindow = $derived(selectedGraphWindowOffset > 0);
 	const graphRangeLabel = $derived(
 		selectedGraphRange === '24h'
 			? 'Last 24h'
@@ -130,7 +134,12 @@
 	let serverFilterDetails = $state(undefined);
 
 	/** @param {string | string[] | null | undefined} serverId */
-	function dashboardUrl(serverId, sortBy = selectedSort, graphRange = selectedGraphRange) {
+	function dashboardUrl(
+		serverId,
+		sortBy = selectedSort,
+		graphRange = selectedGraphRange,
+		graphWindowOffset = selectedGraphWindowOffset
+	) {
 		const params = new URLSearchParams();
 		const normalizedServerId = Array.isArray(serverId) ? serverId[0] : serverId;
 
@@ -146,8 +155,46 @@
 			params.set('range', graphRange);
 		}
 
+		if (graphWindowOffset > 0) {
+			params.set('window', String(graphWindowOffset));
+		}
+
 		const query = params.toString();
 		return query ? `/dashboard?${query}` : '/dashboard';
+	}
+
+	/** @param {number} delta */
+	function dashboardWindowUrl(delta) {
+		const nextOffset = Math.min(
+			maxGraphWindowOffset,
+			Math.max(0, selectedGraphWindowOffset + delta)
+		);
+		return dashboardUrl(data.selectedServerId, selectedSort, selectedGraphRange, nextOffset);
+	}
+
+	/** @param {'24h' | '1w' | '2w' | '1m' | '2m' | '6m'} graphRange */
+	function maxGraphWindowOffsetForRange(graphRange) {
+		if (graphRange === '24h') {
+			return 179;
+		}
+
+		if (graphRange === '1w') {
+			return 25;
+		}
+
+		if (graphRange === '2w') {
+			return 12;
+		}
+
+		if (graphRange === '1m') {
+			return 4;
+		}
+
+		if (graphRange === '2m') {
+			return 2;
+		}
+
+		return 0;
 	}
 
 	/** @param {number} index */
@@ -410,37 +457,119 @@
 		<div class="graph-head">
 			<h2>Recent Action Graph ({graphRangeLabel})</h2>
 			<p class="stream-copy">warn, kick, timeout, ban, and fail actions attempted by the bot over time</p>
+			<div class="graph-window-row">
+				{#if canGoBackWindow}
+					<a
+						href={dashboardWindowUrl(1)}
+						data-sveltekit-noscroll
+						class="server-sort-pill graph-window-nav"
+						aria-label="View previous time window"
+					>
+						← Back
+					</a>
+				{:else}
+					<span
+						class="server-sort-pill graph-window-nav disabled"
+						aria-disabled="true"
+						aria-label="Maximum six-month history reached"
+					>
+						← Back
+					</span>
+				{/if}
+				<span class="stream-copy timeframe-indicator">
+					{#if selectedGraphWindowOffset === 0}
+					Today
+					{:else}
+					{#if selectedGraphRange === '24h'}
+						{selectedGraphWindowOffset} 
+						{#if selectedGraphWindowOffset > 1}
+						days ago
+						{:else}
+						day ago
+						{/if}
+					{:else if selectedGraphRange === '2w'}
+						{selectedGraphWindowOffset * 2} 
+						{#if selectedGraphWindowOffset > 1}
+						weeks ago
+						{:else}
+						weeks ago
+						{/if}
+					{:else if selectedGraphRange === '1m'}
+						{selectedGraphWindowOffset} 
+						{#if selectedGraphWindowOffset > 1}
+						months ago
+						{:else}
+						month ago
+						{/if}
+					{:else if selectedGraphRange === '2m'}
+						{selectedGraphWindowOffset * 2} 
+						{#if selectedGraphWindowOffset > 1}
+						months ago
+						{:else}
+						months ago
+						{/if}
+					{:else if selectedGraphRange === '6m'}
+						{selectedGraphWindowOffset * 6} 
+						{#if selectedGraphWindowOffset > 1}
+						months ago
+						{:else}
+						months ago
+						{/if}
+					{:else}
+					Back
+					{/if}
+				{/if}
+				</span>
+				{#if canGoForwardWindow}
+					<a
+						href={dashboardWindowUrl(-1)}
+						data-sveltekit-noscroll
+						class="server-sort-pill graph-window-nav"
+						aria-label="View next time window"
+					>
+						Forward →
+					</a>
+				{:else}
+					<span
+						class="server-sort-pill graph-window-nav disabled"
+						aria-disabled="true"
+						aria-label="Already at current time window"
+					>
+						Forward →
+					</span>
+				{/if}
+			</div>
 			<div class="graph-range-row">
 				<a
-					href={dashboardUrl(data.selectedServerId, selectedSort, '24h')}
+					href={dashboardUrl(data.selectedServerId, selectedSort, '24h', 0)}
 					data-sveltekit-noscroll
 					class={`server-sort-pill ${selectedGraphRange === '24h' ? 'active' : ''}`}
 				>
 					24 Hours
 				</a>
 				<a
-					href={dashboardUrl(data.selectedServerId, selectedSort, '2w')}
+					href={dashboardUrl(data.selectedServerId, selectedSort, '2w', 0)}
 					data-sveltekit-noscroll
 					class={`server-sort-pill ${selectedGraphRange === '2w' ? 'active' : ''}`}
 				>
 					2 Weeks
 				</a>
 				<a
-					href={dashboardUrl(data.selectedServerId, selectedSort, '1m')}
+					href={dashboardUrl(data.selectedServerId, selectedSort, '1m', 0)}
 					data-sveltekit-noscroll
 					class={`server-sort-pill ${selectedGraphRange === '1m' ? 'active' : ''}`}
 				>
 					1 Month
 				</a>
 				<a
-					href={dashboardUrl(data.selectedServerId, selectedSort, '2m')}
+					href={dashboardUrl(data.selectedServerId, selectedSort, '2m', 0)}
 					data-sveltekit-noscroll
 					class={`server-sort-pill ${selectedGraphRange === '2m' ? 'active' : ''}`}
 				>
 					2 Months
 				</a>
 				<a
-					href={dashboardUrl(data.selectedServerId, selectedSort, '6m')}
+					href={dashboardUrl(data.selectedServerId, selectedSort, '6m', 0)}
 					data-sveltekit-noscroll
 					class={`server-sort-pill ${selectedGraphRange === '6m' ? 'active' : ''}`}
 				>
@@ -769,5 +898,10 @@
 		to {
 			width: 100%;
 		}
+	}
+
+	.timeframe-indicator {
+		width: 7.4em;
+		text-align: center;
 	}
 </style>

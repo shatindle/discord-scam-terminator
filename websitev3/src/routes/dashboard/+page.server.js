@@ -55,8 +55,11 @@ function metricLabelSet(graphRange) {
 }
 
 
-/** @param {'24h' | '1w' | '2w' | '1m' | '2m' | '6m'} graphRange */
-function fallbackTimeline(graphRange) {
+/**
+ * @param {'24h' | '1w' | '2w' | '1m' | '2m' | '6m'} graphRange
+ * @param {number} graphWindowOffset
+ */
+function fallbackTimeline(graphRange, graphWindowOffset = 0) {
 	const labels = [];
 	let count = 24;
 	let stepHours = 1;
@@ -88,16 +91,19 @@ function fallbackTimeline(graphRange) {
 	if (graphRange === '6m') {
 		const now = new Date();
 		const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+		const monthShift = graphWindowOffset * count;
 
 		for (let i = count - 1; i >= 0; i -= 1) {
-			const date = new Date(monthStart.getFullYear(), monthStart.getMonth() - i, 1);
+			const date = new Date(monthStart.getFullYear(), monthStart.getMonth() - i - monthShift, 1);
 			labels.push(MONTH_NAMES[date.getMonth()]);
 		}
 	} else {
+		const bucketShiftHours = graphWindowOffset * count * stepHours;
+
 		for (let i = count - 1; i >= 0; i -= 1) {
 			const date = new Date();
 			date.setMinutes(0, 0, 0);
-			date.setHours(date.getHours() - i * stepHours);
+			date.setHours(date.getHours() - i * stepHours - bucketShiftHours);
 
 			if (graphRange === '24h') {
 				labels.push(`${String(date.getHours()).padStart(2, '0')}:00`);
@@ -130,6 +136,10 @@ export async function load({ locals, url }) {
 	const selectedServerId = url.searchParams.get('server') ?? undefined;
 	const selectedSort = parseServerSort(url.searchParams.get('sort'));
 	const selectedGraphRange = parseGraphRange(url.searchParams.get('range'));
+	const selectedGraphWindowOffset = Math.min(
+		maxGraphWindowOffset(selectedGraphRange),
+		parseGraphWindowOffset(url.searchParams.get('window'))
+	);
 	const servers = await getSafeServerDirectory();
 	const filteredServers = sortServers(filterServersForUser(servers, locals.user), selectedSort);
 
@@ -138,7 +148,14 @@ export async function load({ locals, url }) {
 			? [selectedServerId]
 			: filteredServers.map(t => t.id);
 
-	return await getData(locals.user, filteredServers, serverFilter, selectedSort, selectedGraphRange);
+	return await getData(
+		locals.user,
+		filteredServers,
+		serverFilter,
+		selectedSort,
+		selectedGraphRange,
+		selectedGraphWindowOffset
+	);
 }
 
 /**
@@ -147,12 +164,21 @@ export async function load({ locals, url }) {
  * @param {Array<string>} serverFilter
  * @param {'name' | 'members' | 'actions'} selectedSort
  * @param {'24h' | '1w' | '2w' | '1m' | '2m' | '6m'} selectedGraphRange
+ * @param {number} selectedGraphWindowOffset
  */
-async function getData(user, servers, serverFilter, selectedSort, selectedGraphRange) {
+async function getData(
+	user,
+	servers,
+	serverFilter,
+	selectedSort,
+	selectedGraphRange,
+	selectedGraphWindowOffset
+) {
 	try {
 		const liveData = await getLiveDashboardData({
 			guildIds: serverFilter,
-			graphRange: selectedGraphRange
+			graphRange: selectedGraphRange,
+			graphWindowOffset: selectedGraphWindowOffset
 		});
 
 		return {
@@ -173,6 +199,7 @@ async function getData(user, servers, serverFilter, selectedSort, selectedGraphR
 			selectedServerId: serverFilter ?? null,
 			selectedSort,
 			selectedGraphRange,
+			selectedGraphWindowOffset,
 			isLive: false,
 			metrics: [
 				{ value: '0', label: `blocked or flagged in ${labels.rangeText}` },
@@ -190,7 +217,7 @@ async function getData(user, servers, serverFilter, selectedSort, selectedGraphR
 					dateIso: null
 				}
 			],
-			timeline: fallbackTimeline(selectedGraphRange),
+			timeline: fallbackTimeline(selectedGraphRange, selectedGraphWindowOffset),
 			playbooks: [
 				'Review log channel events for suspicious link clusters.',
 				'Adjust removal action between kick, timeout, and ban based on server policy.',
@@ -211,6 +238,46 @@ function parseGraphRange(value) {
 	}
 
 	return '24h';
+}
+
+/** @param {string | null} value */
+function parseGraphWindowOffset(value) {
+	if (!value) {
+		return 0;
+	}
+
+	const parsed = Number.parseInt(value, 10);
+
+	if (!Number.isFinite(parsed) || Number.isNaN(parsed)) {
+		return 0;
+	}
+
+	return Math.max(0, parsed);
+}
+
+/** @param {'24h' | '1w' | '2w' | '1m' | '2m' | '6m'} graphRange */
+function maxGraphWindowOffset(graphRange) {
+	if (graphRange === '24h') {
+		return 179;
+	}
+
+	if (graphRange === '1w') {
+		return 25;
+	}
+
+	if (graphRange === '2w') {
+		return 12;
+	}
+
+	if (graphRange === '1m') {
+		return 4;
+	}
+
+	if (graphRange === '2m') {
+		return 2;
+	}
+
+	return 0;
 }
 
 /** @param {string | null} value */
