@@ -57,14 +57,20 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
         });
     }
 
-    if (channel && guild && channel.permissionsFor(guild.members.me).has(PermissionFlagsBits.SendMessages)) {
-        const response = await channel.send(
-            "Potentially dangerous URL or message pattern detected.  If this was in error, please let a Mod know.");
-
-        setTimeout(async function() {
-            if (response.deletable)
-                await response.delete();
-        }, 5000);
+    if (channel && 
+        guild && 
+        channel.permissionsFor(guild.members.me).has(PermissionFlagsBits.SendMessages) && 
+        channel.permissionsFor(guild.members.me).has(PermissionFlagsBits.ViewChannel)) {
+        // note: this may not send if a rate limit is in play...
+        channel
+            .send("Potentially dangerous URL or message pattern detected.  If this was in error, please let a Mod know.")
+            .then(response => {
+                setTimeout(function() {
+                    if (response.deletable)
+                        response.delete().catch(deleteError => console.log(`Error when the bot tried to delete it's warning, potential raid: ${deleteError}`));
+                }, 5000);
+            })
+            .catch(sendError => console.log(`Error when the bot messaged a warning, potential raid: ${sendError}`));
     }
 
     let action = null;
@@ -225,14 +231,19 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
             });
         }
 
-        if (channel && guild && channel.permissionsFor(guild.members.me).has(PermissionFlagsBits.SendMessages)) {
-            const response = await channel.send(
-                "Spam detected.  If this was in error, please let a Mod know.");
-
-            setTimeout(async function() {
-                if (response.deletable)
-                    await response.delete();
-            }, 5000);
+        if (channel && 
+            guild && 
+            channel.permissionsFor(guild.members.me).has(PermissionFlagsBits.SendMessages) && 
+            channel.permissionsFor(guild.members.me).has(PermissionFlagsBits.ViewChannel)) {
+            channel
+                .send("Spam detected.  If this was in error, please let a Mod know.")
+                .then(response => {
+                    setTimeout(function() {
+                        if (response.deletable)
+                            response.delete().catch(deleteError => console.log(`Error when the bot deleted it's message, potential raid: ${deleteError}`));
+                    }, 5000);
+                })
+                .catch(sendError => console.log(`Error when the bot messaged a warning, potential raid: ${sendError}`));
         }
     }
     

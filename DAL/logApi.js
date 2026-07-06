@@ -40,13 +40,17 @@ async function forwardMessage(client, guildId, message, override = undefined, su
                     .setDescription(supplement)
                     .setTimestamp();
 
-                await channel.send({ embeds: [supplementaryMessage] });
+                channel
+                    .send({ embeds: [supplementaryMessage] })
+                    .catch(sendError => console.log(`Error adding supplementary message: ${sendError}`));
             } catch (err) {
                 console.log(`Error adding supplementary message: ${err}`);
             }
         }
 
-        await message.forward(channel);
+        message
+            .forward(channel)
+            .catch(forwardError => console.log(`Unable to foward message for ${guildId}, potential rate limit: ${forwardError}`));
 
         return true;
     } catch (err) {
@@ -93,7 +97,9 @@ async function logActivity(client, guildId, action, activity, color = "#007bff",
             .setDescription(activity)
             .setTimestamp();
 
-        await channel.send({ embeds: [message], content: messageLink });
+        channel
+            .send({ embeds: [message], content: messageLink })
+            .catch(sendError => console.log(`Error logging activity: ${sendError}`));
 
         return true;
     } catch (err) {
