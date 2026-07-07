@@ -236,15 +236,20 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
             guild && 
             channel.permissionsFor(guild.members.me).has(PermissionFlagsBits.SendMessages) && 
             channel.permissionsFor(guild.members.me).has(PermissionFlagsBits.ViewChannel)) {
-            channel
-                .send("Spam detected.  If this was in error, please let a Mod know.")
-                .then(response => {
-                    setTimeout(function() {
-                        if (response.deletable)
-                            response.delete().catch(deleteError => console.log(`Error when the bot deleted it's message, potential raid: ${deleteError}`));
-                    }, 5000);
-                })
-                .catch(sendError => console.log(`Error when the bot messaged a warning, potential raid: ${sendError}`));
+
+            if (reason !== "Image spam") {
+                // due to the increase in image spam problems, don't bother sending this message
+                // TODO: if Discord approves the rate limit request increase, undo this
+                channel
+                    .send("Spam detected.  If this was in error, please let a Mod know.")
+                    .then(response => {
+                        setTimeout(function() {
+                            if (response.deletable)
+                                response.delete().catch(deleteError => console.log(`Error when the bot deleted it's message, potential raid: ${deleteError}`));
+                        }, 5000);
+                    })
+                    .catch(sendError => console.log(`Error when the bot messaged a warning, potential raid: ${sendError}`));
+            }
         }
     }
     
