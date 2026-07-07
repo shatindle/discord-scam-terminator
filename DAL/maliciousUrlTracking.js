@@ -195,6 +195,30 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
     return cleanupNecessary;
 }
 
+/** @type {{[id:string]:NodeJS.Timeout}} */
+const forwardedRecently = {};
+
+const RECENT_GUILD_ACTION = 40000;
+
+const recentForward = (guildId, userId) => {
+    let id = `${guildId}-${userId}`;
+
+    if (forwardedRecently[id]) {
+        // we've recently removed an image in this guild, do light reporting
+        clearTimeout(forwardedRecently[id]);
+
+        forwardedRecently[id] = 
+            setTimeout(() => delete forwardedRecently[id], RECENT_GUILD_ACTION);
+
+        return true;
+    }
+
+    forwardedRecently[id] = 
+        setTimeout(() => delete forwardedRecently[id], RECENT_GUILD_ACTION);
+
+    return false;
+}
+
 /**
  * 
  * @param {Message} message 
@@ -228,8 +252,7 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
     if (perform !== "no-action") {
         // could be a malicious URL.  We need to delete the message.
         if (message.deletable) {
-            if (reason === "Image spam" &&
-                !isRecentlyActioned(guildId, userId)) {
+            if (reason === "Image spam" && !recentForward(guildId, userId)) {
                 await forwardMessage(client, guildId, message);
             }
 
