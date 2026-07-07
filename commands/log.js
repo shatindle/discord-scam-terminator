@@ -1,4 +1,4 @@
-const { PermissionsBitField, ChannelType } = require("discord.js");
+const { PermissionsBitField, ChannelType, MessageFlags } = require("discord.js");
 const { SlashCommandBuilder } = require('discord.js');
 const { registerLogs } = require("../DAL/databaseApi");
 const { logActivity } = require("../DAL/logApi");
@@ -25,19 +25,19 @@ module.exports = {
                 const channel = await interaction.guild.channels.fetch(target.id);
 
                 if (!channel) {
-                    await interaction.reply({ content: 'I could not find the channel <#' + target.id + '>.\n\nI need the following permissions on the log channel to log properly:\n- VIEW_CHANNEL\n- SEND_MESSAGES\n- EMBED_LINKS', ephemeral: true });
+                    await interaction.reply({ content: 'I could not find the channel <#' + target.id + '>.\n\nI need the following permissions on the log channel to log properly:\n- VIEW_CHANNEL\n- SEND_MESSAGES\n- EMBED_LINKS', flags: MessageFlags.Ephemeral });
                     return;
                 }
 
                 if (channel.type !== ChannelType.GuildText) {
-                    await interaction.reply({ content: '<#' + target.id + '> is not a text channel.  Please specify a text channel, then try again', ephemeral: true });
+                    await interaction.reply({ content: '<#' + target.id + '> is not a text channel.  Please specify a text channel, then try again', flags: MessageFlags.Ephemeral });
                     return;
                 }
 
                 const currentPermissions = channel.permissionsFor(interaction.member.user.id);
 
                 if (!currentPermissions.has(PermissionsBitField.Flags.ManageChannels)) {
-                    await interaction.reply({ content: "You need the MANAGE_CHANNELS permission to run this command", ephemeral: true });
+                    await interaction.reply({ content: "You need the MANAGE_CHANNELS permission to run this command", flags: MessageFlags.Ephemeral });
                     return;
                 }
 
@@ -62,26 +62,26 @@ module.exports = {
         
                 if (result) {
                     await registerLogs(interaction.guild.id, target.id);
-                    await interaction.reply({ content: 'Scams and commands will now be logged to <#' + target.id + '>', ephemeral: false });
+                    await interaction.reply({ content: 'Scams and commands will now be logged to <#' + target.id + '>' });
                     return;
                 } else {
-                    await interaction.reply({ content: ' something is not configured correctly when I tried to send a test message to the log channel <#' + target.id + '>.', ephemeral: true });
+                    await interaction.reply({ content: ' something is not configured correctly when I tried to send a test message to the log channel <#' + target.id + '>.', flags: MessageFlags.Ephemeral });
                     return;
                 }
             } else {
                 if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) {
-                    await interaction.reply({ content: "You need the MANAGE_CHANNELS permission to run this command", ephemeral: true });
+                    await interaction.reply({ content: "You need the MANAGE_CHANNELS permission to run this command", flags: MessageFlags.Ephemeral });
                     return;
                 }
 
                 // turn off logging
                 await registerLogs(interaction.guild.id, null);
         
-                await interaction.reply({ content: 'Logging for this server has been disabled', ephemeral: false });
+                await interaction.reply({ content: 'Logging for this server has been disabled' });
             }
         } catch (err) {
             console.log(`Error in /log: ${err}`);
-            await interaction.reply({ content: 'An unknown error occurred. Please let the developer know', ephemeral: false });
+            await interaction.reply({ content: 'An unknown error occurred. Please let the developer know' });
         }
 	},
 };

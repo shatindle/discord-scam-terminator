@@ -1,4 +1,4 @@
-const { PermissionsBitField, ChannelType } = require("discord.js");
+const { PermissionsBitField, ChannelType, MessageFlags } = require("discord.js");
 const { SlashCommandBuilder } = require('discord.js');
 const { registerBehaviorMonitor } = require("../DAL/databaseApi");
 const { logActivity } = require("../DAL/logApi");
@@ -66,18 +66,18 @@ module.exports = {
             const hasManageChannel = interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels);
 
             if (!hasManageChannel) {
-                await interaction.reply({ content: "You need the MANAGE_CHANNELS permission to run this command", ephemeral: true });
+                await interaction.reply({ content: "You need the MANAGE_CHANNELS permission to run this command", flags: MessageFlags.Ephemeral });
                 return;
             }
 
             if (removal_action === "kick" && interaction.guild.members.me.permissions.has(PermissionsBitField.Flags.KickMembers) !== true) {
-                await interaction.reply({ content: "I need the KICK_MEMBERS permission to function. Please grant that permission and then try this command again.", ephemeral: true });
+                await interaction.reply({ content: "I need the KICK_MEMBERS permission to function. Please grant that permission and then try this command again.", flags: MessageFlags.Ephemeral });
                 return;
             } else if (removal_action === "timeout" && interaction.guild.members.me.permissions.has(PermissionsBitField.Flags.ModerateMembers) !== true) {
-                await interaction.reply({ content: "I need the TIMEOUT_MEMBERS permission to function. Please grant that permission and then try this command again.", ephemeral: true });
+                await interaction.reply({ content: "I need the TIMEOUT_MEMBERS permission to function. Please grant that permission and then try this command again.", flags: MessageFlags.Ephemeral });
                 return;
             } else if (removal_action === "ban" && interaction.guild.members.me.permissions.has(PermissionsBitField.Flags.BanMembers) !== true) {
-                await interaction.reply({ content: "I need the BAN_MEMBERS permission to function. Please grant that permission and then try this command again.", ephemeral: true });
+                await interaction.reply({ content: "I need the BAN_MEMBERS permission to function. Please grant that permission and then try this command again.", flags: MessageFlags.Ephemeral });
                 return;
             }
 
@@ -101,11 +101,11 @@ module.exports = {
                 "#007bff"
             ); 
         
-            await interaction.reply({ content: ruleSettings, ephemeral: false });
+            await interaction.reply({ content: ruleSettings });
             return;
         } catch (err) {
             console.log(`Error in /log: ${err}`);
-            await interaction.reply({ content: 'An unknown error occurred. Please let the developer know', ephemeral: false });
+            await interaction.reply({ content: 'An unknown error occurred. Please let the developer know' });
         }
 	},
 };

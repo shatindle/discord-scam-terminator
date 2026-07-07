@@ -50,11 +50,15 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
 
      // could be a malicious URL.  We need to delete the message.
     if (message.deletable) {
-        message.delete().catch(async (delErr) => {
+        try {
+            await message.delete();
+        } catch(delErr) {
             try {
                 await recordError(guildId, userId, "Line 55 of maliciousUrlTracking.js: " + JSON.stringify(delErr), reason);
-            } catch { console.log(`Line 56 of maliciousUrlTracking.js: Unable to delete message in ${guildId} for user ${userId}`); }
-        });
+            } catch(recordErr) { 
+                console.log(`Line 56 of maliciousUrlTracking.js: Unable to delete message in ${guildId} for user ${userId}: ${recordErr}`)
+            }
+        }
     }
 
     if (channel && 
@@ -64,15 +68,16 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
 
         if (recentWarnings(guildId)) {
             // note: this may not send if a rate limit is in play...
-            channel
-                .send("Potentially dangerous URL or message pattern detected.  If this was in error, please let a Mod know.")
-                .then(response => {
-                    setTimeout(function() {
-                        if (response.deletable)
-                            response.delete().catch(deleteError => console.log(`Error when the bot tried to delete it's warning, potential raid: ${deleteError}`));
-                    }, 5000);
-                })
-                .catch(sendError => console.log(`Error when the bot messaged a warning, potential raid: ${sendError}`));
+            try {
+                const response = await channel.send("Potentially dangerous URL or message pattern detected.  If this was in error, please let a Mod know.");
+
+                setTimeout(function() {
+                    if (response.deletable)
+                        response.delete().catch(deleteError => console.log(`Error when the bot tried to delete it's warning, potential raid: ${deleteError}`));
+                }, 5000);
+            } catch (sendError) {
+                console.log(`Error when the bot messaged a warning, potential raid: ${sendError}`);
+            }
         }
     }
 
@@ -228,11 +233,15 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
                 await forwardMessage(client, guildId, message);
             }
 
-            message.delete().catch(async (delErr) => {
+            try {
+                await message.delete();
+            } catch(delErr) {
                 try {
                     await recordError(guildId, userId, "Line 223 of maliciousUrlTracking.js: " + JSON.stringify(delErr), reason);
-                } catch { console.log(`Line 224 of maliciousUrlTracking.js: Unable to delete message in ${guildId} for user ${userId}`); }
-            });
+                } catch { 
+                    console.log(`Line 224 of maliciousUrlTracking.js: Unable to delete message in ${guildId} for user ${userId}: ${recordErr}`)
+                }
+            }
         }
 
         if (channel && 
@@ -243,15 +252,16 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
             if (recentWarnings(guildId)) {
                 // due to the increase in image spam problems, don't bother sending this message
                 // TODO: if Discord approves the rate limit request increase, undo this
-                channel
-                    .send("Spam detected.  If this was in error, please let a Mod know.")
-                    .then(response => {
-                        setTimeout(function() {
-                            if (response.deletable)
-                                response.delete().catch(deleteError => console.log(`Error when the bot deleted it's message, potential raid: ${deleteError}`));
-                        }, 5000);
-                    })
-                    .catch(sendError => console.log(`Error when the bot messaged a warning, potential raid: ${sendError}`));
+                try {
+                    const response = await channel.send("Spam detected.  If this was in error, please let a Mod know.");
+
+                    setTimeout(function() {
+                        if (response.deletable)
+                            response.delete().catch(deleteError => console.log(`Error when the bot deleted it's message, potential raid: ${deleteError}`));
+                    }, 5000);
+                } catch(sendError) {
+                    console.log(`Error when the bot messaged a warning, potential raid: ${sendError}`);
+                }
             }
         }
     }
