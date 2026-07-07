@@ -32,6 +32,9 @@ async function forwardMessage(client, guildId, message, override = undefined, su
             return true;
         }
 
+        const sourceNsfwStatus = message.channel.nsfw || message.channel.parent?.nsfw || false;
+        const destinationNsfwStatus = channel.nsfw;
+
         if (supplement) {
             try {
                 const supplementaryMessage = new EmbedBuilder()
@@ -47,6 +50,9 @@ async function forwardMessage(client, guildId, message, override = undefined, su
         }
 
         try {
+            // if source is nsfw but destination isn't, we can't forward the message
+            if (sourceNsfwStatus && !destinationNsfwStatus) return true;
+
             await message.forward(channel);
         } catch (forwardError) {
             console.log(`Unable to foward message for ${guildId}, potential rate limit: ${forwardError}`);
