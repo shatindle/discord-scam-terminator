@@ -97,11 +97,8 @@ async function logActivity(client, guildId, action, activity, color = "#007bff",
             .setDescription(activity)
             .setTimestamp();
 
-        try {
-            await channel.send({ embeds: [message], content: messageLink });
-        } catch (sendError) {
-            console.log(`Error logging activity: ${sendError}`);
-        }
+        // this we should not try/catch as it is also connected to the /log command
+        await channel.send({ embeds: [message], content: messageLink });
 
         return true;
     } catch (err) {
