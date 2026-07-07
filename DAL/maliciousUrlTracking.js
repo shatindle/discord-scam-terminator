@@ -1,7 +1,7 @@
 const { Message, PermissionFlagsBits } = require("discord.js");
 const { lookupGuildBehavior } = require("./behaviorApi");
 const { shouldActionUser, recordKick, recordTimeout, recordBan, recordError, recordWarning, recordFail, recordContentReview } = require("./databaseApi");
-const { logWarning, logKick, logTimeout, logBan, forwardMessage, isRecentlyActioned } = require("./logApi");
+const { logWarning, logKick, logTimeout, logBan, forwardMessage, isRecentlyActioned, recentWarnings } = require("./logApi");
 const { getDomainCreationDate } = require("./domainLookup");
 const { getAllRedirects } = require("./redirectExtractor");
 const { extractHostname } = require("./urlTesterApi");
@@ -61,16 +61,19 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
         guild && 
         channel.permissionsFor(guild.members.me).has(PermissionFlagsBits.SendMessages) && 
         channel.permissionsFor(guild.members.me).has(PermissionFlagsBits.ViewChannel)) {
-        // note: this may not send if a rate limit is in play...
-        channel
-            .send("Potentially dangerous URL or message pattern detected.  If this was in error, please let a Mod know.")
-            .then(response => {
-                setTimeout(function() {
-                    if (response.deletable)
-                        response.delete().catch(deleteError => console.log(`Error when the bot tried to delete it's warning, potential raid: ${deleteError}`));
-                }, 5000);
-            })
-            .catch(sendError => console.log(`Error when the bot messaged a warning, potential raid: ${sendError}`));
+
+        if (recentWarnings(guildId)) {
+            // note: this may not send if a rate limit is in play...
+            channel
+                .send("Potentially dangerous URL or message pattern detected.  If this was in error, please let a Mod know.")
+                .then(response => {
+                    setTimeout(function() {
+                        if (response.deletable)
+                            response.delete().catch(deleteError => console.log(`Error when the bot tried to delete it's warning, potential raid: ${deleteError}`));
+                    }, 5000);
+                })
+                .catch(sendError => console.log(`Error when the bot messaged a warning, potential raid: ${sendError}`));
+        }
     }
 
     let action = null;
@@ -237,7 +240,7 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
             channel.permissionsFor(guild.members.me).has(PermissionFlagsBits.SendMessages) && 
             channel.permissionsFor(guild.members.me).has(PermissionFlagsBits.ViewChannel)) {
 
-            if (reason !== "Image spam") {
+            if (recentWarnings(guildId)) {
                 // due to the increase in image spam problems, don't bother sending this message
                 // TODO: if Discord approves the rate limit request increase, undo this
                 channel

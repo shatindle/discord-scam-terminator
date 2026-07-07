@@ -154,8 +154,8 @@ const logWarning = async (client, guildId, userId, channelId, message = "", reas
 const ACTION_COLOR = "#dc3545";
 const ACTION_NOACTION_COLOR = "#a64d79";
 
-/** @type {string[]} */
-const recentlyActionedUsers = [];
+/** @type {{[id:string]:NodeJS.Timeout|undefined}} */
+const recentlyActionedUsers = {};
 
 const RECENT_ACTION_TIMEOUT = 10000;
 
@@ -186,12 +186,33 @@ const isRecentlyActioned = (guildId, userId, checkOnly = true) => {
     // we have not recently actioned this user
     if (checkOnly) return false;
     
-    recentlyActionedUsers[id] = setTimeout(() => {
-        delete recentlyActionedUsers[id];
-    }, RECENT_ACTION_TIMEOUT);
+    recentlyActionedUsers[id] = 
+        setTimeout(() => delete recentlyActionedUsers[id], RECENT_ACTION_TIMEOUT);
 
     return false;
 };
+
+/** @type {{[guildId:string]:NodeJS.Timeout|undefined}} */
+const recentlyActionedGuilds = {};
+
+const RECENT_GUILD_ACTION = 10000;
+
+const recentWarnings = (guildId) => {
+    if (recentlyActionedGuilds[guildId]) {
+        // we've recently removed an image in this guild, do light reporting
+        clearTimeout(recentlyActionedGuilds[guildId]);
+
+        recentlyActionedGuilds[guildId] = 
+            setTimeout(() => delete recentlyActionedGuilds[guildId], RECENT_GUILD_ACTION);
+
+        return true;
+    }
+
+    recentlyActionedGuilds[guildId] = 
+        setTimeout(() => delete recentlyActionedGuilds[guildId], RECENT_GUILD_ACTION);
+
+    return false;
+}
 
 /**
  * 
@@ -301,5 +322,6 @@ module.exports = {
     logBan,
     logInformation,
     forwardMessage,
-    isRecentlyActioned
+    isRecentlyActioned,
+    recentWarnings
 };
