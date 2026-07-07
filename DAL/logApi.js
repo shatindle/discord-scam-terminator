@@ -50,12 +50,17 @@ async function forwardMessage(client, guildId, message, override = undefined, su
             await message.forward(channel);
         } catch (forwardError) {
             console.log(`Unable to foward message for ${guildId}, potential rate limit: ${forwardError}`);
+            
+            // because we could not forward the message, assume the message is not deletable
+            return false;
         }
 
+        // the message should be deletable
         return true;
     } catch (err) {
         console.log(`Error logging activity when forwarding a message: ${err}`);
 
+        // because something went wrong, assume the message is gone
         return false;
     }
 }

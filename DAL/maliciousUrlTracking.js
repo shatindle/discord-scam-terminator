@@ -250,12 +250,15 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
     if (perform !== "no-action") {
         // could be a malicious URL.  We need to delete the message.
         if (message.deletable) {
+            let deleteAllowed = true;
+
             if (reason === "Image spam" && !recentForward(guildId)) {
-                await forwardMessage(client, guildId, message);
+                deleteAllowed = await forwardMessage(client, guildId, message);
             }
 
             try {
-                await message.delete();
+                if (deleteAllowed)
+                    await message.delete();
             } catch(delErr) {
                 try {
                     await recordError(guildId, userId, "Line 223 of maliciousUrlTracking.js: " + JSON.stringify(delErr), reason);
