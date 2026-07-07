@@ -154,7 +154,44 @@ const logWarning = async (client, guildId, userId, channelId, message = "", reas
 const ACTION_COLOR = "#dc3545";
 const ACTION_NOACTION_COLOR = "#a64d79";
 
+/** @type {string[]} */
 const recentlyActionedUsers = [];
+
+const RECENT_ACTION_TIMEOUT = 10000;
+
+/**
+ * 
+ * @param {string} guildId The guild ID the event happened in
+ * @param {string} userId The user ID that did it
+ * @param {boolean} check Whether or not we should record this event
+ * @returns {boolean}
+ */
+const isRecentlyActioned = (guildId, userId, checkOnly = true) => {
+    let id = `${guildId}-${userId}`;
+
+    if (recentlyActionedUsers[id]) {
+        // we've recently actioned this user
+        if (checkOnly) return true;
+
+        // just reset the timer
+        clearTimeout(recentlyActionedUsers[id]);
+
+        recentlyActionedUsers[id] = setTimeout(() => {
+            delete recentlyActionedUsers[id];
+        }, RECENT_ACTION_TIMEOUT);
+
+        return true;
+    }
+
+    // we have not recently actioned this user
+    if (checkOnly) return false;
+    
+    recentlyActionedUsers[id] = setTimeout(() => {
+        delete recentlyActionedUsers[id];
+    }, RECENT_ACTION_TIMEOUT);
+
+    return false;
+};
 
 /**
  * 
@@ -168,15 +205,8 @@ const recentlyActionedUsers = [];
  */
 async function logKick(client, guildId, userId, channelId, message = "", reason = "unknown") {
     let alreadyActioned = false;
-    let id = `${guildId}-${userId}`
-
-    if (recentlyActionedUsers[id]) alreadyActioned = true;
-    else {
-        recentlyActionedUsers[id] = true;
-        setTimeout(() => {
-            delete recentlyActionedUsers[id];
-        }, 10000);
-    }
+    
+    if (isRecentlyActioned(guildId, userId, false)) return;
 
     await logActivity(
         client,
@@ -200,15 +230,8 @@ async function logKick(client, guildId, userId, channelId, message = "", reason 
  */
 async function logTimeout(client, guildId, userId, channelId, message = "", reason = "unknown") {
     let alreadyActioned = false;
-    let id = `${guildId}-${userId}`
-
-    if (recentlyActionedUsers[id]) alreadyActioned = true;
-    else {
-        recentlyActionedUsers[id] = true;
-        setTimeout(() => {
-            delete recentlyActionedUsers[id];
-        }, 10000);
-    }
+    
+    if (isRecentlyActioned(guildId, userId, false)) return;
 
     await logActivity(
         client,
@@ -232,15 +255,8 @@ async function logTimeout(client, guildId, userId, channelId, message = "", reas
  */
 async function logBan(client, guildId, userId, channelId, message = "", reason = "unknown") {
     let alreadyActioned = false;
-    let id = `${guildId}-${userId}`
-
-    if (recentlyActionedUsers[id]) alreadyActioned = true;
-    else {
-        recentlyActionedUsers[id] = true;
-        setTimeout(() => {
-            delete recentlyActionedUsers[id];
-        }, 10000);
-    }
+    
+    if (isRecentlyActioned(guildId, userId, false)) return;
 
     await logActivity(
         client,
@@ -284,5 +300,6 @@ module.exports = {
     logTimeout,
     logBan,
     logInformation,
-    forwardMessage
+    forwardMessage,
+    isRecentlyActioned
 };

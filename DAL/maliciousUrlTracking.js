@@ -1,7 +1,7 @@
 const { Message, PermissionFlagsBits } = require("discord.js");
 const { lookupGuildBehavior } = require("./behaviorApi");
 const { shouldActionUser, recordKick, recordTimeout, recordBan, recordError, recordWarning, recordFail, recordContentReview } = require("./databaseApi");
-const { logWarning, logKick, logTimeout, logBan, forwardMessage } = require("./logApi");
+const { logWarning, logKick, logTimeout, logBan, forwardMessage, isRecentlyActioned } = require("./logApi");
 const { getDomainCreationDate } = require("./domainLookup");
 const { getAllRedirects } = require("./redirectExtractor");
 const { extractHostname } = require("./urlTesterApi");
@@ -220,7 +220,8 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
     if (perform !== "no-action") {
         // could be a malicious URL.  We need to delete the message.
         if (message.deletable) {
-            if (reason === "Image spam") {
+            if (reason === "Image spam" &&
+                !isRecentlyActioned(guildId, userId)) {
                 await forwardMessage(client, guildId, message);
             }
 
