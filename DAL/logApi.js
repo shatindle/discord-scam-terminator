@@ -165,13 +165,10 @@ const RECENT_ACTION_TIMEOUT = 10000;
  * @param {boolean} check Whether or not we should record this event
  * @returns {boolean}
  */
-const isRecentlyActioned = (guildId, userId, checkOnly = true) => {
+const isRecentlyActioned = (guildId, userId) => {
     let id = `${guildId}-${userId}`;
 
     if (recentlyActionedUsers[id]) {
-        // we've recently actioned this user
-        if (checkOnly) return true;
-
         // just reset the timer
         clearTimeout(recentlyActionedUsers[id]);
 
@@ -181,9 +178,6 @@ const isRecentlyActioned = (guildId, userId, checkOnly = true) => {
 
         return true;
     }
-
-    // we have not recently actioned this user
-    if (checkOnly) return false;
     
     recentlyActionedUsers[id] = 
         setTimeout(() => delete recentlyActionedUsers[id], RECENT_ACTION_TIMEOUT);
@@ -211,7 +205,7 @@ const recentWarnings = (guildId) => {
         setTimeout(() => delete recentlyActionedGuilds[guildId], RECENT_GUILD_ACTION);
 
     return false;
-}
+};
 
 /**
  * 
@@ -226,7 +220,7 @@ const recentWarnings = (guildId) => {
 async function logKick(client, guildId, userId, channelId, message = "", reason = "unknown") {
     let alreadyActioned = false;
     
-    if (isRecentlyActioned(guildId, userId, false)) return;
+    if (isRecentlyActioned(guildId, userId)) return;
 
     await logActivity(
         client,
@@ -251,7 +245,7 @@ async function logKick(client, guildId, userId, channelId, message = "", reason 
 async function logTimeout(client, guildId, userId, channelId, message = "", reason = "unknown") {
     let alreadyActioned = false;
     
-    if (isRecentlyActioned(guildId, userId, false)) return;
+    if (isRecentlyActioned(guildId, userId)) return;
 
     await logActivity(
         client,
@@ -276,7 +270,7 @@ async function logTimeout(client, guildId, userId, channelId, message = "", reas
 async function logBan(client, guildId, userId, channelId, message = "", reason = "unknown") {
     let alreadyActioned = false;
     
-    if (isRecentlyActioned(guildId, userId, false)) return;
+    if (isRecentlyActioned(guildId, userId)) return;
 
     await logActivity(
         client,
@@ -321,6 +315,5 @@ module.exports = {
     logBan,
     logInformation,
     forwardMessage,
-    isRecentlyActioned,
     recentWarnings
 };

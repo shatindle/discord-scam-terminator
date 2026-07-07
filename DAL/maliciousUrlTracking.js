@@ -1,7 +1,7 @@
 const { Message, PermissionFlagsBits } = require("discord.js");
 const { lookupGuildBehavior } = require("./behaviorApi");
 const { shouldActionUser, recordKick, recordTimeout, recordBan, recordError, recordWarning, recordFail, recordContentReview } = require("./databaseApi");
-const { logWarning, logKick, logTimeout, logBan, forwardMessage, isRecentlyActioned, recentWarnings } = require("./logApi");
+const { logWarning, logKick, logTimeout, logBan, forwardMessage, recentWarnings } = require("./logApi");
 const { getDomainCreationDate } = require("./domainLookup");
 const { getAllRedirects } = require("./redirectExtractor");
 const { extractHostname } = require("./urlTesterApi");
@@ -66,7 +66,7 @@ async function maliciousUrlDetected(message, guildId, userId, username, reason, 
         channel.permissionsFor(guild.members.me).has(PermissionFlagsBits.SendMessages) && 
         channel.permissionsFor(guild.members.me).has(PermissionFlagsBits.ViewChannel)) {
 
-        if (recentWarnings(guildId)) {
+        if (!recentWarnings(guildId)) {
             // note: this may not send if a rate limit is in play...
             try {
                 const response = await channel.send("Potentially dangerous URL or message pattern detected.  If this was in error, please let a Mod know.");
@@ -272,7 +272,7 @@ async function spamUrlDetected(message, guildId, userId, username, reason, perfo
             channel.permissionsFor(guild.members.me).has(PermissionFlagsBits.SendMessages) && 
             channel.permissionsFor(guild.members.me).has(PermissionFlagsBits.ViewChannel)) {
 
-            if (recentWarnings(guildId)) {
+            if (!recentWarnings(guildId)) {
                 // due to the increase in image spam problems, don't bother sending this message
                 // TODO: if Discord approves the rate limit request increase, undo this
                 try {
