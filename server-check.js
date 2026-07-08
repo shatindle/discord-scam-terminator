@@ -19,13 +19,13 @@ client.once('ready', async () => {
         total += guild.memberCount;
 
         if (guild.verified && guild.partnered) {
-            partneredverified.push(`${guild.id}: ${guild.name}: ${guild.memberCount}`);
+            partneredverified.push(`${guild.members.me.joinedAt.toDateString()} ${guild.id}: ${guild.name}: ${guild.memberCount}`);
         } else if (guild.partnered) {
-            partnered.push(`${guild.id}: ${guild.name}: ${guild.memberCount}`);
+            partnered.push(`${guild.members.me.joinedAt.toDateString()} ${guild.id}: ${guild.name}: ${guild.memberCount}`);
         } else if (guild.verified) {
-            verified.push(`${guild.id}: ${guild.name}: ${guild.memberCount}`);
+            verified.push(`${guild.members.me.joinedAt.toDateString()} ${guild.id}: ${guild.name}: ${guild.memberCount}`);
         } else {
-            everythingelse.push(`${guild.id}: ${guild.name}: ${guild.memberCount}`);
+            everythingelse.push(`${guild.members.me.joinedAt.toDateString()} ${guild.id}: ${guild.name}: ${guild.memberCount}`);
         }
     });
 

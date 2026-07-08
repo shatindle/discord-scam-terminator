@@ -80,7 +80,11 @@ async function monitor(message, ignoreSusText) {
         // ignore posts from mods
         if (message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) return false;
     } catch (err) {
-        await recordError("", "", "permissions property null: " + err.toString(), reason);
+        await recordError(
+            message?.guild?.id ?? "", 
+            message?.member?.id ?? "", 
+            "permissions property null: " + err.toString(), 
+            reason);
         // for now, exit since we couldn't keep going
         return false;
     }
