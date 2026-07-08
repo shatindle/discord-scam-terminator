@@ -1,4 +1,4 @@
-const { Message, PermissionsBitField, Client } = require("discord.js");
+const { Message, PermissionsBitField, Client, GuildMember } = require("discord.js");
 const { discordInvitePattern } = require("../DAL/bodyparserApi");
 const { recordError, hashMessage } = require("../DAL/databaseApi");
 const { spamUrlDetected } = require("../DAL/maliciousUrlTracking");
@@ -69,15 +69,16 @@ async function cleanup(client, messageList, guildId, userId) {
 /**
  * @description Looks for nitro/steam scams and removes them
  * @param {Message} message The message object
+ * @param {GuildMember} memberFromMessage The member who made the message
  * @returns {Promise<Boolean>} Whether or not the message was acted on in some way
  */
-async function monitor(message) {
+async function monitor(message, memberFromMessage) {
     // ignore posts from bots
     if (message.author.bot) return false;
 
     try {
         // ignore posts from mods
-        if (message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) return false;
+        if (memberFromMessage.permissions.has(PermissionsBitField.Flags.ManageMessages)) return false;
     } catch (err) {
         await recordError(
             message?.guild?.id ?? "", 
@@ -90,12 +91,12 @@ async function monitor(message) {
 
     const client = message.client;
     const guildId = message.guild.id;
-    const userId = message.member.id;
+    const userId = memberFromMessage.id;
     const channelId = message.channel.id;
     const now = new Date().valueOf();
 
     try {
-        const username = message.member.user.username + "#" + message.member.user.discriminator;
+        const username = memberFromMessage.user.username + "#" + memberFromMessage.user.discriminator;
         const isTextLong = candidateForComparison(message.content);
 
         // if the message contains a URL, log it.  If the same message is being spammed, remove it
@@ -144,13 +145,13 @@ async function monitor(message) {
                 } else if (log.messages.length === 3) {
                     // delete just this one and warn
                     log.messages[log.messages.length - 1].deleted = true;
-                    await spamUrlDetected(message, guildId, userId, username, reason, "warn");
+                    await spamUrlDetected(message, guildId, userId, username, reason, "warn", memberFromMessage);
                     return true;
                 } else {
                     // delete all and remove
                     log.messages[log.messages.length - 1].deleted = true;
                     const priorMessages = log.messages.filter(m => !m.deleted);
-                    if (await spamUrlDetected(message, guildId, userId, username, reason, "remove")) {
+                    if (await spamUrlDetected(message, guildId, userId, username, reason, "remove", memberFromMessage)) {
                         await cleanup(client, priorMessages, guildId, userId);
                     }
                     return true;

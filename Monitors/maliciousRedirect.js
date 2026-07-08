@@ -1,4 +1,4 @@
-const { Message, PermissionsBitField } = require('discord.js');
+const { Message, PermissionsBitField, GuildMember } = require('discord.js');
 const { extractUrlsFromContent } = require("../DAL/bodyparserApi");
 const { validUrl, isBlacklisted, extractHostname } = require("../DAL/urlTesterApi");
 const { recordError } = require("../DAL/databaseApi");
@@ -10,15 +10,16 @@ const reason = "Malicious redirect";
 /**
  * @description Looks for nitro/steam scams and removes them
  * @param {Message} message The message object
+ * @param {GuildMember} memberFromMessage The member who made the message
  * @returns {Promise<Boolean>} Whether or not the message was acted on in some way
  */
-async function monitor(message) {
+async function monitor(message, memberFromMessage) {
     // ignore posts from bots
     if (message.author.bot) return false;
 
     try {
         // ignore posts from mods
-        if (message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) return false;
+        if (memberFromMessage.permissions.has(PermissionsBitField.Flags.ManageMessages)) return false;
     } catch (err) {
         await recordError(
             message?.guild?.id ?? "", 
@@ -30,10 +31,10 @@ async function monitor(message) {
     }
 
     const guildId = message.guild.id;
-    const userId = message.member.id;
+    const userId = memberFromMessage.id;
 
     try {
-        const username = message.member.user.username + "#" + message.member.user.discriminator;
+        const username = memberFromMessage.user.username + "#" + memberFromMessage.user.discriminator;
         let messageRemoved = false;
         
         const urlsFound = extractUrlsFromContent(message.content, true);
@@ -50,7 +51,7 @@ async function monitor(message) {
                         if (!messageRemoved) {
                             // if it doesn't have key indicators but fails the deep check, mark it as malicious
                             // because we already evaluated the redirects, no need to do it again.  Leave off the malicousUrl
-                            await maliciousUrlDetected(message, guildId, userId, username, reason, extractHostname(redirectUrl));
+                            await maliciousUrlDetected(message, guildId, userId, username, reason, extractHostname(redirectUrl), undefined, memberFromMessage);
                             messageRemoved = true;
                         }
                     }

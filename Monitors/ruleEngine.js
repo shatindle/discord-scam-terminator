@@ -1,4 +1,4 @@
-const { Message, PermissionsBitField, Client } = require("discord.js");
+const { Message, PermissionsBitField, Client, GuildMember } = require("discord.js");
 const { cleanMessage, extractUrlsFromContent } = require("../DAL/bodyparserApi");
 const { recordError, recordUnusualBehavior } = require("../DAL/databaseApi");
 const { getServerIdFromInvite } = require("../DAL/urlTesterApi");
@@ -20,9 +20,10 @@ const reason = "Advanced rules";
 /**
  * @description Advanced experimental rules
  * @param {Message} message The message object
+ * @param {GuildMember} memberFromMessage The member who made the message
  * @returns {Promise<Boolean>} Whether or not the message was acted on in some way
  */
-async function monitor(message) {
+async function monitor(message, memberFromMessage) {
     // if we have no supplementary rules, keep going
     if (!allRules) return false;
 
@@ -31,7 +32,7 @@ async function monitor(message) {
 
     try {
         // ignore posts from mods
-        if (message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) return false;
+        if (memberFromMessage.permissions.has(PermissionsBitField.Flags.ManageMessages)) return false;
     } catch (err) {
         await recordError(
             message?.guild?.id ?? "", 
@@ -44,10 +45,10 @@ async function monitor(message) {
 
     const client = message.client;
     const guildId = message.guild.id;
-    const userId = message.member.id;
+    const userId = memberFromMessage.id;
 
     try {
-        const username = message.member.user.username + "#" + message.member.user.discriminator;
+        const username = memberFromMessage.user.username + "#" + memberFromMessage.user.discriminator;
 
         if (message.content) {
             const content = cleanMessage(message.content);

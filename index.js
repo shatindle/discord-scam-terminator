@@ -22,6 +22,7 @@ const antiProfileSpam = require("./Monitors/antiProfileSpam");
 const maliciousRedirect = require("./Monitors/maliciousRedirect");
 const advancedRules = require("./Monitors/ruleEngine");
 const publicIp = (...args) => import('public-ip').then(({publicIpv4}) => publicIpv4(...args));
+const { logError } = require('./DAL/logApi');
 
 const client = new Client({ 
     intents: [
@@ -103,32 +104,68 @@ client.on(Events.InteractionCreate, async interaction => {
 client.on(Events.MessageCreate, async (message) => {
     const behaviors = lookupGuildBehavior(message.guildId);
 
+    let memberFromMessage;
+
+    try {
+        // we need to make sure the member details are cached before we go any further
+        memberFromMessage = 
+            message.member ?? await message.guild.members.fetch(message.author.id);
+
+        if (!memberFromMessage || !memberFromMessage.permissions) {
+            // member cannot be found, our rules will not be able to do anything
+
+            try {
+                await logError(client, 
+                    message?.guildId ?? "", 
+                    message?.author?.id ?? "", 
+                    message?.channelId ?? "",
+                    "Unable to look up member for permissions check");
+            } catch {
+                console.log("Error looking up member for permissions check");
+            }
+            return;
+        }
+    } catch {
+        // member cannot be looked up, we can't go any further
+        try {
+            await logError(client, 
+                message?.guildId ?? "", 
+                message?.author?.id ?? "", 
+                message?.channelId ?? "",
+                "Unable to look up member for permissions check");
+        } catch {
+            console.log("Error looking up member for permissions check");
+        }
+
+        return;
+    }
+
     // disabling for now due to performance issues
     // if (await advancedRules(message)) // highly experimental 1 message detector
     //     return; // it was addressed here
 
     if (behaviors.defaults || behaviors.text_spam)
-        if (await antiTextSpam(message)) // check this first because it's the fastest check
+        if (await antiTextSpam(message, memberFromMessage)) // check this first because it's the fastest check
             return; // it was addressed here
 
     if (behaviors.defaults || behaviors.profile_spam)
-        if (await antiProfileSpam(message))
+        if (await antiProfileSpam(message, memberFromMessage))
             return; // it was addressed here
 
     if (behaviors.defaults || behaviors.link_spam)
-        if (await antiLinkSpam(message, behaviors.nitro_steam_spam === false))
+        if (await antiLinkSpam(message, behaviors.nitro_steam_spam === false, memberFromMessage))
             return; // it was addressed here
 
     if (behaviors.defaults || behaviors.image_spam)
-        if (await antiImageSpam(message))
+        if (await antiImageSpam(message, memberFromMessage))
             return; // it was addressed here
 
     if (behaviors.defaults || behaviors.nitro_steam_spam)
-        if (await nitroSteamScam(message))
+        if (await nitroSteamScam(message, memberFromMessage))
             return; // it was addressed here
 
     if (behaviors.defaults || behaviors.malicious_redirects)
-        if (await maliciousRedirect(message))
+        if (await maliciousRedirect(message, memberFromMessage))
             return; // it was addressed here
 });
 

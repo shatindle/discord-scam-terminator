@@ -1,4 +1,4 @@
-const { Message, PermissionsBitField } = require('discord.js');
+const { Message, PermissionsBitField, GuildMember } = require('discord.js');
 const { extractUrlsFromContent, containsKeyIndicators, MINIMUM_INDICATORS, isRedlineStealer } = require("../DAL/bodyparserApi");
 const { validUrl, isSafeDeepCheck, isUrlInWhitelist, extractHostname } = require("../DAL/urlTesterApi");
 const { recordError } = require("../DAL/databaseApi");
@@ -10,15 +10,16 @@ const reason = "Nitro/Steam phishing";
 /**
  * @description Looks for nitro/steam scams and removes them
  * @param {Message} message The message object
+ * @param {GuildMember} memberFromMessage The member who made the message
  * @returns {Promise<Boolean>} Whether or not the message was acted on in some way
  */
-async function monitor(message) {
+async function monitor(message, memberFromMessage) {
     // ignore posts from bots
     if (message.author.bot) return false;
 
     try {
         // ignore posts from mods
-        if (message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) return false;
+        if (memberFromMessage.permissions.has(PermissionsBitField.Flags.ManageMessages)) return false;
     } catch (err) {
         await recordError(
             message?.guild?.id ?? "", 
@@ -30,10 +31,10 @@ async function monitor(message) {
     }
 
     const guildId = message.guild.id;
-    const userId = message.member.id;
+    const userId = memberFromMessage.id;
 
     try {
-        const username = message.member.user.username + "#" + message.member.user.discriminator;
+        const username = memberFromMessage.user.username + "#" + memberFromMessage.user.discriminator;
         let messageRemoved = false;
         
         const keyIndicators = containsKeyIndicators(message.content, true) > MINIMUM_INDICATORS;
@@ -47,7 +48,7 @@ async function monitor(message) {
                 if (redlineStealer) {
                     if (!messageRemoved) {
                         // if it has key indicators, then mark it as malicious and run the deep check after
-                        await maliciousUrlDetected(message, guildId, userId, username, reason, extractHostname(urlsFound[i]), urlsFound[i]);
+                        await maliciousUrlDetected(message, guildId, userId, username, reason, extractHostname(urlsFound[i]), urlsFound[i], memberFromMessage);
                         messageRemoved = true;
                     }
                 }
@@ -62,7 +63,7 @@ async function monitor(message) {
                 if (keyIndicators) {
                     if (!messageRemoved) {
                         // if it has key indicators, then mark it as malicious and run the deep check after
-                        await maliciousUrlDetected(message, guildId, userId, username, reason, extractHostname(urlsFound[i]), urlsFound[i]);
+                        await maliciousUrlDetected(message, guildId, userId, username, reason, extractHostname(urlsFound[i]), urlsFound[i], memberFromMessage);
                         messageRemoved = true;
                     }
 
@@ -79,7 +80,7 @@ async function monitor(message) {
                 } else {
                     if (!messageRemoved) {
                         // if it doesn't have key indicators but fails the deep check, mark it as malicious
-                        await maliciousUrlDetected(message, guildId, userId, username, reason, extractHostname(urlsFound[i]), urlsFound[i]);
+                        await maliciousUrlDetected(message, guildId, userId, username, reason, extractHostname(urlsFound[i]), urlsFound[i], memberFromMessage);
                         messageRemoved = true;
                     }
                 }
