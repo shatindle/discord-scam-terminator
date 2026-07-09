@@ -196,6 +196,7 @@ async function monitor(message, ignoreSusText, memberFromMessage) {
                 } else if (log.messages.length === 3) {
                     // delete all and warn
                     log.messages[log.messages.length - 1].deleted = true;
+                    const priorMessages = log.messages.filter(m => !m.deleted);
                     if (await spamUrlDetected(message, guildId, userId, username, reason, "warn", memberFromMessage)) {
                         await cleanup(client, priorMessages, guildId, userId);
                     }
