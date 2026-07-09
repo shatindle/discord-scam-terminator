@@ -105,6 +105,9 @@ client.on(Events.MessageCreate, async (message) => {
     // ignore webhooks
     if (message.webhookId) return;
 
+    // ignore bots
+    if (message.author.bot) return;
+
     const behaviors = lookupGuildBehavior(message.guildId);
 
     let memberFromMessage;
