@@ -146,9 +146,11 @@ async function monitor(message, memberFromMessage) {
                     // do nothing
                     return false;
                 } else if (log.messages.length === 3) {
-                    // delete just this one and warn
+                    // delete all and warn
                     log.messages[log.messages.length - 1].deleted = true;
-                    await spamUrlDetected(message, guildId, userId, username, reason, "warn", memberFromMessage);
+                    if (await spamUrlDetected(message, guildId, userId, username, reason, "warn", memberFromMessage)) {
+                        await cleanup(client, priorMessages, guildId, userId);
+                    }
                     return true;
                 } else {
                     // delete all and remove
