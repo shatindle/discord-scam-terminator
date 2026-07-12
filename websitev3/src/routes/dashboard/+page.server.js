@@ -61,6 +61,7 @@ function metricLabelSet(graphRange) {
  */
 function fallbackTimeline(graphRange, graphWindowOffset = 0) {
 	const labels = [];
+	const bucketStarts = [];
 	let count = 24;
 	let stepHours = 1;
 
@@ -95,6 +96,7 @@ function fallbackTimeline(graphRange, graphWindowOffset = 0) {
 
 		for (let i = count - 1; i >= 0; i -= 1) {
 			const date = new Date(monthStart.getFullYear(), monthStart.getMonth() - i - monthShift, 1);
+			bucketStarts.push(date.toISOString());
 			labels.push(MONTH_NAMES[date.getMonth()]);
 		}
 	} else {
@@ -104,6 +106,7 @@ function fallbackTimeline(graphRange, graphWindowOffset = 0) {
 			const date = new Date();
 			date.setMinutes(0, 0, 0);
 			date.setHours(date.getHours() - i * stepHours - bucketShiftHours);
+			bucketStarts.push(date.toISOString());
 
 			if (graphRange === '24h') {
 				labels.push(`${String(date.getHours()).padStart(2, '0')}:00`);
@@ -117,6 +120,7 @@ function fallbackTimeline(graphRange, graphWindowOffset = 0) {
 
 	return {
 		labels,
+		bucketStarts,
 		series: {
 			warn: Array(count).fill(0),
 			kick: Array(count).fill(0),

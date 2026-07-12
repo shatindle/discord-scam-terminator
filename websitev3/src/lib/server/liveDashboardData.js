@@ -290,6 +290,7 @@ async function getRecentActionTimeline(graphRange, guildIds, graphWindowOffset =
 
 	const timeline = {
 		labels,
+		bucketStarts: bucketStarts.map((start) => start.toISOString()),
 		series: {
 			warn: Array(bucketStarts.length).fill(0),
 			kick: Array(bucketStarts.length).fill(0),

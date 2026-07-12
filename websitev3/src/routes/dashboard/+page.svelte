@@ -12,19 +12,6 @@
 	const maxGraphWindowOffset = $derived(maxGraphWindowOffsetForRange(selectedGraphRange));
 	const canGoBackWindow = $derived(selectedGraphWindowOffset < maxGraphWindowOffset);
 	const canGoForwardWindow = $derived(selectedGraphWindowOffset > 0);
-	const graphRangeLabel = $derived(
-		selectedGraphRange === '24h'
-			? 'Last 24h'
-			: selectedGraphRange === '1w'
-				? 'Last Week'
-				: selectedGraphRange === '2w'
-					? 'Last 2 Weeks'
-				: selectedGraphRange === '1m'
-					? 'Last Month (Weekly)'
-					: selectedGraphRange === '2m'
-						? 'Last 2 Months (Weekly)'
-					: 'Last 6 Months (Monthly)'
-	);
 	const selectedServer = $derived(
 		servers.find((server) => server.id === data.selectedServerId) ?? null
 	);
@@ -57,9 +44,50 @@
 	const timeline = $derived(
 		data.timeline ?? {
 			labels: [],
+			bucketStarts: [],
 			series: { warn: [], kick: [], timeout: [], ban: [], fail: [] }
 		}
 	);
+
+	/**
+	 * @param {string | undefined} bucketStartIso
+	 * @param {string} fallbackLabel
+	 */
+	function formatGraphLabel(bucketStartIso, fallbackLabel) {
+		if (!bucketStartIso) {
+			return fallbackLabel;
+		}
+
+		const bucketStart = new Date(bucketStartIso);
+
+		if (Number.isNaN(bucketStart.valueOf())) {
+			return fallbackLabel;
+		}
+
+		if (selectedGraphRange === '24h') {
+			return new Intl.DateTimeFormat(undefined, { hour: 'numeric' }).format(bucketStart);
+		}
+
+		if (selectedGraphRange === '2w') {
+			return new Intl.DateTimeFormat(undefined, { day: 'numeric' }).format(bucketStart);
+		}
+
+		if (selectedGraphRange === '6m') {
+			return new Intl.DateTimeFormat(undefined, { month: 'short' }).format(bucketStart);
+		}
+
+		return new Intl.DateTimeFormat(undefined, {
+			month: 'numeric',
+			day: 'numeric'
+		}).format(bucketStart);
+	}
+
+	const localizedTimeline = $derived({
+		...timeline,
+		labels: timeline.labels.map((label, index) =>
+			formatGraphLabel(timeline.bucketStarts?.[index], label)
+		)
+	});
 
 	const graphBucketSize = $derived(
 		selectedGraphRange !== '24h' ? 1 : viewportWidth <= 640 ? 3 : viewportWidth <= 940 ? 2 : 1
@@ -90,24 +118,24 @@
 	const graphTimeline = $derived(
 		shouldCondense24h
 			? {
-				labels: timeline.labels.reduce((labels, label, index) => {
+				labels: localizedTimeline.labels.reduce((labels, label, index) => {
 					if (index % graphBucketSize !== 0) {
 						return labels;
 					}
 
-					const endLabel = timeline.labels[index + (graphBucketSize - 1)] ?? label;
+					const endLabel = localizedTimeline.labels[index + (graphBucketSize - 1)] ?? label;
 					labels.push(endLabel ? `${label}-${endLabel}` : label);
 					return labels;
 				}, /** @type {string[]} */ ([])),
 				series: {
-					warn: groupSeries(timeline.series.warn, graphBucketSize),
-					kick: groupSeries(timeline.series.kick, graphBucketSize),
-					timeout: groupSeries(timeline.series.timeout, graphBucketSize),
-					ban: groupSeries(timeline.series.ban, graphBucketSize),
-					fail: groupSeries(timeline.series.fail, graphBucketSize)
+					warn: groupSeries(localizedTimeline.series.warn, graphBucketSize),
+					kick: groupSeries(localizedTimeline.series.kick, graphBucketSize),
+					timeout: groupSeries(localizedTimeline.series.timeout, graphBucketSize),
+					ban: groupSeries(localizedTimeline.series.ban, graphBucketSize),
+					fail: groupSeries(localizedTimeline.series.fail, graphBucketSize)
 				}
 			}
-			: timeline
+			: localizedTimeline
 	);
 
 	const bucketTotals = $derived(
@@ -455,7 +483,7 @@
 
 	<section class="dashboard-card action-graph-card">
 		<div class="graph-head">
-			<h2>Recent Action Graph ({graphRangeLabel})</h2>
+			<h2>Recent Action Graph</h2>
 			<p class="stream-copy">warn, kick, timeout, ban, and fail actions attempted by the bot over time</p>
 			<div class="graph-window-row">
 				{#if canGoBackWindow}
