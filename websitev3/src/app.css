@@ -1433,13 +1433,20 @@ h2 {
 
 .graph-window-row {
 	display: flex;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 	gap: 0.35rem;
 	margin-top: 0.4rem;
+	overflow-x: auto;
+	align-items: center;
 }
 
 .graph-window-nav {
 	min-width: 6.9rem;
+	white-space: nowrap;
+}
+
+.graph-window-row > * {
+	flex: 0 0 auto;
 }
 
 .server-sort-pill.disabled {

@@ -903,5 +903,6 @@
 	.timeframe-indicator {
 		width: 7.4em;
 		text-align: center;
+		white-space: nowrap;
 	}
 </style>
