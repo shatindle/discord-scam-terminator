@@ -151,5 +151,5 @@ export async function GET({ cookies, fetch, url }) {
 
 	cookies.set(SESSION_COOKIE_NAME, token, sessionCookieOptions(secure));
 
-	throw redirect(302, '/');
+	throw redirect(302, '/dashboard');
 }
