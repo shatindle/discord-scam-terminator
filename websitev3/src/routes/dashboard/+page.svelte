@@ -400,6 +400,11 @@
 								alt="server avatar"
 								class="server-avatar"
 							/>
+							{#if selectedServer?.isVerified}
+							<img src="/img/verified-logo.png" alt={`${selectedServer?.name} verified`} class="server-verified" />
+							{:else if selectedServer?.isPartnered}
+							<img src="/img/partner-logo.png" alt={`${selectedServer?.name} partnered`} class="server-partnered" />
+							{/if}
 							<div>
 								<p class="choice-title">
 									{selectedServer ? selectedServer.name : 'All Servers'}
@@ -456,6 +461,11 @@
 						{#each servers as server}
 							<a href={dashboardUrl(server.id)} data-sveltekit-noscroll class="server-item" onclick={onServerSelected}>
 								<img src={server.avatarUrl} alt={`${server.name} avatar`} class="server-avatar" />
+								{#if server.isVerified}
+								<img src="/img/verified-logo.png" alt={`${server.name} verified`} class="server-verified" />
+								{:else if server.isPartnered}
+								<img src="/img/partner-logo.png" alt={`${server.name} partnered`} class="server-partnered" />
+								{/if}
 								<div class="server-meta">
 									<p class="choice-title">{server.name}</p>
 									<p class="choice-subtitle">Users: {server.memberCount} | Actions: {server.totalActions}</p>

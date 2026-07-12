@@ -53,6 +53,8 @@ async function refreshServerDirectory() {
 		const directory = await Promise.all(
 			guildIds.map(async (guildId) => {
 				const guildRef = guildMap.get(guildId);
+				const isPartnered = !!guildRef?.partnered;
+				const isVerified = !!guildRef?.verified;
 				const fallbackName = guildRef?.name ?? `Unknown Server (${guildId})`;
 				const fallbackAvatar = guildRef?.icon
 					? `https://cdn.discordapp.com/icons/${guildId}/${guildRef.icon}.png?size=128`
@@ -96,7 +98,9 @@ async function refreshServerDirectory() {
 						id: ownerId,
 						username: ownerUsername,
 						avatarUrl: ownerAvatarUrl
-					}
+					},
+					isPartnered,
+					isVerified
 				};
 			})
 		);

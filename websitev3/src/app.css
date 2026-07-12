@@ -1277,7 +1277,9 @@ h2 {
 	display: flex;
 	align-items: center;
 	gap: 0.6rem;
+	position: relative;
 }
+
 
 .server-menu {
 	max-height: 280px;
@@ -1337,6 +1339,7 @@ h2 {
 	border-radius: 0.18rem;
 	border: 1px solid transparent;
 	transition: background-color 140ms ease, border-color 140ms ease;
+	position: relative;
 }
 
 .server-item:hover {
@@ -1351,6 +1354,25 @@ h2 {
 	border: 1px solid #624a97;
 	object-fit: cover;
 	flex-shrink: 0;
+}
+
+
+.server-choice .server-partnered,
+.server-choice .server-verified {
+	position: absolute;
+	top: -0.45em;
+	left: 1.5em;
+	width: 1em;
+	height: 1em;
+}
+
+.server-item .server-partnered,
+.server-item .server-verified {
+	position: absolute;
+	top: 0.45em;
+	left: 1.9em;
+	width: 1em;
+	height: 1em;
 }
 
 .server-meta {
