@@ -688,8 +688,7 @@
 								</div>
 								<p class="graph-label">
 									{#if shouldCondense24h && label.includes('-')}
-										{label.slice(0, label.indexOf('-') + 1)}<br />
-										{label.slice(label.indexOf('-') + 1)}
+										{label.slice(0, label.indexOf('-'))}
 									{:else}
 										{label}
 									{/if}
