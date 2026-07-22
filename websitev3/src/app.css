@@ -277,6 +277,19 @@ a {
 	border-color: rgba(182, 162, 255, 0.74);
 }
 
+.clean-button.get-help-button {
+	background: linear-gradient(135deg, rgba(52, 201, 255, 0.28), rgba(58, 123, 255, 0.26));
+	color: #ebf7ff;
+	border-color: rgba(112, 205, 255, 0.62);
+	box-shadow: 0 0 0 1px rgba(87, 190, 255, 0.2), 0 10px 26px rgba(16, 42, 104, 0.34);
+}
+
+.clean-button.get-help-button:hover {
+	background: linear-gradient(135deg, rgba(79, 214, 255, 0.44), rgba(74, 142, 255, 0.4));
+	border-color: rgba(139, 217, 255, 0.76);
+	box-shadow: 0 0 0 1px rgba(108, 201, 255, 0.3), 0 12px 30px rgba(14, 36, 88, 0.44);
+}
+
 .github-source-button {
 	min-height: 2.2rem;
 	padding: 0.5rem 0.8rem;
@@ -682,6 +695,70 @@ a {
 	white-space: pre;
 }
 
+.donations-page {
+	gap: 1rem;
+}
+
+.donations-hero {
+	align-items: stretch;
+}
+
+.donations-stat-card {
+	display: grid;
+	gap: 0.8rem;
+	align-content: start;
+	padding: 1rem;
+	border-radius: 0.95rem;
+	border: 1px solid rgba(148, 160, 255, 0.24);
+	background: rgba(18, 23, 54, 0.46);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.donations-stat-card h2 {
+	font-size: clamp(0.95rem, 1.7vw, 1.2rem);
+	letter-spacing: 0.16em;
+	line-height: 1.25;
+}
+
+.donations-impact-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: 0.8rem;
+}
+
+.donations-impact-list li {
+	display: grid;
+	gap: 0.2rem;
+	padding: 0.68rem 0.7rem;
+	border-radius: 0.65rem;
+	border: 1px solid rgba(148, 160, 255, 0.22);
+	background: rgba(9, 12, 30, 0.66);
+}
+
+.donations-impact-label {
+	font-size: 0.82rem;
+	font-weight: 700;
+	letter-spacing: 0.11em;
+	text-transform: uppercase;
+	color: var(--green-strong);
+}
+
+.donations-impact-copy {
+	font-size: 0.95rem;
+	line-height: 1.58;
+	color: rgba(244, 247, 255, 0.78);
+}
+
+.donations-section {
+	gap: 1.25rem;
+}
+
+.donations-bottom-actions {
+	margin-top: 0.2rem;
+}
+
 @media (max-width: 640px) {
 	.setup-section {
 		gap: 1.1rem;
@@ -693,6 +770,14 @@ a {
 
 	.setup-detail-block {
 		padding: 0.62rem 0.72rem;
+	}
+
+	.donations-stat-card {
+		padding: 0.85rem;
+	}
+
+	.donations-impact-list li {
+		padding: 0.62rem 0.65rem;
 	}
 }
 

@@ -94,15 +94,16 @@
 				>
 					Protect your server
 				</a>
+				<a class="clean-button secondary support-server-button" href="/donations">Support Development</a>
 				<a
-					class="clean-button secondary support-server-button"
+					class="clean-button secondary get-help-button"
 					href="https://discord.gg/8ykjyQ8wJw"
 					target="_blank"
 					rel="noreferrer"
 				>
-					Get Support
+					Get Help
 				</a>
-				<a class="clean-button secondary" href="/dashboard">Open Dashboard</a>
+				<a class="clean-button secondary" href="/dashboard">Open the Dashboard</a>
 			</div>
 
 			{#if data.user}

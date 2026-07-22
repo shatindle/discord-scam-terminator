@@ -25,6 +25,10 @@
 			return 'Scam Hunter | Dashboard';
 		}
 
+		if (pathname === '/donations') {
+			return 'Scam Hunter | Donations';
+		}
+
 		return defaultTitle;
 	}
 
@@ -34,6 +38,10 @@
 	function pageDescription(pathname) {
 		if (isDashboardPath(pathname)) {
 			return 'Review server activity, bot moderation actions, and anti-scam rule configuration for your Discord communities.';
+		}
+
+		if (pathname === '/donations') {
+			return 'Support Scam Hunter development and infrastructure costs to keep Discord communities protected from scams and spam.';
 		}
 
 		return defaultDescription;
@@ -84,6 +92,7 @@
 
 		{#if data.user}
 			<div class="clean-user-actions">
+				<a class="clean-button secondary support-server-button" href="/donations">Donations</a>
 				<a class="clean-button secondary" href="/dashboard">Dashboard</a>
 				<a
 					class="clean-button github-source-button with-icon"
@@ -125,6 +134,7 @@
 			</div>
 		{:else}
 			<div class="clean-user-actions">
+				<a class="clean-button secondary support-server-button" href="/donations">Donations</a>
 				<a
 					class="clean-button github-source-button with-icon"
 					href="https://github.com/shatindle/discord-scam-terminator"

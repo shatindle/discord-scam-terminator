@@ -3,7 +3,7 @@
 
 	let { data } = $props();
 	const servers = $derived(
-		/** @type {Array<{ id: string; name: string; avatarUrl: string; memberCount: number; totalActions: number; owner: { id: string; username: string; avatarUrl: string } }>} */
+		/** @type {Array<{ id: string; name: string; avatarUrl: string; memberCount: number; totalActions: number; isPartnered: boolean; isVerified: boolean; owner: { id: string; username: string; avatarUrl: string } }>} */
 		(data.servers ?? [])
 	);
 	const selectedSort = $derived(data.selectedSort ?? 'members');
