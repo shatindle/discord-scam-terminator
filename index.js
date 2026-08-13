@@ -120,28 +120,30 @@ client.on(Events.MessageCreate, async (message) => {
         if (!memberFromMessage || !memberFromMessage.permissions) {
             // member cannot be found, our rules will not be able to do anything
 
-            try {
-                await logError(client, 
-                    message?.guildId ?? "", 
-                    message?.author?.id ?? "", 
-                    message?.channelId ?? "",
-                    "Unable to look up member for permissions check");
-            } catch {
-                console.log("Error looking up member for permissions check");
-            }
+            // just continue, we don't need to log it anymore
+            // try {
+            //     await logError(client, 
+            //         message?.guildId ?? "", 
+            //         message?.author?.id ?? "", 
+            //         message?.channelId ?? "",
+            //         "Unable to look up member for permissions check");
+            // } catch {
+            //     console.log("Error looking up member for permissions check");
+            // }
             return;
         }
     } catch {
         // member cannot be looked up, we can't go any further
-        try {
-            await logError(client, 
-                message?.guildId ?? "", 
-                message?.author?.id ?? "", 
-                message?.channelId ?? "",
-                "Unable to look up member for permissions check");
-        } catch {
-            console.log("Error looking up member for permissions check");
-        }
+        // just continue, we don't need to log it anymore
+        // try {
+        //     await logError(client, 
+        //         message?.guildId ?? "", 
+        //         message?.author?.id ?? "", 
+        //         message?.channelId ?? "",
+        //         "Unable to look up member for permissions check");
+        // } catch {
+        //     console.log("Error looking up member for permissions check");
+        // }
 
         return;
     }
