@@ -29,6 +29,10 @@
 			return 'Scam Hunter | Donations';
 		}
 
+		if (pathname === '/privacy-policy') {
+			return 'Scam Hunter | Privacy Policy';
+		}
+
 		return defaultTitle;
 	}
 
@@ -42,6 +46,10 @@
 
 		if (pathname === '/donations') {
 			return 'Support Scam Hunter development and infrastructure costs to keep Discord communities protected from scams and spam.';
+		}
+
+		if (pathname === '/privacy-policy') {
+			return 'Learn what data Scam Hunter collects, how it is stored, and what rights users have.';
 		}
 
 		return defaultDescription;
@@ -155,4 +163,9 @@
 	</header>
 
 	{@render children()}
+
+	<footer class="clean-footer">
+		<p>Scam Hunter</p>
+		<a class="clean-inline-link" href="/privacy-policy">Privacy Policy</a>
+	</footer>
 </div>

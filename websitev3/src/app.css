@@ -320,6 +320,20 @@ a {
 	color: var(--text);
 }
 
+.clean-footer {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 1rem;
+	padding: 0.5rem 0.25rem;
+	color: rgba(244, 247, 255, 0.58);
+	font-size: 0.82rem;
+}
+
+.clean-footer p {
+	margin: 0;
+}
+
 .panel {
 	border: 1px solid var(--line);
 	background: rgba(11, 14, 35, 0.78);
@@ -371,6 +385,42 @@ a {
 .clean-page h2 {
 	font-size: clamp(1rem, 1.8vw, 1.25rem);
 	letter-spacing: 0.2em;
+}
+
+.privacy-policy {
+	gap: 1.25rem;
+}
+
+.privacy-policy h1 {
+	max-width: none;
+}
+
+.privacy-policy h2 {
+	margin-top: 0.75rem;
+}
+
+.privacy-policy ul {
+	display: grid;
+	gap: 0.45rem;
+	margin: 0;
+	padding-left: 1.25rem;
+	color: var(--muted);
+	line-height: 1.6;
+}
+
+.privacy-policy a {
+	color: var(--green-strong);
+	text-decoration: underline;
+	text-decoration-color: rgba(49, 240, 162, 0.42);
+	text-underline-offset: 0.17em;
+}
+
+.privacy-policy a:hover {
+	text-decoration-color: rgba(49, 240, 162, 0.78);
+}
+
+.privacy-policy code {
+	color: var(--text);
 }
 
 .clean-lead,
